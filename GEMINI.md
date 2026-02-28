@@ -36,6 +36,10 @@
 
 ## 🔒 3. 비즈니스 로직 및 보안 (Business Logic & Security)
 
+- **Backend Agnostic (백엔드 독립성)**: 
+  - 프론트엔드(UI/Features)는 특정 백엔드 기술(Supabase, Prisma 등)에 직접 의존하지 않습니다.
+  - 모든 데이터 요청은 `entities/[domain]/api` 레이어의 **추상화된 서비스(Interface/Repository)**를 통해서만 이루어집니다.
+  - 백엔드 응답 데이터는 반드시 **내부 표준 모델(Entity)**로 변환(Mapping)하여 사용함으로써, 백엔드 API 명세가 바뀌어도 UI 코드는 영향을 받지 않게 합니다.
 - **비회원 5개 제한 (Free Tier)**: 북마크 저장 시 반드시 비회원 여부와 현재 저장 개수를 체크하는 로직이 포함되어야 합니다.
 - **데이터 이전 (Migration)**: 로그인 시 임시 데이터를 정식 계정으로 안전하게 이전하는 로직을 철저히 검증합니다.
 - **보안 점검**: API Key(`OPENAI_API_KEY`) 등이 코드에 노출되지 않았는지, `.env`를 적절히 사용하는지 매 리뷰마다 확인합니다.
