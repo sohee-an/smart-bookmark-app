@@ -27,6 +27,11 @@ export interface BookmarkRepository {
   delete(id: string): Promise<void>;
 
   /**
+   * @description 북마크 전체를 삭제합니다.
+   */
+  removeAll(): Promise<void>;
+
+  /**
    * @description 특정 사용자의 현재 북마크 개수를 조회합니다. (5개 제한 체크용)
    */
   count(userIdOrTempId: string): Promise<number>;

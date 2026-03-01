@@ -9,11 +9,12 @@ export interface Bookmark {
   content?: string; // 본문 텍스트 (검색용)
   userMemo?: string; // 사용자 메모
   thumbnailUrl?: string;
+  aiStatus: "processing" | "completed" | "failed";
   tags: string[];
   status: "unread" | "read";
   createdAt: string;
   userId?: string; // 회원 ID
-  tempUserId?: string; // 비회원 익명 ID
+  guestId?: string; // 비회원 익명 ID
 }
 
 /**
@@ -32,4 +33,10 @@ export interface BookmarkFilter {
   tag?: string;
   status?: "unread" | "read";
   searchQuery?: string;
+}
+
+export interface LocalCreateBookmarkRequest {
+  url: string;
+  userMemo?: string;
+  guestId: string;
 }
