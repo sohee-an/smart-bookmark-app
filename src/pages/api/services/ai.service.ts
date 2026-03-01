@@ -34,7 +34,7 @@ export class AIService {
       `;
 
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o",
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
       });
