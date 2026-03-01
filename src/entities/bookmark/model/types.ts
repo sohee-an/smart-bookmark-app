@@ -15,6 +15,7 @@ export interface Bookmark {
   createdAt: string;
   userId?: string; // 회원 ID
   guestId?: string; // 비회원 익명 ID
+  updatedAt: string;
 }
 
 /**

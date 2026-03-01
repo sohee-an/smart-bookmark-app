@@ -1,5 +1,5 @@
 import { Bookmark, BookmarkFilter, CreateBookmarkRequest } from "../model/types";
-
+export type UpdateBookmarkData = Partial<Pick<Bookmark, "title" | "summary" | "tags" | "aiStatus">>;
 /**
  * @description 북마크 데이터에 접근하는 추상화된 인터페이스 (Repository)
  * 나중에 백엔드를 갈아끼울 때, 이 인터페이스의 구현체만 교체하면 됩니다.
@@ -35,4 +35,6 @@ export interface BookmarkRepository {
    * @description 특정 사용자의 현재 북마크 개수를 조회합니다. (5개 제한 체크용)
    */
   count(userIdOrTempId: string): Promise<number>;
+
+  update(id: string, data: UpdateBookmarkData): Promise<void>;
 }

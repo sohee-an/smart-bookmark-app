@@ -1,13 +1,11 @@
 import storage from "@/shared/lib/storage";
 import { Bookmark, BookmarkFilter, LocalCreateBookmarkRequest } from "../model/types";
 
-import { BookmarkRepository } from "./bookmark.repository";
+import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import getGuestId from "@/shared/lib/guest";
 
 const GUEST_KEY = "GUEST_BOOKMARK";
-/**
- * 비회원일때
- */
+
 export class LocalRepository implements BookmarkRepository {
   /**
    * @description 북마크를 저장합니다.
@@ -32,6 +30,7 @@ export class LocalRepository implements BookmarkRepository {
       title: "",
       summary: "",
       tags: [],
+      updatedAt: new Date().toISOString(),
     };
     const bookmarks = [newBookmark, ...currentBookmarks];
     storage.set(GUEST_KEY, bookmarks);
@@ -80,5 +79,26 @@ export class LocalRepository implements BookmarkRepository {
     const currentBookmarks = await this.findAll();
 
     return currentBookmarks.length;
+  }
+
+  async update(id: string, data: UpdateBookmarkData): Promise<void> {
+    const existingBookmark = await this.findById(id);
+
+    if (!existingBookmark) {
+      throw new Error(`ID가 ${id}인 북마크를 찾을 수 없습니다.`);
+    }
+
+    const updatedBookmark: Bookmark = {
+      ...existingBookmark,
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const allBookmarks = await this.findAll();
+    const updatedList = allBookmarks.map((bookmark) =>
+      bookmark.id === id ? updatedBookmark : bookmark
+    );
+
+    storage.set(GUEST_KEY, updatedList);
   }
 }
