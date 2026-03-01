@@ -1,5 +1,5 @@
 import storage from "@/shared/lib/storage";
-import { Bookmark, BookmarkFilter, LocalCreateBookmarkRequest } from "../model/types";
+import { Bookmark, BookmarkFilter, CreateBookmarkRequest } from "../model/types";
 
 import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import getGuestId from "@/shared/lib/guest";
@@ -11,11 +11,11 @@ export class LocalRepository implements BookmarkRepository {
    * @description 북마크를 저장합니다.
    * 비회원인 경우 guestId 사용하며, 5개 제한 로직이 포함됩니다.
    */
-  async save(request: LocalCreateBookmarkRequest): Promise<Bookmark> {
+  async save<T extends CreateBookmarkRequest>(request: T): Promise<Bookmark> {
     const guestId = getGuestId();
     const currentBookmarks = await this.findAll();
     const count = await this.count();
-    if (count > 5) {
+    if (count >= 5) {
       throw new Error("무료 체험 한도(5개)를 초과했습니다. 로그인이 필요합니다.");
     }
 

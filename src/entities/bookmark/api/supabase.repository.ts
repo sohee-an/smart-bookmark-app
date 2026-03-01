@@ -1,13 +1,17 @@
 import { supabase } from "@/shared/api/supabase";
 import { Bookmark, BookmarkFilter, CreateBookmarkRequest } from "../model/types";
-import { BookmarkRepository } from "./bookmark.repository";
+import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 
 /**
  * @description Supabase를 사용하는 BookmarkRepository 구현체
  */
 export class SupabaseBookmarkRepository implements BookmarkRepository {
-  async save(request: CreateBookmarkRequest): Promise<Bookmark> {
-    const { url, userMemo, tempUserId } = request;
+  constructor(private userId: string) {}
+  /**
+   * @description 회원은 제한 없이 북마크를 저장합니다.
+   */
+  async save<T extends CreateBookmarkRequest>(request: T): Promise<Bookmark> {
+    const { url, userMemo } = request;
 
     const { data, error } = await supabase
       .from("bookmarks")
@@ -15,20 +19,24 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
         {
           url,
           user_memo: userMemo,
-          temp_user_id: tempUserId,
+          user_id: this.userId,
           status: "unread",
           tags: [],
-          summary: "", // 초기 생성 시 빈 문자열
+          summary: "",
+          ai_status: "processing",
         },
       ])
       .select()
       .single();
 
     if (error) throw new Error(`북마크 저장 실패: ${error.message}`);
-    
+
     return this.mapToDomain(data);
   }
 
+  /**
+   * @description 필터 조건에 맞는 북마크 목록을 조회합니다.
+   */
   async findAll(filter?: BookmarkFilter): Promise<Bookmark[]> {
     let query = supabase.from("bookmarks").select("*");
 
@@ -40,19 +48,21 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       query = query.eq("status", filter.status);
     }
 
+    if (filter?.searchQuery) {
+      const q = filter.searchQuery;
+      // 제목, 요약, URL 중 하나라도 검색어를 포함하는 경우
+      query = query.or(`title.ilike.%${q}%,summary.ilike.%${q}%,url.ilike.%${q}%`);
+    }
+
     const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) throw new Error(`목록 조회 실패: ${error.message}`);
-    
-    return data.map(this.mapToDomain);
+
+    return data.map((dbData) => this.mapToDomain(dbData));
   }
 
   async findById(id: string): Promise<Bookmark | null> {
-    const { data, error } = await supabase
-      .from("bookmarks")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const { data, error } = await supabase.from("bookmarks").select("*").eq("id", id).single();
 
     if (error) return null;
     return this.mapToDomain(data);
@@ -63,14 +73,38 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
     if (error) throw new Error(`삭제 실패: ${error.message}`);
   }
 
-  async count(userIdOrTempId: string): Promise<number> {
+  /**
+   * @description 로그인한 사용자의 모든 북마크를 삭제합니다.
+   */
+  async removeAll(): Promise<void> {
+    const { error } = await supabase.from("bookmarks").delete().eq("user_id", this.userId);
+
+    if (error) throw new Error(`전체 삭제 실패: ${error.message}`);
+  }
+
+  async count(): Promise<number> {
     const { count, error } = await supabase
       .from("bookmarks")
       .select("*", { count: "exact", head: true })
-      .or(`user_id.eq.${userIdOrTempId},temp_user_id.eq.${userIdOrTempId}`);
+      .eq("user_id", this.userId);
 
     if (error) return 0;
     return count || 0;
+  }
+
+  async update(id: string, data: UpdateBookmarkData): Promise<void> {
+    const { error } = await supabase
+      .from("bookmarks")
+      .update({
+        title: data.title,
+        summary: data.summary,
+        tags: data.tags,
+        ai_status: data.aiStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) throw new Error(`업데이트 실패: ${error.message}`);
   }
 
   /**
@@ -85,16 +119,13 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       content: dbData.content,
       userMemo: dbData.user_memo,
       thumbnailUrl: dbData.thumbnail_url,
+      aiStatus: dbData.ai_status || "processing",
       tags: dbData.tags || [],
       status: dbData.status,
       createdAt: dbData.created_at,
       userId: dbData.user_id,
-      tempUserId: dbData.temp_user_id,
+      guestId: dbData.temp_user_id, // 표준 모델의 guestId로 매핑
+      updatedAt: dbData.updated_at || dbData.created_at,
     };
   }
 }
-
-/**
- * @description 싱글톤 인스턴스 생성 및 배포
- */
-export const bookmarkRepository = new SupabaseBookmarkRepository();

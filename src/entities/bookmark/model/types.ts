@@ -19,15 +19,6 @@ export interface Bookmark {
 }
 
 /**
- * @description 북마크 생성을 위한 요청 타입
- */
-export interface CreateBookmarkRequest {
-  url: string;
-  userMemo?: string;
-  tempUserId?: string;
-}
-
-/**
  * @description 북마크 목록 조회를 위한 필터 옵션
  */
 export interface BookmarkFilter {
@@ -36,8 +27,12 @@ export interface BookmarkFilter {
   searchQuery?: string;
 }
 
-export interface LocalCreateBookmarkRequest {
+/**
+ * @description 북마크 생성을 위한 요청 타입
+ */
+export interface CreateBookmarkRequest {
   url: string;
   userMemo?: string;
-  guestId: string;
+  guestId?: string;
+  userId?: string;
 }
