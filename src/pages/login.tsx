@@ -9,7 +9,7 @@ import { MailIcon, LockIcon } from '@/shared/ui/icons';
 import { authSchema, AuthFormData } from '@/features/auth/model/auth-schema';
 
 /**
- * @description 사용자 인증 페이지 (로그인 및 회원가입 전환 지원)
+ * @description 사용자 인증 페이지 (디자인 토큰 적용)
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -57,14 +57,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-surface-base dark:bg-surface-base-dark px-4">
       <Head>
         <title>{isLogin ? '로그인' : '회원가입'} | SmartMark</title>
       </Head>
 
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="max-w-md w-full space-y-8 bg-surface-card dark:bg-surface-card-dark p-8 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800">
         <div className="text-center">
-          <h1 className="text-3xl font-black text-indigo-600 dark:text-indigo-400">
+          <h1 className="text-3xl font-black text-brand-primary transition-colors">
             SmartMark
           </h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400 font-medium">
@@ -108,7 +108,7 @@ export default function LoginPage() {
           </div>
 
           {serverError && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/10 p-3 rounded-xl border border-red-200 dark:border-red-900/50">
+            <div className="text-status-error text-sm bg-status-error/5 p-4 rounded-2xl border border-status-error/20 animate-shake">
               {serverError}
             </div>
           )}
@@ -116,7 +116,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-lg text-base font-bold text-white bg-brand-primary hover:bg-brand-primary-hover focus:outline-none focus:ring-4 focus:ring-brand-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isSubmitting ? (
                <span className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export default function LoginPage() {
         <div className="text-center mt-6">
           <button
             onClick={toggleMode}
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 cursor-pointer transition-colors"
+            className="text-sm font-semibold text-brand-primary hover:opacity-80 cursor-pointer transition-all"
           >
             {isLogin ? '아직 계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
           </button>

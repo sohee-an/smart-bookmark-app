@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* -------------------------------------------------------------------------- */
+  /*  디자인 토큰 (Design Tokens)                                                  */
+  /* -------------------------------------------------------------------------- */
+  
+  /* 브랜드 메인 색상 */
+  --color-brand-primary: var(--color-indigo-600);
+  --color-brand-primary-hover: var(--color-indigo-700);
+  --color-brand-primary-active: var(--color-indigo-800);
+  
+  /* 브랜드 강조/액센트 색상 */
+  --color-brand-accent: var(--color-purple-600);
+  --color-brand-secondary: var(--color-pink-600);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* 상태 색상 */
+  --color-status-error: var(--color-red-500);
+  --color-status-success: var(--color-green-500);
+  --color-status-warning: var(--color-amber-500);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* 배경 및 표면 색상 */
+  --color-surface-base: var(--color-zinc-50);
+  --color-surface-card: var(--color-white);
+  
+  /* 다크 모드 표면 색상 */
+  --color-surface-base-dark: var(--color-zinc-950);
+  --color-surface-card-dark: var(--color-zinc-900);
+
+  /* 폰트 설정 */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-mono-serif, monospace;
+
+  /* 애니메이션 커스텀 */
+  --animate-shake: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* -------------------------------------------------------------------------- */
+/*  기본 스타일 (Base Styles)                                                   */
+/* -------------------------------------------------------------------------- */
+
+@layer base {
+  body {
+    @apply bg-surface-base text-zinc-900 dark:bg-surface-base-dark dark:text-zinc-50;
+  }
+
+  ::selection {
+    @apply bg-brand-primary/10 text-brand-primary dark:bg-brand-primary/20 dark:text-brand-primary;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  커스텀 유틸리티 (Custom Utilities)                                           */
+/* -------------------------------------------------------------------------- */
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-primary via-brand-accent to-brand-secondary;
+  }
 }

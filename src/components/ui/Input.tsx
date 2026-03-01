@@ -8,7 +8,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 /**
- * @description 공통 입력 필드 컴포넌트 (Zod 에러 메시지 지원)
+ * @description 공통 입력 필드 컴포넌트 (디자인 토큰 적용)
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ icon, label, hideLabel = true, error, className = '', ...props }, ref) => {
@@ -27,7 +27,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative group">
           {icon && (
-            <div className={`pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 transition-colors ${hasError ? 'text-red-400' : 'text-zinc-400 group-focus-within:text-indigo-500'}`}>
+            <div className={`pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 transition-colors ${hasError ? 'text-status-error' : 'text-zinc-400 group-focus-within:text-brand-primary'}`}>
               {icon}
             </div>
           )}
@@ -41,20 +41,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               text-sm text-zinc-900 placeholder-zinc-400
               transition-all outline-none
               ${hasError 
-                ? 'border-red-100 bg-red-50/30 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' 
-                : 'border-transparent focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10'
+                ? 'border-status-error/10 bg-status-error/5 focus:border-status-error focus:ring-4 focus:ring-status-error/10' 
+                : 'border-transparent focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10'
               }
               dark:bg-zinc-800/50 dark:text-zinc-100 dark:placeholder-zinc-500
               ${hasError 
-                ? 'dark:border-red-900/30 dark:bg-red-900/10 dark:focus:border-red-500' 
-                : 'dark:focus:bg-zinc-900 dark:focus:border-indigo-400'
+                ? 'dark:border-status-error/20 dark:bg-status-error/10 dark:focus:border-status-error' 
+                : 'dark:focus:bg-zinc-900 dark:focus:border-brand-primary'
               }
               ${className}
             `}
           />
         </div>
         {hasError && (
-          <p className="text-xs font-semibold text-red-500 dark:text-red-400 ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
+          <p className="text-xs font-semibold text-status-error ml-1 animate-in fade-in slide-in-from-top-1 duration-200">
             {error}
           </p>
         )}
