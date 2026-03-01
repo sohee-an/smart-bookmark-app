@@ -9,20 +9,13 @@ export interface Bookmark {
   content?: string; // 본문 텍스트 (검색용)
   userMemo?: string; // 사용자 메모
   thumbnailUrl?: string;
+  aiStatus: "processing" | "completed" | "failed";
   tags: string[];
   status: "unread" | "read";
   createdAt: string;
   userId?: string; // 회원 ID
-  tempUserId?: string; // 비회원 익명 ID
-}
-
-/**
- * @description 북마크 생성을 위한 요청 타입
- */
-export interface CreateBookmarkRequest {
-  url: string;
-  userMemo?: string;
-  tempUserId?: string;
+  guestId?: string; // 비회원 익명 ID
+  updatedAt: string;
 }
 
 /**
@@ -32,4 +25,14 @@ export interface BookmarkFilter {
   tag?: string;
   status?: "unread" | "read";
   searchQuery?: string;
+}
+
+/**
+ * @description 북마크 생성을 위한 요청 타입
+ */
+export interface CreateBookmarkRequest {
+  url: string;
+  userMemo?: string;
+  guestId?: string;
+  userId?: string;
 }
