@@ -12,6 +12,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * @description 메인 홈 페이지. 
+ * Middleware(`middleware.ts`)에서 인증 여부를 확인하므로 별도의 리다이렉트 로직이 필요 없습니다.
+ */
 export default function Home() {
   return (
     <div className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-indigo-100 selection:text-indigo-700 dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-indigo-900 dark:selection:text-indigo-200`}>
