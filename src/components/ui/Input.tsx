@@ -5,18 +5,26 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   hideLabel?: boolean;
   error?: string;
+  inputSize?: 'sm' | 'md' | 'lg';
 }
 
 /**
- * @description 공통 입력 필드 컴포넌트 (디자인 토큰 적용)
+ * @description 공통 입력 필드 컴포넌트 (사이즈 조절 기능 추가)
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, label, hideLabel = true, error, className = '', ...props }, ref) => {
+  ({ icon, label, hideLabel = true, error, inputSize = 'md', className = '', ...props }, ref) => {
     const id = useId();
     const hasError = !!error;
 
+    // 사이즈별 패딩 설정
+    const sizeClasses = {
+      sm: 'py-1.5 text-xs',
+      md: 'py-2.5 text-sm',
+      lg: 'py-3.5 text-base',
+    };
+
     return (
-      <div className="relative w-full space-y-1.5">
+      <div className="relative w-full space-y-1">
         {label && (
           <label 
             htmlFor={id} 
@@ -37,9 +45,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
             className={`
               block w-full rounded-2xl border-2 
-              bg-zinc-50 py-3 ${icon ? 'pl-11' : 'pl-4'} pr-4 
-              text-sm text-zinc-900 placeholder-zinc-400
+              bg-zinc-50 ${icon ? 'pl-11' : 'pl-4'} pr-4 
+              text-zinc-900 placeholder-zinc-400
               transition-all outline-none
+              ${sizeClasses[inputSize]}
               ${hasError 
                 ? 'border-status-error/10 bg-status-error/5 focus:border-status-error focus:ring-4 focus:ring-status-error/10' 
                 : 'border-transparent focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/10'

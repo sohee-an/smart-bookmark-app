@@ -14,13 +14,18 @@ export const Header = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       if (!error) setUser(user);
       setLoading(false);
     };
     checkUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
@@ -37,15 +42,18 @@ export const Header = () => {
     router.push("/landing");
   };
 
-  const isGuest = !user && !loading && storage.cookie.get("is_guest") === 'true';
+  const isGuest = !user && !loading && storage.cookie.get("is_guest") === "true";
   const nickname = user?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-black/80">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8" aria-label="Global">
+      <nav
+        className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
+        aria-label="Global"
+      >
         <div className="flex items-center gap-8">
           <a href="/" className="group flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-brand-primary transition-opacity group-hover:opacity-80">
+            <h1 className="text-brand-primary text-2xl font-bold tracking-tight transition-opacity group-hover:opacity-80">
               SmartMark
             </h1>
           </a>
@@ -57,6 +65,7 @@ export const Header = () => {
               placeholder="북마크 검색..."
               className="w-80"
               type="search"
+              inputSize="md"
             />
           </form>
         </div>
@@ -64,7 +73,7 @@ export const Header = () => {
         <div className="flex items-center gap-4">
           <button
             type="button"
-            className="flex cursor-pointer items-center gap-2 rounded-full bg-brand-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-primary-hover focus:ring-4 focus:ring-brand-primary/20 focus:outline-none active:scale-95"
+            className="bg-brand-primary hover:bg-brand-primary-hover focus:ring-brand-primary/20 flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all focus:ring-4 focus:outline-none active:scale-95"
           >
             <PlusIcon />
             <span className="hidden sm:inline">북마크 추가</span>
@@ -85,12 +94,12 @@ export const Header = () => {
                 </div>
                 <div className="group relative cursor-pointer">
                   <Avatar username={nickname} src={user?.user_metadata?.avatar_url} />
-                  <div className="absolute top-full right-0 mt-2 hidden pt-2 group-hover:block animate-in fade-in zoom-in-95 duration-200">
-                    <div className="flex flex-col gap-1 rounded-2xl border border-zinc-200 bg-surface-card p-1.5 shadow-xl dark:border-zinc-800 dark:bg-surface-card-dark min-w-[140px]">
+                  <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 mt-2 hidden pt-2 duration-200 group-hover:block">
+                    <div className="bg-surface-card dark:bg-surface-card-dark flex min-w-[140px] flex-col gap-1 rounded-2xl border border-zinc-200 p-1.5 shadow-xl dark:border-zinc-800">
                       {isGuest && (
                         <button
                           onClick={handleLogin}
-                          className="flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-brand-primary hover:bg-brand-primary/5 transition-colors"
+                          className="text-brand-primary hover:bg-brand-primary/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
                         >
                           <PlusIcon />
                           <span>로그인하기</span>
@@ -98,7 +107,7 @@ export const Header = () => {
                       )}
                       <button
                         onClick={handleLogout}
-                        className="flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-status-error hover:bg-status-error/5 transition-colors"
+                        className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
                       >
                         <LogOutIcon />
                         <span>로그아웃</span>
@@ -110,7 +119,7 @@ export const Header = () => {
             ) : (
               <button
                 onClick={handleLogin}
-                className="cursor-pointer text-sm font-semibold text-zinc-600 transition-colors hover:text-brand-primary dark:text-zinc-400 dark:hover:text-brand-primary"
+                className="hover:text-brand-primary dark:hover:text-brand-primary cursor-pointer text-sm font-semibold text-zinc-600 transition-colors dark:text-zinc-400"
               >
                 로그인
               </button>
