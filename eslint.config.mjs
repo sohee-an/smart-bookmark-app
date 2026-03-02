@@ -18,7 +18,12 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   prettier,
-  ...storybook.configs["flat/recommended"]
+  ...storybook.configs["flat/recommended"],
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Input } from "../ui/input/Input";
+import { Input } from "@/shared/ui/input/Input";
 import { supabase } from "@/shared/api/supabase";
 import { Avatar } from "@/shared/ui/Avatar";
 import { User } from "@supabase/supabase-js";
@@ -7,6 +7,8 @@ import { useRouter } from "next/router";
 import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@/shared/ui/icons";
 import Link from "next/link";
+import { overlay } from "@/shared/lib/overlay/overlay";
+import { AddBookmarkOverlay } from "@/features/add-bookmark/ui/AddBookmarkOverlay";
 
 export const Header = () => {
   const router = useRouter();
@@ -74,6 +76,11 @@ export const Header = () => {
         <div className="flex items-center gap-4">
           <button
             type="button"
+            onClick={() =>
+              overlay.open(({ isOpen, close }) => (
+                <AddBookmarkOverlay isOpen={isOpen} onClose={close} />
+              ))
+            }
             className="bg-brand-primary hover:bg-brand-primary-hover focus:ring-brand-primary/20 flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all focus:ring-4 focus:outline-none active:scale-95"
           >
             <PlusIcon />
