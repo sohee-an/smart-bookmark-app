@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Link2, FileText, X, Plus } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 
+import { bookmarkService } from "../model/bookmark.service";
+import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
+
 interface AddBookmarkOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,18 +18,37 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [url, setUrl] = useState("");
   const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { addBookmark } = useBookmarkStore();
 
-  const handleClose = () => onClose();
+  const handleClose = () => {
+    onClose();
+    // if (!url) {
+    //   onClose();
+    //   return;
+    // }
 
+    // const isConfirmed = confirm("적은 것들이 다 사라질 수 있어요. 정말 모달을 닫으시겠어요?");
+
+    // if (isConfirmed) {
+    //   onClose();
+    // }
+  };
   // 저장 로직 (나중에 API 연동 예정)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return;
 
     setIsLoading(true);
-    // TODO: 북마크 저장 API 호출
-    console.log("Saving bookmark:", { url, memo });
-
+    try {
+      const newBookmark = await bookmarkService.addBookmark(url, memo);
+      addBookmark(newBookmark);
+      handleClose();
+    } catch (error) {
+      // 에러 처리 (5개 초과 등)
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
     // 임시 딜레이 후 닫기
     setTimeout(() => {
       setIsLoading(false);

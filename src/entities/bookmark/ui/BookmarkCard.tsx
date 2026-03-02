@@ -1,0 +1,142 @@
+import { ExternalLink, Tag, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
+import type { Bookmark } from "../model/types";
+
+interface BookmarkCardProps {
+  bookmark: Bookmark;
+  onClick?: (bookmark: Bookmark) => void;
+}
+
+/**
+ * @description 북마크 정보를 카드 형태로 보여주는 엔티티 컴포넌트입니다.
+ * AI 분석 상태(aiStatus), 읽음 상태(status), 크롤링 결과에 따른 대응 UI를 포함합니다.
+ */
+export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
+  const { title, url, thumbnailUrl, summary, tags, aiStatus, status } = bookmark;
+
+  const isProcessing = aiStatus === "processing";
+  const isFailed = aiStatus === "failed";
+  const isUnread = status === "unread";
+
+  return (
+    <div
+      onClick={() => !isProcessing && onClick?.(bookmark)}
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isProcessing ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} shadow-sm dark:border-zinc-800 dark:bg-zinc-900`}
+    >
+      {/* 1. Thumbnail Area */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={title}
+            className={`h-full w-full object-cover transition-transform duration-700 ${isProcessing ? "blur-md grayscale" : "group-hover:scale-110"}`}
+          />
+        ) : (
+          /* Fallback UI: 크롤링 실패 또는 썸네일 없음 */
+          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900">
+            <div className="mb-2 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-800 dark:ring-zinc-700">
+              <ExternalLink size={32} strokeWidth={1.5} className="text-zinc-400" />
+            </div>
+            <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
+              {new URL(url).hostname}
+            </span>
+          </div>
+        )}
+
+        {/* AI Processing Overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/20 backdrop-blur-[2px]">
+            <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-xl dark:bg-zinc-900/90">
+              <Loader2 size={16} className="text-brand-primary animate-spin" />
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                AI 분석 중...
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Unread Badge (Optional top right) */}
+        {isUnread && !isProcessing && (
+          <div className="bg-brand-primary absolute top-4 right-4 flex h-6 w-14 items-center justify-center rounded-full px-2 text-[10px] font-black text-white shadow-lg">
+            NEW
+          </div>
+        )}
+      </div>
+
+      {/* 2. Content Area */}
+      <div className="flex flex-1 flex-col p-6">
+        {/* Title with Unread Dot */}
+        <div className="mb-3 flex items-start gap-2">
+          {isUnread && !isProcessing && (
+            <div className="bg-brand-primary mt-2 h-2 w-2 flex-none rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+          )}
+          <h3
+            className={`line-clamp-2 text-lg leading-snug font-black tracking-tight transition-colors ${isProcessing ? "text-zinc-400" : "group-hover:text-brand-primary text-zinc-900 dark:text-zinc-100"}`}
+          >
+            {title || (isProcessing ? "데이터를 분석하고 있어요" : url)}
+          </h3>
+        </div>
+
+        {/* Summary or Loading placeholder */}
+        <div className="mb-6 flex-1">
+          {isProcessing ? (
+            <div className="space-y-2">
+              <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+              <div className="h-3 w-[80%] animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+            </div>
+          ) : isFailed ? (
+            <div className="bg-status-error/5 text-status-error flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
+              <AlertCircle size={14} />
+              <span>AI 요약에 실패했습니다.</span>
+            </div>
+          ) : (
+            <p className="line-clamp-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+              {summary || "요약된 내용이 없습니다."}
+            </p>
+          )}
+        </div>
+
+        {/* 3. Bottom Info: Tags & AI completed badge */}
+        <div className="mt-auto flex items-center justify-between pt-4">
+          <div className="flex flex-wrap gap-1.5 overflow-hidden">
+            {tags.length > 0
+              ? tags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-lg bg-zinc-50 px-2.5 py-1 text-[10px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                  >
+                    #{tag}
+                  </span>
+                ))
+              : !isProcessing && (
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-zinc-300 italic dark:text-zinc-600">
+                    <Tag size={10} />
+                    <span>NO TAGS</span>
+                  </div>
+                )}
+          </div>
+
+          {/* AI Completed Indicator */}
+          {!isProcessing && !isFailed && summary && (
+            <div
+              className="bg-brand-primary/10 text-brand-primary flex h-8 w-8 items-center justify-center rounded-xl shadow-sm"
+              title="AI 요약 완료"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+              </svg>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

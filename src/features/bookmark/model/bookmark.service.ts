@@ -1,10 +1,10 @@
 import { supabase } from "@/shared/api/supabase";
-import { BookmarkRepository } from "./bookmark.repository";
-import { LocalRepository } from "./local.repository";
-import { SupabaseBookmarkRepository } from "./supabase.repository";
+import { BookmarkRepository } from "../../../entities/bookmark/api/bookmark.repository";
+import { LocalRepository } from "../../../entities/bookmark/api/local.repository";
+import { SupabaseBookmarkRepository } from "../../../entities/bookmark/api/supabase.repository";
 import getGuestId from "@/shared/lib/guest";
-import { Bookmark, BookmarkFilter } from "../model/types";
-
+import { BookmarkFilter } from "../../../entities/bookmark/api/bookmark.types.db";
+import { Bookmark } from "@/entities/bookmark/model/types";
 /**
  * @description 로그인 상태에 따라 Local 또는 Supabase Repository를 동적으로 선택하는 서비스 (Factory Pattern)
  */

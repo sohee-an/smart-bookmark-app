@@ -8,7 +8,7 @@ import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@/shared/ui/icons";
 import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
-import { AddBookmarkOverlay } from "@/features/add-bookmark/ui/AddBookmarkOverlay";
+import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
 
 export const Header = () => {
   const router = useRouter();

@@ -1,6 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Head from "next/head";
 import { Header } from "@/components/layout/Header";
+import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
+import { useEffect } from "react";
+import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
+import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,40 +16,67 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/**
- * @description 메인 홈 페이지. 
- * Middleware(`middleware.ts`)에서 인증 여부를 확인하므로 별도의 리다이렉트 로직이 필요 없습니다.
- */
+// 데모용 가짜 북마크 데이터
+// const MOCK_BOOKMARKS: Bookmark[] = [
+//   {
+//     id: "1",
+//     url: "https://nextjs.org",
+//     title: "Next.js 15: The Future of React",
+//     thumbnailUrl: "https://nextjs.org/_next/static/media/nextjs-logo.d7963931.svg",
+//     summary:
+//       "Next.js 15 introduces exciting new features like React Server Components and improved routing. It provides a robust foundation for building fast and scalable web applications.",
+//     aiStatus: "completed",
+//     status: "unread",
+//     tags: ["React", "Next.js", "Frontend"],
+//     userId: "test-user",
+//     createdAt: new Date().toISOString(),
+//     updatedAt: new Date().toISOString(),
+//   },
+
+// ];
+
 export default function Home() {
+  const { bookmarks, setBookmarks } = useBookmarkStore();
+
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      try {
+        const data = await bookmarkService.getBookmarks();
+        setBookmarks(data); // store에 저장
+      } catch (error) {
+        console.error("북마크 로드 실패:", error);
+      }
+    };
+    fetchBookmarks();
+  }, [setBookmarks]);
+
   return (
-    <div className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-indigo-100 selection:text-indigo-700 dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-indigo-900 dark:selection:text-indigo-200`}>
+    <div
+      className={`${geistSans.variable} ${geistMono.variable} selection:bg-brand-primary/20 selection:text-brand-primary min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100`}
+    >
       <Head>
         <title>SmartMark - 스마트 북마크 관리</title>
       </Head>
 
       <Header />
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <section className="text-center" aria-labelledby="empty-state-title">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-indigo-50 text-indigo-600 mb-8 dark:bg-indigo-950/50 dark:text-indigo-400">
-            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-          </div>
-          <h2 id="empty-state-title" className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl dark:text-white">
-            시작해볼까요?
+      <main className="pb-20">
+        {/* 최근 북마크 슬라이더 섹션 */}
+        <RecentBookmarkSlider
+          bookmarks={bookmarks ?? []}
+          onBookmarkClick={(bookmark) => {
+            console.log("Clicked:", bookmark.title);
+          }}
+        />
+
+        <section className="mx-auto mt-4 max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
+          <h2 className="mb-6 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+            나의 모든 북마크
           </h2>
-          <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">
-            당신의 소중한 링크들을 한곳에서 스마트하게 관리하세요.
-          </p>
-          <div className="mt-10">
-            <button 
-              type="button"
-              className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-700 dark:hover:bg-zinc-800 transition-all"
-            >
-              도움말 확인하기
-            </button>
+          <div className="flex h-64 items-center justify-center rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <p className="text-zinc-500 dark:text-zinc-400">
+              전체 북마크 리스트가 들어갈 자리입니다.
+            </p>
           </div>
         </section>
       </main>
