@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Input } from "../ui/Input";
+import { Input } from "../ui/input/Input";
 import { supabase } from "@/shared/api/supabase";
 import { Avatar } from "@/shared/ui/Avatar";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/router";
 import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@/shared/ui/icons";
+import Link from "next/link";
 
 export const Header = () => {
   const router = useRouter();
@@ -52,11 +53,11 @@ export const Header = () => {
         aria-label="Global"
       >
         <div className="flex items-center gap-8">
-          <a href="/" className="group flex items-center gap-2">
+          <Link href="/" className="group flex items-center gap-2">
             <h1 className="text-brand-primary text-2xl font-bold tracking-tight transition-opacity group-hover:opacity-80">
               SmartMark
             </h1>
-          </a>
+          </Link>
 
           <form role="search" className="hidden md:block" onSubmit={(e) => e.preventDefault()}>
             <Input
