@@ -44,3 +44,5 @@ next-env.d.ts
 scripts
 skill.md
 schedule.md
+*storybook.log
+storybook-static
