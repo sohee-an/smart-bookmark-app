@@ -1,5 +1,5 @@
 import React, { InputHTMLAttributes, forwardRef } from "react";
-import { InputPrimitive } from "./input.primitive";
+import { InputPrimitive } from "@smart-bookmark/ui/input";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;

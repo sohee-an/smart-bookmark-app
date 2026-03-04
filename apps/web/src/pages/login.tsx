@@ -4,8 +4,8 @@ import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/shared/api/supabase";
-import { Input } from "@/components/ui/Input";
-import { MailIcon, LockIcon } from "@/shared/ui/icons";
+import { Input } from "@/shared/ui/input/Input";
+import { MailIcon, LockIcon } from "@smart-bookmark/ui/icons";
 import { authSchema, AuthFormData } from "@/features/auth/model/auth-schema";
 
 /**

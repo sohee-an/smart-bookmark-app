@@ -35,6 +35,9 @@ importers:
       '@prisma/client':
         specifier: ^7.4.2
         version: 7.4.2(typescript@5.9.3)
+      '@smart-bookmark/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@supabase/auth-helpers-nextjs':
         specifier: ^0.15.0
         version: 0.15.0(@supabase/supabase-js@2.98.0)
@@ -200,6 +203,22 @@ importers:
         version: 8.56.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
 
   packages/typescript-config: {}
+
+  packages/ui:
+    dependencies:
+      react:
+        specifier: ^19
+        version: 19.2.3
+    devDependencies:
+      '@smart-bookmark/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/react':
+        specifier: ^19
+        version: 19.2.14
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
 packages:
 

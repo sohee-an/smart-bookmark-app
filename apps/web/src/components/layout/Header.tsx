@@ -5,7 +5,7 @@ import { Avatar } from "@/shared/ui/Avatar";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/router";
 import storage from "@/shared/lib/storage";
-import { SearchIcon, PlusIcon, LogOutIcon } from "@/shared/ui/icons";
+import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
 import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";

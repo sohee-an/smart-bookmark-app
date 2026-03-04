@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link2, FileText, X, Plus } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
-
 import { bookmarkService } from "../model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 

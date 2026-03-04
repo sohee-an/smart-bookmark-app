@@ -1,4 +1,5 @@
 import React from "react";
+import { AvatarPrimitive } from "@smart-bookmark/ui/avatar";
 
 interface AvatarProps {
   src?: string | null;
@@ -7,33 +8,30 @@ interface AvatarProps {
   className?: string;
 }
 
+const sizeClasses = {
+  sm: "h-6 w-6",
+  md: "h-8 w-8",
+  lg: "h-12 w-12",
+};
+
 /**
- * @description 사용자의 프로필 이미지를 렌더링합니다.
- * 이미지가 없으면 DiceBear API를 사용하여 고유하고 귀여운 아바타를 생성합니다.
+ * @description 완성된 UI 형태의 Avatar 컴포넌트
+ * 스타일링과 레이아웃(Size)만 결정합니다.
  */
-export const Avatar = ({ src, username = "guest", size = "md", className = "" }: AvatarProps) => {
-  // 사이즈별 크기 정의
-  const sizeClasses = {
-    sm: "h-6 w-6",
-    md: "h-8 w-8",
-    lg: "h-12 w-12",
-  };
-
-  // DiceBear Adventurer 스타일 사용 (닉네임을 시드로 사용)
-  const defaultAvatar = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(username)}`;
-
+export const Avatar = ({ src, username, size = "md", className = "" }: AvatarProps) => {
   return (
-    <div
+    <AvatarPrimitive
+      src={src}
+      username={username}
+      // 뼈대에 입힐 스타일(Class) 전달
       className={`relative inline-block overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800 ${sizeClasses[size]} ${className}`}
+      // 내부 img 태그에 적용될 스타일 (필요 시)
+      style={{ display: "flex" }}
     >
-      <img
-        src={src || defaultAvatar}
-        alt={`${username}'s avatar`}
-        className="h-full w-full object-cover"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = defaultAvatar;
-        }}
-      />
-    </div>
+      {/* 참고: AvatarPrimitive 내부에서 img에 
+          h-full w-full object-cover 같은 클래스를 
+          직접 주고 있다면 아래 스타일은 생략 가능합니다. 
+      */}
+    </AvatarPrimitive>
   );
 };

@@ -1,4 +1,3 @@
-// components/ui/input/input.primitive.tsx
 import React, {
   InputHTMLAttributes,
   HTMLAttributes,
