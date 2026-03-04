@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,15 +14,23 @@
 /coverage
 
 # next.js
-/.next/
+.next/
 /out/
 
 # production
 /build
 
+# Turborepo
+.turbo
+
+# pnpm
+.pnpm-store
+.pnpm-debug.log*
+
 # misc
 .DS_Store
 *.pem
+.cache
 
 # debug
 npm-debug.log*
@@ -40,9 +48,28 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+.idea/
 
-scripts
-skill.md
-schedule.md
+# OS
+Thumbs.db
+
+# Storybook
 *storybook.log
 storybook-static
+
+# Windows Executables (vites.cmd, etc.)
+
+*.exe
+*.bat
+*.ps1
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
