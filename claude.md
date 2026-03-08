@@ -100,13 +100,15 @@ pnpm test       # 테스트 실행
 
 - 할일 매니저 page_id: `31cd9ab9-9d63-809e-80c6-c0d503c72341`
 
-**현재 진행중: 🔖 [북마크 추가] 저장 → AI 분석 파이프라인 완성**
+**현재 진행중: 🔖 북마크 저장하기**
 
-- 큰 할일 page_id: `31cd9ab9-9d63-8141-a465-ec8ca453536d`
-- 세부 태스크 DB data_source_id: `39d5abbf-83ed-4fd2-99b3-0b70faf15831`
-- Task 1 (카드 즉시 표시): `31cd9ab9-9d63-81cd-b55a-edf073efd640`
-- Task 2 (title/summary/tags 자동 채워짐): `31cd9ab9-9d63-8173-a1bf-c76ec1be4fa9`
-- Task 3 (에러 시 모달 내 메시지): `31cd9ab9-9d63-81d6-8fb2-d2826b493007`
+- 큰 할일 page_id: `31dd9ab9-9d63-8169-9fc9-d4f938970f77`
+- 세부 태스크 DB data_source_id: `74885a2f-4cde-4f00-acb8-b80d4bb502ef`
+- Task 1 (카드 즉시 표시): `31dd9ab9-9d63-8180-89fb-dde90ddf2f2a`
+- Task 2 (title/summary/tags 자동 채워짐): `31dd9ab9-9d63-8158-8048-ce58e725ab2d`
+- Task 3 (에러 시 모달 내 메시지): `31dd9ab9-9d63-8147-8d02-d8ad6ff8a604`
+- Task 4 (URL 크롤링): `31dd9ab9-9d63-8103-b287-ea3d2b323408`
+- Task 5 (AI 결과 수신): `31dd9ab9-9d63-81f1-956b-d4dab5dd3698`
 
 ### "노션 댓글 확인해줘"
 
