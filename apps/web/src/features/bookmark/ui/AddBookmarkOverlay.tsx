@@ -3,6 +3,7 @@ import { Link2, FileText, X, Plus } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 import { bookmarkService } from "../model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
+import { validateUrl } from "@/shared/lib/validateUrl";
 
 interface AddBookmarkOverlayProps {
   isOpen: boolean;
@@ -17,9 +18,11 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [url, setUrl] = useState("");
   const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
   const { addBookmark } = useBookmarkStore();
 
   const handleClose = () => {
+    setUrlError(null);
     onClose();
     // if (!url) {
     //   onClose();
@@ -35,7 +38,11 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   // 저장 로직 (나중에 API 연동 예정)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url) return;
+    const error = validateUrl(url);
+    if (error) {
+      setUrlError(error);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -95,9 +102,12 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
             placeholder="https://example.com"
             icon={<Link2 size={18} />}
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              if (urlError) setUrlError(null);
+            }}
+            error={urlError ?? undefined}
             autoFocus
-            required
             className="w-full"
           />
 
@@ -121,7 +131,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
             </button>
             <button
               type="submit"
-              disabled={!url || isLoading}
+              disabled={isLoading}
               className="dark:bg-brand-primary dark:hover:bg-brand-primary/90 flex-[1.5] rounded-2xl bg-zinc-900 py-3 text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-900"
             >
               {isLoading ? "저장 중..." : "북마크 저장"}
