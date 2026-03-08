@@ -85,6 +85,8 @@ playwright/.cache/
 # 개인용
 .agents
 portfolio.md
+ai-dev-pipeline.md
+ai-pipeline 정리와 개선.md
 
 # 올려도 되는 것들 (아래는 gitignore 제외)
 # .claude/commands/   ← 커밋, 테스트 등 커맨드
@@ -113,3 +115,4 @@ portfolio.md
 .aider*
 .continue/
 .cursor/
+

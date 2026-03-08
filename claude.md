@@ -129,22 +129,53 @@ pnpm test       # 테스트 실행
 ## 개발 프로세스 (검수 체크 감지 후 순서)
 
 ```
-1. 개발
-   태스크 페이지의 코드 방향대로 코드 작성
+1. 상태 → 개발중
+   Notion 태스크 페이지의 코드 방향 숙지
 
-2. 에러 수집 및 자동 수정
-   cd apps/web && pnpm build 실행
-   → TypeScript 에러, 린트 에러 수집
-   → 에러 자동 수정 후 재빌드로 확인
-   → 에러 없을 때까지 반복
+2. 테스트 먼저 작성
+   태스크의 완료 기준을 테스트 코드로 변환
+   파일 위치: 소스 파일 옆 co-location (bookmark.service.test.ts)
 
-3. 검수대기 전환
-   상태: 개발중 → 검수대기 로 변경
-   Notion 태스크 페이지에 댓글로 "개발 완료, 확인 부탁드립니다" + 변경 내용 요약 작성
+3. 구현
+   테스트가 통과할 코드 작성
 
-4. 사용자 최종 검수
-   사용자가 브라우저에서 직접 확인 후 상태를 완료로 변경
+4. 상태 → 테스트중
+   테스트 실행: pnpm test (현재 태스크 + 관련 파일 회귀 테스트)
+
+5. 결과 분기
+   ✅ 전부 통과 → 상태: 완료, Notion 댓글에 완료 요약 작성
+   ❌ 실패 → AI 자가 수정 후 재실행 (최대 5회)
+   ❌ 5회 초과 → 상태: 검수요청, Notion 댓글에 실패 로그 + 시도 요약 기록
 ```
+
+## 세부 태스크 상태값
+
+| 상태         | 의미                                | 담당                 |
+| ------------ | ----------------------------------- | -------------------- |
+| `방향성`     | 태스크 분해 완료, 검수 대기         | 사람 검수 대기       |
+| `개발중`     | AI 구현 진행 중                     | AI                   |
+| `테스트중`   | 테스트 실행 중                      | AI                   |
+| `완료`       | 테스트 전부 통과                    | AI 자동              |
+| `재검토필요` | 기획 변경 영향 감지, 사람 판단 대기 | AI 자동 감지         |
+| `재개발`     | 재검토 후 수정 확정, AI 재실행 대기 | 사람 판단 후         |
+| `검수요청`   | 5회 이상 실패, 사람 확인 필요       | AI 자동 에스컬레이션 |
+
+## 테스트 파일 컨벤션
+
+소스 파일 옆 co-location 방식:
+
+```
+apps/web/src/features/bookmark/model/
+├── bookmark.service.ts
+├── bookmark.service.test.ts      ← 단위 테스트
+└── useBookmarkStore.ts
+    useBookmarkStore.test.ts      ← 단위 테스트
+
+apps/web/src/__tests__/           ← 통합 테스트
+apps/web/e2e/                     ← e2e 테스트
+```
+
+회귀 테스트 탐지: 관련 파일명 + `.test` 자동 탐지 → import 분석으로 연관 테스트도 실행
 
 ## 태스크 분해 기준
 
@@ -162,3 +193,38 @@ pnpm test       # 테스트 실행
 묶는 조건:
 
 - 분리해도 중간 결과를 확인할 수 없으면 하나로 묶는다
+
+# 프로젝트 Rules
+
+## 아키텍처
+
+- FSD(Feature-Sliced Design) 레이어 규칙 엄수
+- `entities`가 `features`를 import 금지 (레이어 위반)
+- 레이어 순서: app → pages → widgets → features → entities → shared
+
+## 테스트 컨벤션
+
+- 테스트 파일은 소스 파일 옆에 위치 (co-location)
+- 네이밍: `파일명.test.ts` (예: bookmark.service.test.ts)
+- 단위 테스트: 소스 파일 옆
+- 통합 테스트: `apps/web/src/__tests__/`
+- e2e 테스트: `apps/web/e2e/`
+
+## 절대 규칙
+
+- 구현 전 반드시 시나리오 작성 → 사람 검수 → 테스트 코드 작성 순서 준수
+- 검수 없이 구현 절대 금지
+- 5회 이상 테스트 실패 시 구현 중단 → Notion 상태를 검수요청으로 변경
+- 스펙 변경 감지 시 영향받는 태스크 재검토필요로 자동 변경
+
+## 트리거
+
+- `새 할일 등록해줘 [내용]` → /project:new-task 실행
+- `노션 댓글 확인해줘` → /project:review 실행
+
+## 참고 스킬
+
+- 파이프라인 전체 흐름: `.claude/skills/task-pipeline/SKILL.md`
+- 시나리오 작성법: `.claude/skills/task-pipeline/SCENARIO.md`
+- 상태 전환 규칙: `.claude/skills/task-pipeline/STATUS.md`
+- 에스컬레이션 기준: `.claude/skills/task-pipeline/ESCALATION.md`
