@@ -1,15 +1,21 @@
 import * as cheerio from "cheerio";
-
-export type CrawlerErrorCode = "FETCH_FAILED" | "TITLE_NOT_FOUND" | "UNKNOWN_ERROR";
+export type CrawlerErrorCode =
+  | "FETCH_FAILED" // 사이트 자체 접근 불가
+  | "PARSE_FAILED" // HTML 파싱 실패
+  | "TITLE_NOT_FOUND" // title 없음 → AI fallback
+  | "DESCRIPTION_NOT_FOUND" // description 없음 → AI fallback
+  | "BODY_NOT_FOUND" // 본문 없음 → AI 호출 불가
+  | "UNKNOWN_ERROR";
 
 export interface CrawlResult {
-  title: string;
-  description: string;
+  title: string | null;
+  description: string | null;
   thumbnailUrl: string;
   success: boolean;
   status: "completed" | "manual_required";
   attempt: number;
   errorCode?: CrawlerErrorCode;
+  bodyChunks?: [string, string, string]; // 본문 3등분, AI 호출 후 버림
 }
 
 /**
