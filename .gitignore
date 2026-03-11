@@ -97,7 +97,7 @@ ai-pipeline 정리와 개선.md
 # ─── Gemini CLI ────────────────────────────────────
 # 민감 정보 (OAuth 토큰, API 키 등)
 .gemini/settings.json
-.gemini/credentials.json
+.gemini/credentials.json 
 
 # 로컬 전용
 .gemini/.session
