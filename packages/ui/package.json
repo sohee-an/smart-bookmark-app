@@ -5,7 +5,8 @@
   "exports": {
     "./input": "./src/input/index.ts",
     "./avatar": "./src/avatar/index.ts",
-    "./icons": "./src/icons/index.ts"
+    "./icons": "./src/icons/index.ts",
+    "./tag": "./src/tag/index.ts"
   },
   "devDependencies": {
     "@smart-bookmark/typescript-config": "workspace:*",
