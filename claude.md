@@ -1,4 +1,5 @@
 @PROJECT_PLAN.md
+@PROJECT_INDEX.md
 
 # Smart Bookmark
 
@@ -88,6 +89,12 @@ pnpm test       # 테스트 실행
 ## 작업 규칙
 
 - CLAUDE.md와 PROJECT_PLAN.md는 항상 자동으로 로드됨 — 이미 알고 있으면 다시 읽지 말 것
+
+## 탐색 실패 규칙
+
+- PROJECT_INDEX.md에서 키워드를 못 찾아 Glob/Grep으로 우회한 경우 → `memory/search-failures.md`에 자동 기록
+  - 형식: 날짜 / 키워드 / 실제로 찾은 파일 경로 / 해결 방법
+- 같은 키워드 2회 이상 실패 → PROJECT_INDEX.md에 즉시 추가
 - 아키텍처, 기술 스택, 프로젝트 구조는 이 파일 기준으로 판단할 것
 - 개별 파일은 해당 파일의 구체적인 코드가 필요할 때만 핀포인트로 읽을 것
 - Glob으로 전체 파일 탐색하지 말 것
