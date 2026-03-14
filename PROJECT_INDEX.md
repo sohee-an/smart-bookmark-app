@@ -35,6 +35,7 @@
 ## 북마크 UI
 
 - `BookmarkCard` → `apps/web/src/entities/bookmark/ui/BookmarkCard.tsx`
+- `BookmarkDetailPanel` (우측 슬라이드 상세 패널, 뷰/편집 모드) → `apps/web/src/entities/bookmark/ui/BookmarkDetailPanel.tsx`
 - `AddBookmarkOverlay` (URL + 메모 입력 모달) → `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx`
 - `RecentBookmarkSlider` → `apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx`
 
@@ -69,6 +70,8 @@
 ## 공용 UI
 
 - `Input` (레이블/에러/아이콘) → `apps/web/src/shared/ui/input/Input.tsx`
+- `TagGroup` (태그 목록, 편집 모드 지원) → `apps/web/src/shared/ui/tag/Tag.tsx`
+- `TagPrimitive` (Headless) → `packages/ui/src/tag/tag.primitive.tsx`
 - `Avatar` → `apps/web/src/shared/ui/Avatar.tsx`
 - `Header` → `apps/web/src/components/layout/Header.tsx`
 

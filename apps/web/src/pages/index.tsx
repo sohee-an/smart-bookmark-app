@@ -75,7 +75,6 @@ export default function Home() {
       <BookmarkDetailPanel onSave={handlePanelSave} />
 
       <main className="pb-20">
-        {/* 최근 북마크 슬라이더 섹션 */}
         <RecentBookmarkSlider bookmarks={bookmarks ?? []} onBookmarkClick={handleBookmarkClick} />
 
         <section className="mx-auto mt-4 max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
