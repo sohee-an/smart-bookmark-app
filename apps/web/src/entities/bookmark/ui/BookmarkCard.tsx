@@ -1,4 +1,5 @@
-import { ExternalLink, Tag, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
+import { ExternalLink, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
+import { TagGroup } from "@/shared/ui/tag/Tag";
 import type { Bookmark } from "../model/types";
 
 interface BookmarkCardProps {
@@ -116,23 +117,7 @@ export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
 
         {/* 3. Bottom Info: Tags & AI completed badge */}
         <div className="mt-auto flex items-center justify-between pt-4">
-          <div className="flex flex-wrap gap-1.5 overflow-hidden">
-            {tags.length > 0
-              ? tags.slice(0, 2).map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-lg bg-zinc-50 px-2.5 py-1 text-[10px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
-                  >
-                    #{tag}
-                  </span>
-                ))
-              : !isPending && (
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-zinc-300 italic dark:text-zinc-600">
-                    <Tag size={10} />
-                    <span>NO TAGS</span>
-                  </div>
-                )}
-          </div>
+          {!isPending && <TagGroup tags={tags} maxVisible={2} showLabel={false} />}
 
           {/* AI Completed Indicator */}
           {!isPending && !isFailed && summary && (

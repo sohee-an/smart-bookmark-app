@@ -2,9 +2,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Head from "next/head";
 import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
+import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
 import { useEffect } from "react";
 import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
+import type { Bookmark } from "@/entities/bookmark/model/types";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +38,16 @@ const geistMono = Geist_Mono({
 // ];
 
 export default function Home() {
-  const { bookmarks, setBookmarks } = useBookmarkStore();
+  const { bookmarks, setBookmarks, setSelectedBookmarkId, updateBookmark } = useBookmarkStore();
+
+  const handleBookmarkClick = (bookmark: Bookmark) => {
+    setSelectedBookmarkId(bookmark.id);
+  };
+
+  const handlePanelSave = async (id: string, data: Pick<Bookmark, "title" | "tags">) => {
+    await bookmarkService.updateBookmark(id, data);
+    updateBookmark(id, data);
+  };
 
   useEffect(() => {
     const fetchBookmarks = async () => {
@@ -60,14 +71,12 @@ export default function Home() {
 
       <Header />
 
+      {/* 우측 슬라이드 패널 — selectedBookmarkId가 있을 때 표시 */}
+      <BookmarkDetailPanel onSave={handlePanelSave} />
+
       <main className="pb-20">
         {/* 최근 북마크 슬라이더 섹션 */}
-        <RecentBookmarkSlider
-          bookmarks={bookmarks ?? []}
-          onBookmarkClick={(bookmark) => {
-            console.log("Clicked:", bookmark.title);
-          }}
-        />
+        <RecentBookmarkSlider bookmarks={bookmarks ?? []} onBookmarkClick={handleBookmarkClick} />
 
         <section className="mx-auto mt-4 max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
           <h2 className="mb-6 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">

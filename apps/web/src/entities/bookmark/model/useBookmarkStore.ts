@@ -6,6 +6,8 @@ interface BookmarkStore {
   setBookmarks: (bookmarks: Bookmark[]) => void;
   addBookmark: (bookmark: Bookmark) => void;
   updateBookmark: (id: string, data: Partial<Bookmark>) => void;
+  selectedBookmarkId: string | null;
+  setSelectedBookmarkId: (id: string | null) => void;
 }
 
 export const useBookmarkStore = create<BookmarkStore>((set) => ({
@@ -19,4 +21,6 @@ export const useBookmarkStore = create<BookmarkStore>((set) => ({
     set((state) => ({
       bookmarks: state.bookmarks.map((b) => (b.id === id ? { ...b, ...data } : b)),
     })),
+  selectedBookmarkId: null,
+  setSelectedBookmarkId: (id) => set({ selectedBookmarkId: id }),
 }));
