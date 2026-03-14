@@ -19,23 +19,13 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const { addBookmark } = useBookmarkStore();
+  const { addBookmark, updateBookmark } = useBookmarkStore();
 
   const handleClose = () => {
     setUrlError(null);
     onClose();
-    // if (!url) {
-    //   onClose();
-    //   return;
-    // }
-
-    // const isConfirmed = confirm("적은 것들이 다 사라질 수 있어요. 정말 모달을 닫으시겠어요?");
-
-    // if (isConfirmed) {
-    //   onClose();
-    // }
   };
-  // 저장 로직 (나중에 API 연동 예정)
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const error = validateUrl(url);
@@ -45,21 +35,77 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
     }
 
     setIsLoading(true);
+    let newBookmark;
     try {
-      const newBookmark = await bookmarkService.addBookmark(url, memo);
+      // 1. DB 저장 (aiStatus: "crawling"), 카드 즉시 표시
+      newBookmark = await bookmarkService.addBookmark(url, memo);
       addBookmark(newBookmark);
       handleClose();
     } catch (error) {
-      // 에러 처리 (5개 초과 등)
       console.error(error);
-    } finally {
       setIsLoading(false);
+      return;
     }
-    // 임시 딜레이 후 닫기
-    setTimeout(() => {
-      setIsLoading(false);
-      handleClose();
-    }, 800);
+    setIsLoading(false);
+
+    const bookmarkId = newBookmark.id;
+
+    // 2. 백그라운드 크롤링
+    try {
+      const crawlRes = await fetch("/api/crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const crawlJson = await crawlRes.json();
+
+      if (!crawlJson.success) {
+        await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
+        updateBookmark(bookmarkId, { aiStatus: "failed" });
+        return;
+      }
+
+      const { title, thumbnailUrl, description, bodyChunks } = crawlJson.data;
+
+      // 3. 크롤링 결과 반영 + AI 분석 중 상태로 전환 (title 없으면 스켈레톤 유지)
+      const crawlUpdate = {
+        thumbnailUrl,
+        aiStatus: "processing" as const,
+        ...(title ? { title } : {}),
+      };
+      await bookmarkService.updateBookmark(bookmarkId, crawlUpdate);
+      updateBookmark(bookmarkId, crawlUpdate);
+
+      // 4. 백그라운드 AI 분석
+      const aiRes = await fetch("/api/ai-analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description, bodyChunks }),
+      });
+      const aiJson = await aiRes.json();
+
+      if (!aiJson.success) {
+        await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
+        updateBookmark(bookmarkId, { aiStatus: "failed" });
+        return;
+      }
+
+      const { title: aiTitle, summary, tags } = aiJson.data;
+
+      // 5. AI 결과 반영 + 완료
+      const finalUpdate = {
+        summary,
+        tags,
+        aiStatus: "completed" as const,
+        ...(aiTitle ? { title: aiTitle } : {}),
+      };
+      await bookmarkService.updateBookmark(bookmarkId, finalUpdate);
+      updateBookmark(bookmarkId, finalUpdate);
+    } catch (error) {
+      console.error("[Pipeline] 파이프라인 오류:", error);
+      await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
+      updateBookmark(bookmarkId, { aiStatus: "failed" });
+    }
   };
 
   if (!isOpen) return null;

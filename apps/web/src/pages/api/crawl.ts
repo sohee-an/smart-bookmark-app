@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { crawlerService } from "./services/crawler.service";
-import { aiService } from "./services/ai.service";
+import { crawlerService } from "@/server/services/crawler.service";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -14,10 +13,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    //  크롤링 시도 (내부적으로 최대 3회 재시도 및 에러 코드 처리)
     const crawlResult = await crawlerService.crawl(url);
+    console.log("cc", crawlResult);
 
-    // 최종 크롤링 실패 시 (수동 입력 유도)
     if (crawlResult.status === "manual_required") {
       let message = "웹사이트 정보를 자동으로 가져올 수 없습니다.";
 
@@ -34,30 +32,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: "manual_required",
         attempt: crawlResult.attempt,
         errorCode: crawlResult.errorCode,
-        message, // 구체적인 에러 메시지 반환
+        message,
       });
     }
 
-    //  크롤링 성공 시 AI 분석 수행
-    const aiResult = await aiService.analyze(crawlResult.title, crawlResult.description);
-
     return res.status(200).json({
       success: true,
-      status: "completed",
-      attempt: crawlResult.attempt,
       data: {
         title: crawlResult.title,
-        summary: aiResult.summary,
-        tags: aiResult.tags,
+        description: crawlResult.description,
         thumbnailUrl: crawlResult.thumbnailUrl,
+        bodyChunks: crawlResult.bodyChunks,
       },
     });
   } catch (error) {
-    console.error("[API Process URL] 알 수 없는 오류:", error);
+    console.error("[API Crawl] 오류:", error);
     return res.status(500).json({
       success: false,
-      status: "error",
-      message: "분석 중 예기치 않은 오류가 발생했습니다.",
+      message: "크롤링 중 예기치 않은 오류가 발생했습니다.",
     });
   }
 }

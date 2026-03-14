@@ -1,10 +1,11 @@
 import * as cheerio from "cheerio";
+
 export type CrawlerErrorCode =
-  | "FETCH_FAILED" // 사이트 자체 접근 불가
-  | "PARSE_FAILED" // HTML 파싱 실패
-  | "TITLE_NOT_FOUND" // title 없음 → AI fallback
-  | "DESCRIPTION_NOT_FOUND" // description 없음 → AI fallback
-  | "BODY_NOT_FOUND" // 본문 없음 → AI 호출 불가
+  | "FETCH_FAILED"
+  | "PARSE_FAILED"
+  | "TITLE_NOT_FOUND"
+  | "DESCRIPTION_NOT_FOUND"
+  | "BODY_NOT_FOUND"
   | "UNKNOWN_ERROR";
 
 export interface CrawlResult {
@@ -15,7 +16,7 @@ export interface CrawlResult {
   status: "completed" | "manual_required";
   attempt: number;
   errorCode?: CrawlerErrorCode;
-  bodyChunks?: [string, string, string]; // 본문 3등분, AI 호출 후 버림
+  bodyChunks?: [string, string, string];
 }
 
 /**
@@ -43,15 +44,26 @@ export class CrawlerService {
       const $ = cheerio.load(html);
 
       const title = $('meta[property="og:title"]').attr("content") || $("title").text() || "";
-
       const description =
         $('meta[property="og:description"]').attr("content") ||
         $('meta[name="description"]').attr("content") ||
         "";
-
       const thumbnailUrl = $('meta[property="og:image"]').attr("content") || "";
 
-      if (!title) {
+      // bodyChunks 추출을 title 체크 전에 수행
+      const bodyText = $("p, article, main").text().replace(/\s+/g, " ").trim();
+      let bodyChunks: [string, string, string] | undefined;
+      if (bodyText.length > 0) {
+        const chunkSize = Math.ceil(bodyText.length / 3);
+        bodyChunks = [
+          bodyText.slice(0, chunkSize),
+          bodyText.slice(chunkSize, chunkSize * 2),
+          bodyText.slice(chunkSize * 2),
+        ];
+      }
+
+      // title 없어도 bodyChunks 있으면 AI가 생성 — success로 반환
+      if (!title && !bodyChunks) {
         return this.handleRetry(url, attempt, "TITLE_NOT_FOUND");
       }
 
@@ -62,6 +74,7 @@ export class CrawlerService {
         success: true,
         status: "completed",
         attempt,
+        bodyChunks,
       };
     } catch (error) {
       console.error(`[Crawler] ${attempt}회차 예외 발생:`, error);

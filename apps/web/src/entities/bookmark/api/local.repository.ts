@@ -31,7 +31,7 @@ export class LocalRepository implements BookmarkRepository {
       id: crypto.randomUUID(),
       url: request.url,
       userMemo: request.userMemo,
-      aiStatus: "processing",
+      aiStatus: "crawling",
       guestId: guestId,
       createdAt: new Date().toISOString(),
       status: "unread",

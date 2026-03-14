@@ -7,13 +7,13 @@
 
 ## 크롤링
 
-- `CrawlResult`, `CrawlerErrorCode`, `CrawlerService` → `apps/web/src/pages/api/services/crawler.service.ts`
-- URL 크롤링 + AI 파이프라인 조율 → `apps/web/src/pages/api/process-url.ts`
+- `CrawlResult`, `CrawlerErrorCode`, `CrawlerService` → `apps/web/src/server/services/crawler.service.ts`
+- 크롤링 전용 API Route → `apps/web/src/pages/api/crawl.ts`
 
 ## AI 분석
 
-- `AIAnalysisResult`, `AIService` → `apps/web/src/pages/api/services/ai.service.ts`
-- URL 크롤링 + AI 파이프라인 조율 → `apps/web/src/pages/api/process-url.ts`
+- `AIAnalysisResult`, `AIService` → `apps/web/src/server/services/ai.service.ts`
+- AI 분석 전용 API Route → `apps/web/src/pages/api/ai-analyze.ts`
 
 ## 북마크 타입
 
