@@ -90,14 +90,14 @@ pnpm test       # 테스트 실행
 
 - CLAUDE.md와 PROJECT_PLAN.md는 항상 자동으로 로드됨 — 이미 알고 있으면 다시 읽지 말 것
 
-## 탐색 실패 규칙
+## 탐색 규칙
 
-- PROJECT_INDEX.md에서 키워드를 못 찾아 Glob/Grep으로 우회한 경우 → `memory/search-failures.md`에 자동 기록
-  - 형식: 날짜 / 키워드 / 실제로 찾은 파일 경로 / 해결 방법
-- 같은 키워드 2회 이상 실패 → PROJECT_INDEX.md에 즉시 추가
+- 파일을 찾을 때는 반드시 PROJECT_INDEX.md를 먼저 본다
+- INDEX에서 찾지 못한 경우 → Glob/Grep 절대 금지, 사용자에게 이렇게 말한다:
+  > "PROJECT_INDEX.md에 해당 키워드가 없어서 충분한 자료를 찾지 못했습니다."
+- 사용자가 "전체코드 봐줘" 라고 하면 → 그때만 Glob/Grep으로 탐색하고, 찾은 파일을 PROJECT_INDEX.md에 즉시 추가
 - 아키텍처, 기술 스택, 프로젝트 구조는 이 파일 기준으로 판단할 것
 - 개별 파일은 해당 파일의 구체적인 코드가 필요할 때만 핀포인트로 읽을 것
-- Glob으로 전체 파일 탐색하지 말 것
 
 ## Notion 워크플로우 트리거
 

@@ -1,4 +1,4 @@
-import { supabase } from "@/shared/api/supabase";
+import { supabase } from "@/shared/api/supabase/client";
 import { BookmarkRepository } from "../../../entities/bookmark/api/bookmark.repository";
 import { LocalRepository } from "../../../entities/bookmark/api/local.repository";
 import { SupabaseBookmarkRepository } from "../../../entities/bookmark/api/supabase.repository";

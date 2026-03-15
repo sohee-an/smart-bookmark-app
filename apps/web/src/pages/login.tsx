@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/shared/api/supabase";
+import { supabase } from "@/shared/api/supabase/client";
 import { Input } from "@/shared/ui/input/Input";
 import { MailIcon, LockIcon } from "@smart-bookmark/ui/icons";
 import { authSchema, AuthFormData } from "@/features/auth/model/auth-schema";
@@ -87,22 +87,11 @@ export default function LoginPage() {
               type="password"
               placeholder="••••••••"
               icon={<LockIcon />}
+              showPasswordToggle
               {...register("password")}
               error={errors.password?.message}
               required
             />
-
-            {!isLogin && (
-              <Input
-                label="비밀번호 확인"
-                type="password"
-                placeholder="••••••••"
-                icon={<LockIcon />}
-                {...register("confirmPassword")}
-                error={errors.confirmPassword?.message}
-                required
-              />
-            )}
           </div>
 
           {serverError && (

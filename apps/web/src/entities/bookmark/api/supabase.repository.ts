@@ -1,4 +1,4 @@
-import { supabase } from "@/shared/api/supabase";
+import { supabase } from "@/shared/api/supabase/client";
 import type { BookmarkRow, BookmarkFilter, CreateBookmarkRequest } from "./bookmark.types.db";
 import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";

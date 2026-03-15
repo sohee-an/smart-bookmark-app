@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Input } from "@/shared/ui/input/Input";
-import { supabase } from "@/shared/api/supabase";
+import { supabase } from "@/shared/api/supabase/client";
 import { Avatar } from "@/shared/ui/Avatar";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/router";
@@ -74,6 +74,11 @@ export const Header = () => {
   }, []);
 
   const handleLogin = () => {
+    router.push("/login");
+  };
+
+  const handleGuestLogin = () => {
+    storage.cookie.remove("is_guest");
     router.push("/login");
   };
 
@@ -168,15 +173,15 @@ export const Header = () => {
                 </div>
                 <div className="group relative cursor-pointer">
                   <Avatar username={nickname} src={user?.user_metadata?.avatar_url} />
-                  <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 mt-2 hidden pt-2 duration-200 group-hover:block">
+                  <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 hidden pt-2 duration-200 group-hover:block">
                     <div className="bg-surface-card dark:bg-surface-card-dark flex min-w-[140px] flex-col gap-1 rounded-2xl border border-zinc-200 p-1.5 shadow-xl dark:border-zinc-800">
                       {isGuest && (
                         <button
-                          onClick={handleLogin}
+                          onClick={handleGuestLogin}
                           className="text-brand-primary hover:bg-brand-primary/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
                         >
                           <PlusIcon />
-                          <span>로그인하기</span>
+                          <span>로그인/회원가입</span>
                         </button>
                       )}
                       <button

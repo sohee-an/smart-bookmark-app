@@ -42,7 +42,9 @@
 ## 인증
 
 - 인증 미들웨어 (비회원→랜딩, 회원→메인) → `apps/web/src/middleware.ts`
-- Supabase 클라이언트 → `apps/web/src/shared/api/supabase.ts`
+- Supabase 브라우저 클라이언트 (`supabase`) → `apps/web/src/shared/api/supabase/client.ts`
+- Supabase 서버 클라이언트 (`createSupabaseServerClient`) → `apps/web/src/shared/api/supabase/server.ts`
+- OAuth 콜백 처리 → `apps/web/src/pages/api/auth/callback.ts`
 - 로그인/회원가입 Zod 스키마 → `apps/web/src/features/auth/model/auth-schema.ts`
 
 ## 페이지 라우팅
