@@ -5,13 +5,14 @@ import type { Bookmark } from "../model/types";
 interface BookmarkCardProps {
   bookmark: Bookmark;
   onClick?: (bookmark: Bookmark) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 /**
  * @description 북마크 정보를 카드 형태로 보여주는 엔티티 컴포넌트입니다.
  * AI 분석 상태(aiStatus), 읽음 상태(status), 크롤링 결과에 따른 대응 UI를 포함합니다.
  */
-export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
+export const BookmarkCard = ({ bookmark, onClick, onTagClick }: BookmarkCardProps) => {
   const { title, url, thumbnailUrl, summary, tags, aiStatus, status } = bookmark;
 
   const isCrawling = aiStatus === "crawling";
@@ -117,7 +118,15 @@ export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
 
         {/* 3. Bottom Info: Tags & AI completed badge */}
         <div className="mt-auto flex items-center justify-between pt-4">
-          {!isPending && <TagGroup tags={tags} maxVisible={2} showLabel={false} />}
+          {!isPending && (
+            <TagGroup
+              tags={tags}
+              maxVisible={2}
+              showLabel={false}
+              onTagClick={onTagClick}
+              onMoreClick={() => onClick?.(bookmark)}
+            />
+          )}
 
           {/* AI Completed Indicator */}
           {!isPending && !isFailed && summary && (

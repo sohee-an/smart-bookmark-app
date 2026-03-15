@@ -9,6 +9,8 @@ interface TagGroupProps extends HTMLAttributes<HTMLDivElement> {
   onTagInputChange?: (value: string) => void;
   onTagAdd?: () => void;
   onTagRemove?: (tag: string) => void;
+  onTagClick?: (tag: string) => void;
+  onMoreClick?: () => void;
   showLabel?: boolean;
   maxVisible?: number;
 }
@@ -20,12 +22,15 @@ export const TagGroup = ({
   onTagInputChange,
   onTagAdd,
   onTagRemove,
+  onTagClick,
+  onMoreClick,
   showLabel = true,
   maxVisible,
   className = "",
   ...props
 }: TagGroupProps) => {
   const visibleTags = maxVisible ? tags.slice(0, maxVisible) : tags;
+  const hiddenCount = maxVisible ? Math.max(0, tags.length - maxVisible) : 0;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -50,7 +55,15 @@ export const TagGroup = ({
           <TagPrimitive.Item
             key={tag}
             value={tag}
-            className="inline-flex items-center gap-1 rounded-lg bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+            onClick={
+              onTagClick
+                ? (e) => {
+                    e.stopPropagation();
+                    onTagClick(tag);
+                  }
+                : undefined
+            }
+            className={`inline-flex items-center gap-1 rounded-lg bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 ${onTagClick ? "cursor-pointer transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-700 dark:hover:text-zinc-100" : ""}`}
           >
             #{tag}
             <TagPrimitive.RemoveButton
@@ -62,6 +75,18 @@ export const TagGroup = ({
             </TagPrimitive.RemoveButton>
           </TagPrimitive.Item>
         ))}
+
+        {hiddenCount > 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoreClick?.();
+            }}
+            className="inline-flex items-center rounded-lg bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 dark:bg-zinc-800 dark:text-zinc-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+          >
+            +{hiddenCount}
+          </button>
+        )}
 
         {tags.length === 0 && !editable && (
           <div className="flex items-center gap-1 text-[10px] font-bold text-zinc-300 italic dark:text-zinc-600">

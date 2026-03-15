@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
@@ -38,10 +39,16 @@ const geistMono = Geist_Mono({
 // ];
 
 export default function Home() {
+  const router = useRouter();
   const { bookmarks, setBookmarks, setSelectedBookmarkId, updateBookmark } = useBookmarkStore();
 
   const handleBookmarkClick = (bookmark: Bookmark) => {
     setSelectedBookmarkId(bookmark.id);
+  };
+
+  const handleTagClick = (tag: string) => {
+    setSelectedBookmarkId(null);
+    router.push(`/bookmarks?tag=${encodeURIComponent(tag)}`);
   };
 
   const handlePanelSave = async (id: string, data: Pick<Bookmark, "title" | "tags">) => {
@@ -72,10 +79,14 @@ export default function Home() {
       <Header />
 
       {/* 우측 슬라이드 패널 — selectedBookmarkId가 있을 때 표시 */}
-      <BookmarkDetailPanel onSave={handlePanelSave} />
+      <BookmarkDetailPanel onSave={handlePanelSave} onTagClick={handleTagClick} />
 
       <main className="pb-20">
-        <RecentBookmarkSlider bookmarks={bookmarks ?? []} onBookmarkClick={handleBookmarkClick} />
+        <RecentBookmarkSlider
+          bookmarks={bookmarks ?? []}
+          onBookmarkClick={handleBookmarkClick}
+          onTagClick={handleTagClick}
+        />
 
         <section className="mx-auto mt-4 max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
           <h2 className="mb-6 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">

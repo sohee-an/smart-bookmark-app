@@ -6,9 +6,10 @@ import type { Bookmark } from "../model/types";
 
 interface BookmarkDetailPanelProps {
   onSave?: (id: string, data: Pick<Bookmark, "title" | "tags">) => Promise<void>;
+  onTagClick?: (tag: string) => void;
 }
 
-export const BookmarkDetailPanel = ({ onSave }: BookmarkDetailPanelProps) => {
+export const BookmarkDetailPanel = ({ onSave, onTagClick }: BookmarkDetailPanelProps) => {
   const { bookmarks, selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
 
   const bookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
@@ -176,6 +177,7 @@ export const BookmarkDetailPanel = ({ onSave }: BookmarkDetailPanelProps) => {
                 onTagInputChange={setTagInput}
                 onTagAdd={handleTagAdd}
                 onTagRemove={handleTagRemove}
+                onTagClick={!isEditing ? onTagClick : undefined}
               />
             </div>
           </div>

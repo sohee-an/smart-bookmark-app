@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Input } from "@/shared/ui/input/Input";
 import { supabase } from "@/shared/api/supabase";
 import { Avatar } from "@/shared/ui/Avatar";
@@ -9,11 +9,49 @@ import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
 import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
+import { FilterBar } from "@/features/bookmark/ui/FilterBar";
+import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 
 export const Header = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const isBookmarksPage = router.pathname === "/bookmarks";
+  const { bookmarks } = useBookmarkStore();
+
+  const selectedTags = useMemo(() => {
+    const raw = router.query.tag;
+    if (!raw) return [];
+    return Array.isArray(raw) ? raw : [raw];
+  }, [router.query.tag]);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    bookmarks.forEach((b) => b.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [bookmarks]);
+
+  const recentTags = useMemo(() => {
+    const set = new Set<string>();
+    bookmarks.slice(0, 5).forEach((b) => b.tags.forEach((t) => set.add(t)));
+    return Array.from(set);
+  }, [bookmarks]);
+
+  const handleTagClick = (tag: string) => {
+    if (selectedTags.includes(tag)) return;
+    const next = [...selectedTags, tag];
+    router.push({ pathname: "/bookmarks", query: { ...router.query, tag: next } });
+  };
+
+  const handleTagRemove = (tag: string) => {
+    const next = selectedTags.filter((t) => t !== tag);
+    router.replace({
+      pathname: "/bookmarks",
+      query: { ...router.query, tag: next.length ? next : undefined },
+    });
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -45,6 +83,20 @@ export const Header = () => {
     router.push("/landing");
   };
 
+  useEffect(() => {
+    if (router.pathname === "/bookmarks") {
+      setSearchQuery((router.query.q as string) ?? "");
+    }
+  }, [router.pathname, router.query.q]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push({
+      pathname: "/bookmarks",
+      query: { ...router.query, q: searchQuery || undefined },
+    });
+  };
+
   const isGuest = !user && !loading && storage.cookie.get("is_guest") === "true";
   const nickname = user?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
 
@@ -61,7 +113,7 @@ export const Header = () => {
             </h1>
           </Link>
 
-          <form role="search" className="hidden md:block" onSubmit={(e) => e.preventDefault()}>
+          <form role="search" className="hidden md:block" onSubmit={handleSearchSubmit}>
             <Input
               label="북마크 검색"
               icon={<SearchIcon />}
@@ -69,8 +121,22 @@ export const Header = () => {
               className="w-80"
               type="search"
               inputSize="md"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </form>
+
+          {isBookmarksPage && (
+            <div className="hidden md:block">
+              <FilterBar
+                selectedTags={selectedTags}
+                onTagClick={handleTagClick}
+                onTagRemove={handleTagRemove}
+                allTags={allTags}
+                recentTags={recentTags}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -136,12 +202,14 @@ export const Header = () => {
       </nav>
 
       <div className="border-t border-zinc-100 p-4 md:hidden dark:border-zinc-800">
-        <form role="search" onSubmit={(e) => e.preventDefault()}>
+        <form role="search" onSubmit={handleSearchSubmit}>
           <Input
             label="북마크 검색"
             icon={<SearchIcon />}
             placeholder="북마크 검색..."
             type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </form>
       </div>
