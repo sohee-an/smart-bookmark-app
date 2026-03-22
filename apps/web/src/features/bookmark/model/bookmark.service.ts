@@ -2,6 +2,7 @@ import { supabase } from "@/shared/api/supabase";
 import { BookmarkRepository } from "../../../entities/bookmark/api/bookmark.repository";
 import { LocalRepository } from "../../../entities/bookmark/api/local.repository";
 import { SupabaseBookmarkRepository } from "../../../entities/bookmark/api/supabase.repository";
+
 import getGuestId from "@/shared/lib/guest";
 import { BookmarkFilter } from "../../../entities/bookmark/api/bookmark.types.db";
 import { Bookmark } from "@/entities/bookmark/model/types";
@@ -83,6 +84,16 @@ export class BookmarkService {
     } = await supabase.auth.getSession();
     const id = session?.user?.id || getGuestId();
     return repo.count(id);
+  }
+
+  /**
+   * @description 임베딩 벡터를 저장합니다. (회원 전용)
+   */
+  async saveEmbedding(bookmarkId: string, embedding: number[]): Promise<void> {
+    const repo = await this.getRepository();
+    if (repo instanceof SupabaseBookmarkRepository) {
+      await repo.saveEmbedding(bookmarkId, embedding);
+    }
   }
 
   /**

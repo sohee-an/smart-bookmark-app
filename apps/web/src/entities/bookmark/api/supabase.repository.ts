@@ -124,6 +124,17 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
   }
 
   /**
+   * @description 임베딩 벡터를 embeddings 테이블에 저장합니다
+   */
+  async saveEmbedding(bookmarkId: string, embedding: number[]): Promise<void> {
+    const { error } = await supabase
+      .from("embeddings")
+      .upsert({ bookmark_id: bookmarkId, embedding });
+
+    if (error) throw new Error(`임베딩 저장 실패: ${error.message}`);
+  }
+
+  /**
    * @description 태그 이름 목록을 tags 테이블에 upsert하고 bookmark_tags에 연결합니다
    */
   async insertTags(bookmarkId: string, tagNames: string[]): Promise<void> {

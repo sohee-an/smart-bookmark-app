@@ -34,7 +34,7 @@ alter table bookmarks drop column if exists temp_user_id;
 create table if not exists embeddings (
   id          uuid         primary key default gen_random_uuid(),
   bookmark_id uuid         not null unique references bookmarks(id) on delete cascade,
-  embedding   vector(1536) not null,
+  embedding   vector(3072) not null,
   created_at  timestamptz  not null default now()
 );
 
