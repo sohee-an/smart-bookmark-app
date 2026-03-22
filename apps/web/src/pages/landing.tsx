@@ -54,15 +54,14 @@ export default function LandingPage() {
           </div>
 
           <h1 className="mb-8 text-5xl leading-[1.1] font-black tracking-tight text-zinc-900 md:text-7xl dark:text-white">
-            북마크는 쌓이는데,
+            수많은 링크 속에서
             <br />
-            <span className="text-gradient">정작 필요할 때 못 찾죠?</span>
+            <span className="text-gradient">진짜 가치</span>를 찾아내세요
           </h1>
 
           <p className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-zinc-600 dark:text-zinc-400">
-            키워드가 정확히 맞지 않아도 AI가 내용의{" "}
-            <strong className="text-zinc-800 dark:text-zinc-200">의미</strong>를 이해하고
-            찾아줍니다. 북마크를 저장하는 순간, 요약·태그·의미 검색이 자동으로 준비됩니다.
+            단순한 링크 저장을 넘어, AI가 내용을 요약하고 최적의 태그를 추천합니다. 제목이 기억 안
+            나도 괜찮아요. 의미만 알아도 관련된 북마크를 찾아드려요.
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -104,7 +103,7 @@ export default function LandingPage() {
             },
             {
               title: "AI 의미 검색",
-              desc: '"리액트 최적화"를 검색하면 제목엔 없어도 내용이 관련된 북마크를 찾아줍니다.',
+              desc: '"재테크"를 검색하면 제목엔 없어도 내용이 관련된 북마크를 찾아줍니다.',
               icon: <Search className="text-brand-accent h-6 w-6" />,
               color: "bg-brand-accent/5",
             },
