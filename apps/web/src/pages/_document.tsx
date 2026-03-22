@@ -10,6 +10,10 @@ export default function Document() {
   return (
     <Html lang="ko">
       <Head>
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" />
+
         {/* Primary Meta */}
         <meta name="description" content={OG_DESCRIPTION} />
 
