@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createServerClient } from "@supabase/ssr";
+import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -26,11 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const embedding = result.embedding.values;
 
     // 2. Supabase RPC로 유사도 검색
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
-      { cookies: { get: (n) => req.cookies[n], set: () => {}, remove: () => {} } }
-    );
+    const supabase = createSupabaseServerClient(req, res);
 
     const { data, error } = await supabase.rpc("match_bookmarks", {
       query_embedding: embedding,

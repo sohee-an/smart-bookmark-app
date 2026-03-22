@@ -10,7 +10,7 @@ import { SemanticResultSection } from "@/features/bookmark/ui/SemanticResultSect
 import { filterBookmarks } from "@/features/bookmark/model/filterBookmarks";
 import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
-import { supabase } from "@/shared/api/supabase";
+import { supabase } from "@/shared/api/supabase/client";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
