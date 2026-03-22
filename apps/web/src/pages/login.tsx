@@ -37,12 +37,17 @@ export default function LoginPage() {
         });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
         });
         if (error) throw error;
-        alert("회원가입 확인 메일을 확인해주세요!");
+
+        // 이메일 인증이 켜져 있으면 session이 null로 옴
+        // if (!signUpData.session) {
+        //   alert("회원가입 확인 메일을 확인해주세요!");
+        //   return;
+        // }
       }
       router.push("/");
     } catch (err: any) {

@@ -92,7 +92,22 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
       const { title: aiTitle, summary, tags } = aiJson.data;
 
-      // 5. AI 결과 반영 + 완료
+      // 5. 임베딩 생성 (백그라운드, 실패해도 북마크 저장은 완료 처리)
+      const resolvedTitle = aiTitle || title || "";
+      fetch("/api/embed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: resolvedTitle, summary }),
+      })
+        .then((r) => r.json())
+        .then(async (embedJson) => {
+          if (embedJson.success) {
+            await bookmarkService.saveEmbedding(bookmarkId, embedJson.data.embedding);
+          }
+        })
+        .catch((e) => console.error("[Pipeline] 임베딩 오류:", e));
+
+      // 6. AI 결과 반영 + 완료
       const finalUpdate = {
         summary,
         tags,
