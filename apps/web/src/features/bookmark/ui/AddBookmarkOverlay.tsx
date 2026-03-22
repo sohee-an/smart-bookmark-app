@@ -21,13 +21,13 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [isLimitReached, setIsLimitReached] = useState(false);
   const { addBookmark, updateBookmark, bookmarks } = useBookmarkStore();
+  const [isLimitReached, setIsLimitReached] = useState(bookmarks.length >= 5);
   const router = useRouter();
 
   const handleClose = () => {
     setUrlError(null);
-    setIsLimitReached(false);
+    setIsLimitReached(bookmarks.length >= 5);
     onClose();
   };
 
