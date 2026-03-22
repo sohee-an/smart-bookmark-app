@@ -240,6 +240,7 @@ export const Header = () => {
             onTagRemove={handleTagRemove}
             allTags={allTags}
             recentTags={recentTags}
+            frequentTags={frequentTags}
           />
         </div>
       </div>
