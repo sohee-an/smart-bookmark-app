@@ -98,6 +98,22 @@ export default function Home() {
       <BookmarkDetailPanel onSave={handlePanelSave} onTagClick={handleTagClick} />
 
       <main className="pb-20">
+        {/* Hero */}
+        <section className="mx-auto max-w-7xl px-4 pt-12 pb-4 sm:px-6 lg:px-8">
+          <p className="text-brand-primary mb-3 text-xs font-bold tracking-widest uppercase">
+            AI 북마크 · SmartMark
+          </p>
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 sm:text-5xl dark:text-white">
+            저장은 했는데,
+            <br />
+            <span className="text-brand-primary">어디 있는지 모르겠다고요?</span>
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500 dark:text-zinc-400">
+            제목이 기억 안 나도 괜찮아요. AI가 내용을 읽고 의미로 찾아드려요. 북마크를 저장하는
+            순간, 요약·태그·검색이 자동으로 준비됩니다.
+          </p>
+        </section>
+
         <RecentBookmarkSlider
           bookmarks={(bookmarks ?? []).slice(0, 5)}
           onBookmarkClick={handleBookmarkClick}
