@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Link2, FileText, X, Plus } from "lucide-react";
+import { Link2, FileText, X, Plus, Lock } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 import { bookmarkService } from "../model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { validateUrl } from "@/shared/lib/validateUrl";
+import { useRouter } from "next/router";
+import { toast } from "@/shared/lib/toast";
 
 interface AddBookmarkOverlayProps {
   isOpen: boolean;
@@ -19,10 +21,13 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const { addBookmark, updateBookmark } = useBookmarkStore();
+  const [isLimitReached, setIsLimitReached] = useState(false);
+  const { addBookmark, updateBookmark, bookmarks } = useBookmarkStore();
+  const router = useRouter();
 
   const handleClose = () => {
     setUrlError(null);
+    setIsLimitReached(false);
     onClose();
   };
 
@@ -35,14 +40,26 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
     }
 
     setIsLoading(true);
+    const isFifth = bookmarks.length === 4; // 저장 전 4개 = 이번이 5번째
     let newBookmark;
     try {
       // 1. DB 저장 (aiStatus: "crawling"), 카드 즉시 표시
       newBookmark = await bookmarkService.addBookmark(url, memo);
       addBookmark(newBookmark);
       handleClose();
-    } catch (error) {
-      console.error(error);
+      if (isFifth) {
+        toast.show({
+          message: "북마크 5개를 모두 채웠어요! 로그인하면 무제한으로 저장할 수 있어요.",
+          action: { label: "로그인", onClick: () => router.push("/login") },
+          duration: 6000,
+        });
+      }
+    } catch (error: any) {
+      if (error?.message?.includes("무료 체험 한도")) {
+        setIsLimitReached(true);
+      } else {
+        console.error(error);
+      }
       setIsLoading(false);
       return;
     }
@@ -67,7 +84,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
       const { title, thumbnailUrl, description, bodyChunks } = crawlJson.data;
 
-      // 3. 크롤링 결과 반영 + AI 분석 중 상태로 전환 (title 없으면 스켈레톤 유지)
+      // 3. 크롤링 결과 반영 + AI 분석 중 상태로 전환
       const crawlUpdate = {
         thumbnailUrl,
         aiStatus: "processing" as const,
@@ -127,7 +144,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop: 배경 클릭 시 닫기 */}
+      {/* Backdrop */}
       <div
         className="animate-in fade-in absolute inset-0 bg-zinc-950/60 backdrop-blur-sm transition-opacity duration-300"
         onClick={handleClose}
@@ -138,13 +155,23 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-brand-primary/10 text-brand-primary flex h-10 w-10 items-center justify-center rounded-2xl">
-              <Plus size={22} strokeWidth={2.5} />
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-2xl ${isLimitReached ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" : "bg-brand-primary/10 text-brand-primary"}`}
+            >
+              {isLimitReached ? (
+                <Lock size={20} strokeWidth={2.5} />
+              ) : (
+                <Plus size={22} strokeWidth={2.5} />
+              )}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">새 북마크 추가</h3>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                {isLimitReached ? "무료 체험 한도 도달" : "새 북마크 추가"}
+              </h3>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                나중에 기억할 URL을 저장하세요
+                {isLimitReached
+                  ? "로그인하면 무제한으로 저장할 수 있어요"
+                  : "나중에 기억할 URL을 저장하세요"}
               </p>
             </div>
           </div>
@@ -156,49 +183,78 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
           </button>
         </div>
 
-        {/* Form Content */}
-        <form onSubmit={handleSave} className="space-y-4">
-          <Input
-            label="URL 주소"
-            placeholder="https://example.com"
-            icon={<Link2 size={18} />}
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              if (urlError) setUrlError(null);
-            }}
-            error={urlError ?? undefined}
-            autoFocus
-            className="w-full"
-          />
-
-          <Input
-            label="메모 (선택)"
-            placeholder="이 북마크에 대한 짧은 메모..."
-            icon={<FileText size={18} />}
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            className="w-full"
-          />
-
-          {/* Footer Actions */}
-          <div className="mt-8 flex gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 rounded-2xl border-2 border-zinc-100 bg-white py-3 text-sm font-bold text-zinc-600 transition-all hover:bg-zinc-50 active:scale-[0.98] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="dark:bg-brand-primary dark:hover:bg-brand-primary/90 flex-[1.5] rounded-2xl bg-zinc-900 py-3 text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-900"
-            >
-              {isLoading ? "저장 중..." : "북마크 저장"}
-            </button>
+        {/* 한도 초과 UI */}
+        {isLimitReached ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+              비회원은 북마크를 최대 <span className="font-bold">5개</span>까지 저장할 수 있어요.
+              {/* 추후 구현: 로그인 후 기존 북마크 이전 기능 완성 시 노출 */}
+              {/* 지금까지 저장한 북마크는 로그인 후에도 그대로 유지됩니다. */}
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 rounded-2xl border-2 border-zinc-100 bg-white py-3 text-sm font-bold text-zinc-600 transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  router.push("/login");
+                }}
+                className="bg-brand-primary hover:bg-brand-primary-hover flex-[1.5] rounded-2xl py-3 text-sm font-bold text-white transition-all active:scale-[0.98]"
+              >
+                로그인 / 회원가입
+              </button>
+            </div>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSave} className="space-y-4">
+            <Input
+              label="URL 주소"
+              placeholder="https://example.com"
+              icon={<Link2 size={18} />}
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                if (urlError) setUrlError(null);
+              }}
+              error={urlError ?? undefined}
+              autoFocus
+              className="w-full"
+            />
+
+            <Input
+              label="메모 (선택)"
+              placeholder="이 북마크에 대한 짧은 메모..."
+              icon={<FileText size={18} />}
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              className="w-full"
+            />
+
+            {/* Footer Actions */}
+            <div className="mt-8 flex gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 rounded-2xl border-2 border-zinc-100 bg-white py-3 text-sm font-bold text-zinc-600 transition-all hover:bg-zinc-50 active:scale-[0.98] dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="dark:bg-brand-primary dark:hover:bg-brand-primary/90 flex-[1.5] rounded-2xl bg-zinc-900 py-3 text-sm font-bold text-white transition-all hover:bg-zinc-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-900"
+              >
+                {isLoading ? "저장 중..." : "북마크 저장"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
