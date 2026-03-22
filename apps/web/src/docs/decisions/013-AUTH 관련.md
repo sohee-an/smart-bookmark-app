@@ -138,14 +138,14 @@ URL에 code가 있지만 처리하는 곳이 없음
 
 ```typescript
 // pages/api/auth/callback.ts
-import { createPagesServerClient } from "@supabase/auth-helpers-nextjs";
+import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { code } = req.query;
 
   if (code) {
-    const supabase = createPagesServerClient({ req, res });
+    const supabase = createSupabaseServerClient(req, res);
     // code → JWT 교환 + 쿠키 저장까지 한 번에 처리
     await supabase.auth.exchangeCodeForSession(String(code));
   }
@@ -153,6 +153,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.redirect("/");
 }
 ```
+
+> `createSupabaseServerClient`는 `shared/api/supabase/server.ts`에 정의된 래퍼 함수.
+> 내부에서 `@supabase/ssr`의 `createServerClient`를 사용하며, `req.cookies` 읽기와 `res.setHeader("Set-Cookie")` 쓰기를 처리한다.
 
 ---
 
@@ -444,38 +447,6 @@ CREATE TABLE sessions (
 세션 목록 조회     → "현재 로그인된 기기" 화면 구현 가능
 ```
 
-실제 프로세스
-실제 흐름  
- [server.ts] - API Route (서버)  
- exchangeCodeForSession()
-↓
-Set-Cookie 헤더를 HTTP 응답에 담아서 브라우저에 전달
-↓
-브라우저가 쿠키 자동 저장
-
-[client.ts] - React 컴포넌트 (브라우저)
-supabase.auth.getUser()
-↓
-브라우저에 이미 저장된 쿠키를 직접 읽음
-(document.cookie 또는 내부적으로 쿠키 접근)
-
-핵심 차이
-
-┌───────────┬─────────────────────────────┬────────────────┐
-│ │ server.ts │ client.ts │
-├───────────┼─────────────────────────────┼────────────────┤
-│ 실행 위치 │ Node.js (서버) │ 브라우저 │
-├───────────┼─────────────────────────────┼────────────────┤
-│ 쿠키 읽기 │ req.cookies │ 브라우저 자체 │
-├───────────┼─────────────────────────────┼────────────────┤
-│ 쿠키 쓰기 │ res.setHeader("Set-Cookie") │ 브라우저 자체 │
-├───────────┼─────────────────────────────┼────────────────┤
-│ 사용처 │ API Route, middleware │ React 컴포넌트 │
-└───────────┴─────────────────────────────┴────────────────┘
-
-즉 server.ts가 Set-Cookie를 응답 헤더에 실어 보내면, 브라우저가 알아서 저장하고, 이후  
- client.ts는 브라우저에 저장된 쿠키를 직접 읽는 구조입니다. 둘 사이에 직접 통신은 없어요.
-
 ---
 
 ## 중급 개념 요약
@@ -499,7 +470,7 @@ supabase.auth.getUser()
 
 - [Supabase Auth 공식 문서](https://supabase.com/docs/guides/auth)
 - [Supabase SSR with Next.js](https://supabase.com/docs/guides/auth/server-side/nextjs)
-- [Next.js 미들웨어 공식 문서](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+- [Next.js 미들웨어 공식 문서](https://nextjs.org/docs/pages/building-your-application/routing/middleware)
 
 ### JWT
 
