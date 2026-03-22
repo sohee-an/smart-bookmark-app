@@ -4,29 +4,14 @@ import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import type { Bookmark } from "@/entities/bookmark/model/types";
-import { supabase } from "@/shared/api/supabase/client";
-import storage from "@/shared/lib/storage";
-import { X } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
   const { bookmarks, setBookmarks, setSelectedBookmarkId, updateBookmark } = useBookmarkStore();
-  const [showGuestBanner, setShowGuestBanner] = useState(false);
-
-  useEffect(() => {
-    const check = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const isGuest = !user && storage.cookie.get("is_guest") === "true";
-      if (isGuest) setShowGuestBanner(true);
-    };
-    check();
-  }, []);
 
   const handleBookmarkClick = (bookmark: Bookmark) => {
     setSelectedBookmarkId(bookmark.id);
@@ -66,67 +51,16 @@ export default function Home() {
 
       <Header />
 
-      {/* 게스트 유저 로그인 유도 배너 */}
-      {showGuestBanner && (
-        <div className="bg-brand-primary/10 border-brand-primary/20 dark:bg-brand-primary/5 border-b">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              지금은 최대 <span className="text-brand-primary font-bold">5개</span>까지 저장할 수
-              있어요. 로그인하면 북마크를 무제한으로 저장하고 AI 검색도 사용할 수 있어요.
-            </p>
-            <div className="flex flex-none items-center gap-3">
-              <button
-                type="button"
-                onClick={() => router.push("/login")}
-                className="bg-brand-primary hover:bg-brand-primary-hover rounded-full px-4 py-1.5 text-xs font-bold text-white transition-all"
-              >
-                로그인
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowGuestBanner(false)}
-                className="text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-300"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 우측 슬라이드 패널 */}
       <BookmarkDetailPanel onSave={handlePanelSave} onTagClick={handleTagClick} />
 
       <main className="pb-20">
-        {/* Hero */}
-        <section className="mx-auto max-w-7xl px-4 pt-12 pb-4 sm:px-6 lg:px-8">
-          <p className="text-brand-primary mb-3 text-xs font-bold tracking-widest uppercase">
-            AI 북마크 · SmartMark
-          </p>
-          <h1 className="text-4xl font-black tracking-tight text-zinc-900 sm:text-5xl dark:text-white">
-            저장은 했는데,
-            <br />
-            <span className="text-brand-primary">어디 있는지 모르겠다고요?</span>
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500 dark:text-zinc-400">
-            제목이 기억 안 나도 괜찮아요. AI가 내용을 읽고 의미로 찾아드려요. 북마크를 저장하는
-            순간, 요약·태그·검색이 자동으로 준비됩니다.
-          </p>
-        </section>
-
         <RecentBookmarkSlider
           bookmarks={(bookmarks ?? []).slice(0, 5)}
           onBookmarkClick={handleBookmarkClick}
           onTagClick={handleTagClick}
-          onViewAll={() =>
-            document.getElementById("all-bookmarks")?.scrollIntoView({ behavior: "smooth" })
-          }
         />
 
-        <section
-          id="all-bookmarks"
-          className="mx-auto max-w-7xl scroll-mt-24 border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800"
-        >
+        <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
           <h2 className="mb-6 text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
             나의 모든 북마크
           </h2>
@@ -134,6 +68,7 @@ export default function Home() {
             bookmarks={bookmarks ?? []}
             onBookmarkClick={handleBookmarkClick}
             onTagClick={handleTagClick}
+            emptyMessage="북마크를 추가하세요."
           />
         </section>
       </main>
