@@ -15,6 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const {
     register,
@@ -35,7 +36,13 @@ export default function LoginPage() {
           email: data.email,
           password: data.password,
         });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            setServerError("이메일 인증이 완료되지 않았습니다. 받은 편지함을 확인해주세요.");
+            return;
+          }
+          throw error;
+        }
       } else {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: data.email,
@@ -43,11 +50,10 @@ export default function LoginPage() {
         });
         if (error) throw error;
 
-        // 이메일 인증이 켜져 있으면 session이 null로 옴
-        // if (!signUpData.session) {
-        //   alert("회원가입 확인 메일을 확인해주세요!");
-        //   return;
-        // }
+        if (!signUpData.session) {
+          setPendingEmail(data.email);
+          return;
+        }
       }
       router.push("/");
     } catch (err: any) {
@@ -60,6 +66,54 @@ export default function LoginPage() {
     setServerError(null);
     reset();
   };
+
+  if (pendingEmail) {
+    return (
+      <div className="bg-surface-base dark:bg-surface-base-dark flex min-h-screen items-center justify-center px-4">
+        <Head>
+          <title>이메일 확인 | SmartMark</title>
+        </Head>
+        <div className="bg-surface-card dark:bg-surface-card-dark w-full max-w-md space-y-6 rounded-3xl border border-zinc-200 p-8 text-center shadow-xl dark:border-zinc-800">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+            <svg
+              className="h-8 w-8 text-zinc-600 dark:text-zinc-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+              />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-zinc-900 dark:text-white">
+              이메일을 확인해주세요
+            </h2>
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              <span className="font-semibold text-zinc-700 dark:text-zinc-300">{pendingEmail}</span>
+              으로 인증 링크를 보냈습니다.
+            </p>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              링크를 클릭하면 자동으로 로그인됩니다.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setPendingEmail(null);
+              setIsLogin(true);
+            }}
+            className="text-brand-primary cursor-pointer text-sm font-semibold hover:opacity-80"
+          >
+            로그인 화면으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-surface-base dark:bg-surface-base-dark flex min-h-screen items-center justify-center px-4">
