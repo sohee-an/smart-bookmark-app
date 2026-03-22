@@ -1,138 +1,187 @@
-📚 AI Smart Bookmark
+# SmartMark
 
-저장만 하는 북마크에서, 언제든 꺼내 쓰는 지식 저장소로
+저장만 하는 북마크에서, 언제든 꺼내 쓰는 지식 저장소로.
 
-📌 프로젝트 소개
-URL을 저장하는 순간, AI가 자동으로 내용을 요약하고 태그를 생성합니다.
-"왜 저장했는지"를 기억하고, 필요한 순간에 꺼내 쓸 수 있는 스마트 북마크 서비스입니다.
+URL을 저장하면 AI가 자동으로 요약·태깅하고, 의미 기반(시맨틱) 검색으로 원하는 콘텐츠를 바로 찾을 수 있는 북마크 앱.
 
-✨ 주요 기능
-① 스마트 북마크 수집 (Collector)
+---
 
-URL 자동 크롤링 — URL 입력 시 제목, 본문, 대표 이미지를 자동으로 수집
-저장 메모 (Context) — "왜 저장하는지"에 대한 사용자 메모 입력 (리마인드의 핵심)
+## 기술 스택
 
-② AI 지능형 가공 (AI Processor)
+| 분류         | 기술                             |
+| ------------ | -------------------------------- |
+| 프레임워크   | Next.js 14 (Pages Router)        |
+| 언어         | TypeScript strict                |
+| 스타일       | Tailwind CSS v4                  |
+| 상태 관리    | Zustand                          |
+| DB / Auth    | Supabase (PostgreSQL + pgvector) |
+| AI 요약·태깅 | Gemini 2.5-flash                 |
+| AI 임베딩    | gemini-embedding-001 (3072차원)  |
+| 크롤링       | Cheerio                          |
+| 모노레포     | pnpm + Turborepo                 |
+| 배포         | Vercel                           |
 
-자동 요약 — AI가 본문을 3줄 내외로 핵심 요약
-자동 태깅 — 콘텐츠를 분석해 #개발, #레시피, #뉴스 등 태그 자동 생성
-저장 의도 분석 — 메모와 본문을 조합해 보관 목적을 명시화
+---
 
-③ 지식 관리 및 탐색 (Management)
-
-비주얼 카드 뷰 — 썸네일과 요약문이 포함된 카드 형태의 목록
-시맨틱 검색 — "저번에 본 리액트 최적화 글"처럼 자연어로 검색
-리마인드 큐레이션 — 저장 후 읽지 않은 글 중 현재 관심사와 유사한 글 추천
-
-🛠 기술 스택
-구분기술이유FrameworkNext.js (App Router)SSR을 통한 빠른 속도 및 API Routes 활용StylingTailwind CSS빠르고 일관된 UI 컴포넌트 제작DatabaseSupabase (PostgreSQL)실시간 DB 및 인증(Auth) 기능 제공AI 모델OpenAI API (GPT-4o)텍스트 요약 및 임베딩 처리ORMPrismaDB 스키마 관리 및 타입 안정성 확보
-
-## 🏗️ 아키텍처 & 컴포넌트 설계
+## 아키텍처
 
 ### 폴더 구조 — Feature-Sliced Design (FSD)
 
-단순히 `components/`, `hooks/`를 모아두는 방식 대신,
-기능(Feature) 단위로 관련 코드를 응집시켜 유지보수성을 높였습니다.
+```
+smart-bookmark-app/
+├── apps/
+│   └── web/
+│       └── src/
+│           ├── pages/         # 라우팅 + API Routes
+│           ├── widgets/       # 복합 UI 조합 (RecentBookmarkSlider)
+│           ├── features/      # 비즈니스 로직 (AddBookmarkOverlay, FilterBar)
+│           ├── entities/      # 도메인 모델 + Repository (BookmarkCard, Store)
+│           └── shared/        # 유틸, 공용 UI, Supabase 클라이언트
+└── packages/
+    ├── ui/                    # Headless 공용 컴포넌트 (TagPrimitive 등)
+    └── types/                 # 공통 타입
+```
+
+레이어 의존 방향: `pages → widgets → features → entities → shared`
+
+상위 레이어만 하위를 import할 수 있고 역방향은 금지. 레이어 경계 덕분에 Spring Boot 백엔드 전환이나 React Native 앱 추가 시 영향 범위가 Repository 구현체 하나로 좁혀진다.
+
+### Repository 패턴
 
 ```
-src/
-├── features/
-│   ├── bookmark/          # 북마크 CRUD, 카드 UI, 관련 hooks
-│   └── ai-summary/        # AI 요약 요청, 결과 표시
-├── shared/
-│   ├── ui/                # 공통 Atom/Molecule 컴포넌트
-│   └── hooks/             # 전역에서 쓰이는 hooks
-└── pages/
+BookmarkRepository (interface)
+  ├── LocalRepository      → localStorage (비회원, 5개 제한)
+  └── SupabaseRepository   → Supabase (회원)
 ```
+
+`BookmarkService` (Factory)가 세션 유무로 구현체를 동적 선택. 스토리지가 바뀌어도 상위 레이어 코드는 변경 없음.
+
+### 북마크 저장 파이프라인
+
+```
+URL 입력
+  → DB 저장 (aiStatus: "crawling") → 카드 즉시 표시
+  → /api/crawl       Cheerio로 OG 메타 + 본문 추출
+  → /api/ai-analyze  Gemini 2.5-flash로 3줄 요약 + 태그 생성  (aiStatus: "processing")
+  → /api/embed       gemini-embedding-001로 3072차원 벡터 생성
+  → DB 업데이트      (aiStatus: "completed")
+```
+
+AI 작업은 UI 차단 없이 백그라운드에서 순차 실행. 각 단계 완료 시 카드 UI가 실시간 업데이트됨.
 
 ---
 
-### 컴포넌트 분류 — Atomic Design
+## 기술적 도전
 
-재사용 컴포넌트는 Atomic Design 기준으로 분류해
-컴포넌트의 역할과 의존 관계를 명확히 했습니다.
+### 1. 시맨틱 서치 (벡터 유사도 검색)
 
-| 단계      | 예시                                      |
-| --------- | ----------------------------------------- |
-| Atoms     | Button, Input, Tag, Badge                 |
-| Molecules | SearchBar, TagGroup                       |
-| Organisms | BookmarkCard (Thumbnail + Summary + Tags) |
-| Templates | 페이지 레이아웃 골격                      |
+단순 키워드 매칭 대신 **의미 기반 검색**을 구현했다.
+
+- 북마크 저장 시 제목·요약을 `RETRIEVAL_DOCUMENT` 타입으로 3072차원 벡터로 변환 → Supabase(pgvector)에 저장
+- 검색 시 쿼리를 `RETRIEVAL_QUERY` 타입으로 임베딩 → 코사인 유사도로 비교
+- 유사도 0.8 기준으로 **정확한 결과 / 연관된 결과** 섹션을 분리해 표시
+
+```
+"React 상태관리"로 검색 시
+→ Zustand 아티클, Context API 비교 글도 함께 검색됨 (키워드 불일치여도)
+```
+
+**PostgreSQL 함수 시그니처 문제**: 태그 필터 파라미터(`p_tags text[]`) 추가 시 `CREATE OR REPLACE`만으로는 교체 불가 — PostgreSQL은 시그니처가 다르면 오버로드로 처리. 기존 4-파라미터 함수를 먼저 `DROP`한 뒤 재생성했다.
+
+**`SELECT DISTINCT` + `ORDER BY` 충돌**: `ORDER BY` 식이 `SELECT` 목록에 없으면 PostgreSQL이 에러를 던짐. DISTINCT를 제거하고 EXISTS 서브쿼리로 교체해 해결했다.
+
+### 2. 태그 필터 + 시맨틱 서치 동시 적용
+
+태그 필터를 클라이언트 후처리가 아닌 **DB 레벨에서 벡터 검색과 동시에 적용**했다.
+
+```sql
+-- match_bookmarks RPC
+where
+  b.user_id = p_user_id
+  and 1 - (e.embedding <=> query_embedding) >= match_threshold  -- 벡터 필터
+  and (
+    p_tags is null
+    or exists (                                                  -- 태그 필터 (OR)
+      select 1 from bookmark_tags bt
+      join tags t on t.id = bt.tag_id
+      where bt.bookmark_id = b.id and t.name = any(p_tags)
+    )
+  )
+order by similarity desc
+limit match_count;
+```
+
+키워드 검색 결과와 시맨틱 결과는 클라이언트에서 중복 제거 후 각 섹션에 표시한다.
+
+### 3. Headless UI + 모노레포
+
+`packages/ui`에 로직·상태만 담은 Headless 컴포넌트를 두고, 스타일은 `apps/web/src/shared/ui`에서 Tailwind로 입힌다. 추후 React Native 앱 추가 시 `packages/ui`는 공유하고 스타일 레이어만 교체하면 됨.
+
+### 4. 전역 Overlay 시스템
+
+EventEmitter 기반으로 컴포넌트 트리 바깥에서도 모달을 제어할 수 있다.
+
+```typescript
+overlay.open(({ isOpen, close }) => (
+  <AddBookmarkOverlay isOpen={isOpen} onClose={close} />
+))
+```
+
+Redux나 Context 없이 어느 레이어에서든 모달을 열고 닫을 수 있어 FSD 레이어 간 결합도를 낮춘다.
 
 ---
 
-### 복잡한 UI 컴포넌트 — Headless + Compound Component
+## 성능
 
-모달, 드롭다운처럼 로직이 복잡한 UI는
-**Headless 패턴**으로 로직과 스타일을 분리하고,
-**Compound Component 패턴**으로 유연한 조합이 가능하게 설계했습니다.
+### 즉각적인 UI 피드백
 
-```tsx
-// 사용 예시 — 필요한 조각만 골라서 조립
-<Dropdown>
-  <Dropdown.Trigger>옵션</Dropdown.Trigger>
-  <Dropdown.List>
-    <Dropdown.Item>수정</Dropdown.Item>
-    <Dropdown.Item>삭제</Dropdown.Item>
-  </Dropdown.List>
-</Dropdown>
+북마크 저장 시 AI 파이프라인 완료를 기다리지 않고 카드를 즉시 표시한다. `aiStatus` 필드로 단계를 추적하며 카드는 상태에 따라 로더·오버레이·완료 UI를 보여준다.
+
+| aiStatus     | UI                         |
+| ------------ | -------------------------- |
+| `crawling`   | 스켈레톤 + 로더            |
+| `processing` | 반투명 오버레이 + 로더     |
+| `completed`  | 썸네일·요약·태그 완전 표시 |
+| `failed`     | 에러 메시지                |
+
+### 검색 성능
+
+| 검색 종류   | 방식                         | 응답 속도 |
+| ----------- | ---------------------------- | --------- |
+| 키워드 검색 | 클라이언트 인메모리 필터링   | 즉시      |
+| 태그 필터   | 클라이언트 인메모리 필터링   | 즉시      |
+| 시맨틱 검색 | 서버 API → Supabase pgvector | ~1-2초    |
+
+키워드·태그는 이미 로드된 데이터를 클라이언트에서 필터링하므로 서버 왕복이 없다. 시맨틱 검색 결과는 키워드 결과와 별도 섹션으로 비동기 렌더링해 키워드 결과 표시를 블로킹하지 않는다.
+
+### 벡터 검색 최적화
+
+- `match_threshold: 0.65` — 유사도 65% 미만을 DB 레벨에서 제거해 네트워크 전송량 축소
+- `match_count: 10` — 최대 10개 제한
+- pgvector HNSW 인덱스 (Supabase 기본 제공) — 전체 스캔 대비 검색 속도 대폭 개선
+
+### 빌드 최적화
+
+- Turborepo 빌드 캐시 — 변경된 패키지만 재빌드
+- Next.js 자동 코드 스플리팅 — 페이지별 번들 분리
+- Tailwind CSS v4 JIT — 사용된 클래스만 번들에 포함
+
+---
+
+## 로컬 실행
+
+```bash
+# 의존성 설치
+pnpm install
+
+# 환경 변수 설정
+cp apps/web/.env.example apps/web/.env.local
+# .env.local에 아래 키 입력:
+# NEXT_PUBLIC_SUPABASE_URL
+# NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+# SUPABASE_SERVICE_ROLE_KEY
+# GEMINI_API_KEY
+
+# 개발 서버
+pnpm dev
 ```
-
-→ 스타일이 바뀌어도 로직을 건드리지 않아도 되고,
-사용하는 쪽에서 구조를 자유롭게 조합할 수 있습니다.
-
-🗺 페이지 구조
-/ 메인 페이지 (서비스 소개 + 로그인)
-/bookmarks 대시보드 (전체 목록, 필터, 검색)
-/bookmarks/[id] 상세 페이지 (원본 링크, AI 요약, 메모 편집)
-
-🗄 데이터베이스 스키마
-prismamodel User {
-id String @id @default(cuid())
-email String @unique
-createdAt DateTime @default(now())
-bookmarks Bookmark[]
-}
-
-model Bookmark {
-id String @id @default(cuid())
-url String
-title String
-summary String // AI 생성 요약
-content String // 본문 텍스트 (검색용)
-userMemo String // 사용자 메모
-thumbnailUrl String?
-tags String[]
-status String @default("unread") // unread | read
-createdAt DateTime @default(now())
-userId String
-user User @relation(fields: [userId], references: [id])
-}
-
-🚀 개발 로드맵
-
-Step 1 — 기초: Next.js 세팅 + DB 연결 + URL 저장 기능
-Step 2 — 핵심: 본문 크롤링 + GPT API 연동 + 자동 요약 생성
-Step 3 — 고급: 카드 UI 디자인 + 검색 및 필터링 고도화
-Step 4 — 완성: 크롬 익스텐션 연동 또는 PWA 모바일 최적화
-
-🏃 시작하기
-bash# 의존성 설치
-npm install
-
-# 환경변수 설정
-
-cp .env.example .env.local
-
-# DB 마이그레이션
-
-npx prisma migrate dev
-
-# 개발 서버 실행
-
-npm run dev
-필요한 환경변수
-envDATABASE_URL=
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-OPENAI_API_KEY=
