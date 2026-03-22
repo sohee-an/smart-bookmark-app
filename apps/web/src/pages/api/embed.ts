@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await model.embedContent({
       content: { parts: [{ text }], role: "user" },
       taskType: TaskType.RETRIEVAL_DOCUMENT,
-    });
+      outputDimensionality: 3072,
+    } as any);
 
     return res.status(200).json({
       success: true,
