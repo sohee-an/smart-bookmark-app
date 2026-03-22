@@ -128,3 +128,33 @@ create policy "bookmark_tags_delete" on bookmark_tags for delete
 create index if not exists bookmarks_user_id_idx   on bookmarks(user_id);
 create index if not exists bookmarks_ai_status_idx  on bookmarks(ai_status);
 create index if not exists bookmark_tags_tag_id_idx on bookmark_tags(tag_id);
+-- ============================================================
+-- 9. public.users (Auth와 연동되는 프로필 테이블)
+-- ============================================================
+create table if not exists public.users (
+  id         uuid primary key references auth.users(id) on delete cascade,
+  avatar_url text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.users enable row level security;
+
+drop policy if exists "users_select" on public.users;
+drop policy if exists "users_update" on public.users;
+create policy "users_select" on public.users for select using (auth.uid() = id);
+create policy "users_update" on public.users for update using (auth.uid() = id);
+
+-- OAuth 로그인 시 자동으로 public.users에 insert
+drop trigger if exists on_auth_user_created on auth.users;
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, avatar_url)
+  values (new.id, new.raw_user_meta_data->>'avatar_url');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
