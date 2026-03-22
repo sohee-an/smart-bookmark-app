@@ -38,6 +38,19 @@ export const Header = () => {
     return Array.from(set);
   }, [bookmarks]);
 
+  const frequentTags = useMemo(() => {
+    const count: Record<string, number> = {};
+    bookmarks.forEach((b) =>
+      b.tags.forEach((t) => {
+        count[t] = (count[t] ?? 0) + 1;
+      })
+    );
+    return Object.entries(count)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([tag]) => tag);
+  }, [bookmarks]);
+
   const handleTagClick = (tag: string) => {
     const next = [...selectedTags, tag];
     router.push({ pathname: "/bookmarks", query: { ...router.query, tag: next } });
@@ -140,6 +153,7 @@ export const Header = () => {
               onTagRemove={handleTagRemove}
               allTags={allTags}
               recentTags={recentTags}
+              frequentTags={frequentTags}
             />
           </div>
         </div>
