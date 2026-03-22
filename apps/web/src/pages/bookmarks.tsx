@@ -124,6 +124,21 @@ export default function BookmarksPage() {
     });
   };
 
+  const keywordFilteredIds = useMemo(
+    () => new Set(keywordFiltered.map((b) => b.id)),
+    [keywordFiltered]
+  );
+
+  const deduplicatedExact = useMemo(
+    () => semanticExact.filter((r) => !keywordFilteredIds.has(r.id)),
+    [semanticExact, keywordFilteredIds]
+  );
+
+  const deduplicatedRelated = useMemo(
+    () => semanticRelated.filter((r) => !keywordFilteredIds.has(r.id)),
+    [semanticRelated, keywordFilteredIds]
+  );
+
   const showSemanticSection = !!query.trim();
 
   return (
@@ -170,8 +185,8 @@ export default function BookmarksPage() {
         {/* 시맨틱 검색 섹션 */}
         {showSemanticSection && (
           <SemanticResultSection
-            exact={semanticExact}
-            related={semanticRelated}
+            exact={deduplicatedExact}
+            related={deduplicatedRelated}
             isLoading={semanticLoading}
             onBookmarkClick={handleBookmarkClick}
             onTagClick={handleTagClick}

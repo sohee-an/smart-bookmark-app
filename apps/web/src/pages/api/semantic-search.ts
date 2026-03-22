@@ -31,8 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await supabase.rpc("match_bookmarks", {
       query_embedding: embedding,
       p_user_id: userId,
-      match_threshold: 0.5,
-      match_count: 20,
+      match_threshold: 0.65,
+      match_count: 10,
     });
 
     if (error) throw error;
