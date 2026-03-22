@@ -18,7 +18,6 @@ export const Header = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const isBookmarksPage = router.pathname === "/bookmarks";
   const { bookmarks } = useBookmarkStore();
 
   const selectedTags = useMemo(() => {
@@ -40,7 +39,6 @@ export const Header = () => {
   }, [bookmarks]);
 
   const handleTagClick = (tag: string) => {
-    if (selectedTags.includes(tag)) return;
     const next = [...selectedTags, tag];
     router.push({ pathname: "/bookmarks", query: { ...router.query, tag: next } });
   };
@@ -89,10 +87,14 @@ export const Header = () => {
   };
 
   useEffect(() => {
-    if (router.pathname === "/bookmarks") {
-      setSearchQuery((router.query.q as string) ?? "");
+    setSearchQuery((router.query.q as string) ?? "");
+  }, [router.query.q]);
+
+  const handleSearchFocus = () => {
+    if (router.pathname !== "/bookmarks") {
+      router.push({ pathname: "/bookmarks", query: router.query });
     }
-  }, [router.pathname, router.query.q]);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,37 +113,35 @@ export const Header = () => {
         className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
         aria-label="Global"
       >
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
           <Link href="/" className="group flex items-center gap-2">
             <h1 className="text-brand-primary text-2xl font-bold tracking-tight transition-opacity group-hover:opacity-80">
               SmartMark
             </h1>
           </Link>
 
-          <form role="search" className="hidden md:block" onSubmit={handleSearchSubmit}>
-            <Input
-              label="북마크 검색"
-              icon={<SearchIcon />}
-              placeholder="북마크 검색..."
-              className="w-80"
-              type="search"
-              inputSize="md"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
-
-          {isBookmarksPage && (
-            <div className="hidden md:block">
-              <FilterBar
-                selectedTags={selectedTags}
-                onTagClick={handleTagClick}
-                onTagRemove={handleTagRemove}
-                allTags={allTags}
-                recentTags={recentTags}
+          <div className="hidden items-center gap-2 md:flex">
+            <form role="search" onSubmit={handleSearchSubmit}>
+              <Input
+                label="북마크 검색"
+                icon={<SearchIcon />}
+                placeholder="북마크 검색..."
+                className="w-72"
+                type="search"
+                inputSize="md"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={handleSearchFocus}
               />
-            </div>
-          )}
+            </form>
+            <FilterBar
+              selectedTags={selectedTags}
+              onTagClick={handleTagClick}
+              onTagRemove={handleTagRemove}
+              allTags={allTags}
+              recentTags={recentTags}
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
@@ -206,17 +206,28 @@ export const Header = () => {
         </div>
       </nav>
 
+      {/* 모바일 검색 + 필터 */}
       <div className="border-t border-zinc-100 p-4 md:hidden dark:border-zinc-800">
-        <form role="search" onSubmit={handleSearchSubmit}>
-          <Input
-            label="북마크 검색"
-            icon={<SearchIcon />}
-            placeholder="북마크 검색..."
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        <div className="flex gap-2">
+          <form role="search" onSubmit={handleSearchSubmit} className="flex-1">
+            <Input
+              label="북마크 검색"
+              icon={<SearchIcon />}
+              placeholder="북마크 검색..."
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={handleSearchFocus}
+            />
+          </form>
+          <FilterBar
+            selectedTags={selectedTags}
+            onTagClick={handleTagClick}
+            onTagRemove={handleTagRemove}
+            allTags={allTags}
+            recentTags={recentTags}
           />
-        </form>
+        </div>
       </div>
     </header>
   );

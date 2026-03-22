@@ -33,7 +33,7 @@ export const FilterBar = ({
     const active = selectedTags.includes(tag);
     return (
       <button
-        onClick={() => onTagClick(tag)}
+        onClick={() => (active ? onTagRemove(tag) : onTagClick(tag))}
         className={`inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-bold transition-colors ${
           active
             ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"

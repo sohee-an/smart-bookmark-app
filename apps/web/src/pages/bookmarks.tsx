@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/components/layout/Header";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
@@ -27,9 +27,7 @@ export default function BookmarksPage() {
   const [semanticExact, setSemanticExact] = useState<SemanticBookmark[]>([]);
   const [semanticRelated, setSemanticRelated] = useState<SemanticBookmark[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
-  const prevQueryRef = useRef("");
 
-  // URL 쿼리 파싱
   const query = (router.query.q as string) ?? "";
   const selectedTags = useMemo(() => {
     const raw = router.query.tag;
@@ -49,11 +47,10 @@ export default function BookmarksPage() {
     fetchBookmarks();
   }, [setBookmarks]);
 
-  // 시맨틱 검색: 검색어 변경 시 실행
+  // 시맨틱 검색: 검색어 또는 태그 변경 시 실행
   useEffect(() => {
-    if (!query.trim() || query === prevQueryRef.current) return;
+    if (!query.trim()) return;
 
-    prevQueryRef.current = query;
     setSemanticExact([]);
     setSemanticRelated([]);
     setSemanticLoading(true);
@@ -68,7 +65,7 @@ export default function BookmarksPage() {
         const res = await fetch("/api/semantic-search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, userId: user.id }),
+          body: JSON.stringify({ query, userId: user.id, tags: selectedTags }),
         });
         const json = await res.json();
 
@@ -84,14 +81,13 @@ export default function BookmarksPage() {
     };
 
     run();
-  }, [query]);
+  }, [query, selectedTags]);
 
   // 검색어 없으면 시맨틱 결과 초기화
   useEffect(() => {
     if (!query.trim()) {
       setSemanticExact([]);
       setSemanticRelated([]);
-      prevQueryRef.current = "";
     }
   }, [query]);
 
@@ -164,7 +160,6 @@ export default function BookmarksPage() {
           </div>
         )}
 
-        {/* 키워드 검색 섹션 */}
         {query && (
           <div className="mb-2 flex items-center gap-2">
             <h2 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">키워드 검색 결과</h2>
@@ -182,7 +177,6 @@ export default function BookmarksPage() {
           onTagClick={handleTagClick}
         />
 
-        {/* 시맨틱 검색 섹션 */}
         {showSemanticSection && (
           <SemanticResultSection
             exact={deduplicatedExact}

@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { query, userId } = req.body;
+    const { query, userId, tags } = req.body;
 
     if (!query?.trim()) {
       return res.status(400).json({ success: false, message: "검색어가 없습니다." });
@@ -33,6 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       p_user_id: userId,
       match_threshold: 0.65,
       match_count: 10,
+      p_tags: tags?.length > 0 ? tags : null,
     });
 
     if (error) throw error;
