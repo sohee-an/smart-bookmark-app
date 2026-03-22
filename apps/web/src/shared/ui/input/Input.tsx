@@ -1,4 +1,5 @@
-import React, { InputHTMLAttributes, forwardRef } from "react";
+import React, { InputHTMLAttributes, forwardRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { InputPrimitive } from "@smart-bookmark/ui/input";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -7,6 +8,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hideLabel?: boolean;
   error?: string;
   inputSize?: "sm" | "md" | "lg";
+  showPasswordToggle?: boolean;
 }
 
 const sizeClasses = {
@@ -16,8 +18,24 @@ const sizeClasses = {
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ icon, label, hideLabel = true, error, inputSize = "md", className = "", ...props }, ref) => {
+  (
+    {
+      icon,
+      label,
+      hideLabel = true,
+      error,
+      inputSize = "md",
+      className = "",
+      showPasswordToggle = false,
+      type,
+      ...props
+    },
+    ref
+  ) => {
     const hasError = !!error;
+    const [showPassword, setShowPassword] = useState(false);
+
+    const resolvedType = showPasswordToggle ? (showPassword ? "text" : "password") : type;
 
     return (
       <InputPrimitive.Root
@@ -49,7 +67,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
           <InputPrimitive.Field
             ref={ref}
-            className={`block w-full rounded-2xl border-2 bg-zinc-50 ${icon ? "pl-11" : "pl-4"} pr-4 text-zinc-900 placeholder-zinc-400 transition-all outline-none ${sizeClasses[inputSize]} ${
+            type={resolvedType}
+            className={`block w-full rounded-2xl border-2 bg-zinc-50 ${icon ? "pl-11" : "pl-4"} ${showPasswordToggle ? "pr-11" : "pr-4"} text-zinc-900 placeholder-zinc-400 transition-all outline-none ${sizeClasses[inputSize]} ${
               hasError
                 ? "border-status-error/10 bg-status-error/5 focus:border-status-error focus:ring-status-error/10 focus:ring-4"
                 : "focus:border-brand-primary focus:ring-brand-primary/10 border-transparent focus:bg-white focus:ring-4"
@@ -60,6 +79,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             } ${className} `}
             {...props}
           />
+
+          {showPasswordToggle && (
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute inset-y-0 right-0 flex items-center pr-4 text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-300"
+              aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          )}
         </div>
 
         <InputPrimitive.Error className="text-status-error animate-in fade-in slide-in-from-top-1 ml-1 text-xs font-semibold duration-200">

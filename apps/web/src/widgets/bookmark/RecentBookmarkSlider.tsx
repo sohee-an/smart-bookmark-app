@@ -8,6 +8,7 @@ interface RecentBookmarkSliderProps {
   subtitle?: string;
   bookmarks: Bookmark[];
   onBookmarkClick?: (bookmark: Bookmark) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 /**
@@ -18,6 +19,7 @@ export const RecentBookmarkSlider = ({
   subtitle = "최근에 저장된 북마크들을 한눈에 확인하세요.",
   bookmarks,
   onBookmarkClick,
+  onTagClick,
 }: RecentBookmarkSliderProps) => {
   if (!bookmarks || bookmarks.length === 0) {
     return null; // 데이터가 없으면 렌더링하지 않음 (또는 Empty State UI로 변경 가능)
@@ -56,7 +58,11 @@ export const RecentBookmarkSlider = ({
                 key={bookmark.id}
                 className="w-[85vw] flex-none snap-start sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] xl:w-[calc(25%-15px)]"
               >
-                <BookmarkCard bookmark={bookmark} onClick={onBookmarkClick} />
+                <BookmarkCard
+                  bookmark={bookmark}
+                  onClick={onBookmarkClick}
+                  onTagClick={onTagClick}
+                />
               </div>
             ))}
 

@@ -10,7 +10,7 @@ export function OverlayProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // OverlayProvider가 마운트되면
     // emitter 신호 구독 시작
-    overlayEmitter.on("OPEN", (payload: OverlayAction & { type: "OPEN" }) => {
+    overlayEmitter.on("OPEN", (payload) => {
       dispatch({ type: "OPEN", id: payload.id, component: payload.component });
     });
 

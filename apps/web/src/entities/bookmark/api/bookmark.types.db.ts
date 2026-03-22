@@ -9,7 +9,7 @@ export interface BookmarkRow {
   content?: string; // 본문 텍스트 (검색용)
   userMemo?: string; // 사용자 메모
   thumbnailUrl?: string;
-  aiStatus: "processing" | "completed" | "failed";
+  aiStatus: "crawling" | "processing" | "completed" | "failed";
   tags: string[];
   status: "unread" | "read";
   createdAt: string;

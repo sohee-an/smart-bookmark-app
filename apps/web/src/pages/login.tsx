@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/shared/api/supabase";
+import { supabase } from "@/shared/api/supabase/client";
 import { Input } from "@/shared/ui/input/Input";
 import { MailIcon, LockIcon } from "@smart-bookmark/ui/icons";
 import { authSchema, AuthFormData } from "@/features/auth/model/auth-schema";
@@ -37,12 +37,17 @@ export default function LoginPage() {
         });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
         });
         if (error) throw error;
-        alert("회원가입 확인 메일을 확인해주세요!");
+
+        // 이메일 인증이 켜져 있으면 session이 null로 옴
+        // if (!signUpData.session) {
+        //   alert("회원가입 확인 메일을 확인해주세요!");
+        //   return;
+        // }
       }
       router.push("/");
     } catch (err: any) {
@@ -87,22 +92,11 @@ export default function LoginPage() {
               type="password"
               placeholder="••••••••"
               icon={<LockIcon />}
+              showPasswordToggle
               {...register("password")}
               error={errors.password?.message}
               required
             />
-
-            {!isLogin && (
-              <Input
-                label="비밀번호 확인"
-                type="password"
-                placeholder="••••••••"
-                icon={<LockIcon />}
-                {...register("confirmPassword")}
-                error={errors.confirmPassword?.message}
-                required
-              />
-            )}
           </div>
 
           {serverError && (

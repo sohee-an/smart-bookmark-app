@@ -1,37 +1,49 @@
-import { ExternalLink, Tag, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
+import { ExternalLink, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
+import { TagGroup } from "@/shared/ui/tag/Tag";
 import type { Bookmark } from "../model/types";
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
   onClick?: (bookmark: Bookmark) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 /**
  * @description 북마크 정보를 카드 형태로 보여주는 엔티티 컴포넌트입니다.
  * AI 분석 상태(aiStatus), 읽음 상태(status), 크롤링 결과에 따른 대응 UI를 포함합니다.
  */
-export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
+export const BookmarkCard = ({ bookmark, onClick, onTagClick }: BookmarkCardProps) => {
   const { title, url, thumbnailUrl, summary, tags, aiStatus, status } = bookmark;
 
+  const isCrawling = aiStatus === "crawling";
   const isProcessing = aiStatus === "processing";
   const isFailed = aiStatus === "failed";
   const isUnread = status === "unread";
+  const isPending = isCrawling || isProcessing;
 
   return (
     <div
-      onClick={() => !isProcessing && onClick?.(bookmark)}
-      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isProcessing ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} shadow-sm dark:border-zinc-800 dark:bg-zinc-900`}
+      onClick={() => !isPending && onClick?.(bookmark)}
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isPending ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} shadow-sm dark:border-zinc-800 dark:bg-zinc-900`}
     >
       {/* 1. Thumbnail Area */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
-        {thumbnailUrl ? (
+        {isCrawling ? (
+          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700">
+            <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-xl dark:bg-zinc-900/90">
+              <Loader2 size={16} className="text-brand-primary animate-spin" />
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                크롤링 중...
+              </span>
+            </div>
+          </div>
+        ) : thumbnailUrl ? (
           <img
             src={thumbnailUrl}
             alt={title}
             className={`h-full w-full object-cover transition-transform duration-700 ${isProcessing ? "blur-md grayscale" : "group-hover:scale-110"}`}
           />
         ) : (
-          /* Fallback UI: 크롤링 실패 또는 썸네일 없음 */
           <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900">
             <div className="mb-2 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-800 dark:ring-zinc-700">
               <ExternalLink size={32} strokeWidth={1.5} className="text-zinc-400" />
@@ -54,8 +66,8 @@ export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
           </div>
         )}
 
-        {/* Unread Badge (Optional top right) */}
-        {isUnread && !isProcessing && (
+        {/* Unread Badge */}
+        {isUnread && !isPending && (
           <div className="bg-brand-primary absolute top-4 right-4 flex h-6 w-14 items-center justify-center rounded-full px-2 text-[10px] font-black text-white shadow-lg">
             NEW
           </div>
@@ -66,19 +78,28 @@ export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
       <div className="flex flex-1 flex-col p-6">
         {/* Title with Unread Dot */}
         <div className="mb-3 flex items-start gap-2">
-          {isUnread && !isProcessing && (
+          {isUnread && !isPending && (
             <div className="bg-brand-primary mt-2 h-2 w-2 flex-none rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
           )}
           <h3
-            className={`line-clamp-2 text-lg leading-snug font-black tracking-tight transition-colors ${isProcessing ? "text-zinc-400" : "group-hover:text-brand-primary text-zinc-900 dark:text-zinc-100"}`}
+            className={`line-clamp-2 text-lg leading-snug font-black tracking-tight transition-colors ${isCrawling ? "text-zinc-300" : isProcessing ? "text-zinc-400" : "group-hover:text-brand-primary text-zinc-900 dark:text-zinc-100"}`}
           >
-            {title || (isProcessing ? "데이터를 분석하고 있어요" : url)}
+            {isCrawling ? (
+              <div className="h-5 w-3/4 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700" />
+            ) : (
+              title || url
+            )}
           </h3>
         </div>
 
         {/* Summary or Loading placeholder */}
         <div className="mb-6 flex-1">
-          {isProcessing ? (
+          {isCrawling ? (
+            <div className="space-y-2">
+              <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+              <div className="h-3 w-[60%] animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+            </div>
+          ) : isProcessing ? (
             <div className="space-y-2">
               <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
               <div className="h-3 w-[80%] animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
@@ -97,26 +118,18 @@ export const BookmarkCard = ({ bookmark, onClick }: BookmarkCardProps) => {
 
         {/* 3. Bottom Info: Tags & AI completed badge */}
         <div className="mt-auto flex items-center justify-between pt-4">
-          <div className="flex flex-wrap gap-1.5 overflow-hidden">
-            {tags.length > 0
-              ? tags.slice(0, 2).map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-lg bg-zinc-50 px-2.5 py-1 text-[10px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
-                  >
-                    #{tag}
-                  </span>
-                ))
-              : !isProcessing && (
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-zinc-300 italic dark:text-zinc-600">
-                    <Tag size={10} />
-                    <span>NO TAGS</span>
-                  </div>
-                )}
-          </div>
+          {!isPending && (
+            <TagGroup
+              tags={tags}
+              maxVisible={2}
+              showLabel={false}
+              onTagClick={onTagClick}
+              onMoreClick={() => onClick?.(bookmark)}
+            />
+          )}
 
           {/* AI Completed Indicator */}
-          {!isProcessing && !isFailed && summary && (
+          {!isPending && !isFailed && summary && (
             <div
               className="bg-brand-primary/10 text-brand-primary flex h-8 w-8 items-center justify-center rounded-xl shadow-sm"
               title="AI 요약 완료"
