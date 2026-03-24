@@ -1,6 +1,7 @@
+"use client";
+
 import React, { useState } from "react";
-import Head from "next/head";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/shared/api/supabase/client";
@@ -8,9 +9,6 @@ import { Input } from "@/shared/ui/input/Input";
 import { MailIcon, LockIcon } from "@smart-bookmark/ui/icons";
 import { authSchema, AuthFormData } from "@/features/auth/model/auth-schema";
 
-/**
- * @description 사용자 인증 페이지 (디자인 토큰 적용)
- */
 export default function LoginPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
@@ -70,9 +68,6 @@ export default function LoginPage() {
   if (pendingEmail) {
     return (
       <div className="bg-surface-base dark:bg-surface-base-dark flex min-h-screen items-center justify-center px-4">
-        <Head>
-          <title>이메일 확인 | SmartMark</title>
-        </Head>
         <div className="bg-surface-card dark:bg-surface-card-dark w-full max-w-md space-y-6 rounded-3xl border border-zinc-200 p-8 text-center shadow-xl dark:border-zinc-800">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
             <svg
@@ -117,10 +112,6 @@ export default function LoginPage() {
 
   return (
     <div className="bg-surface-base dark:bg-surface-base-dark flex min-h-screen items-center justify-center px-4">
-      <Head>
-        <title>{isLogin ? "로그인" : "회원가입"} | SmartMark</title>
-      </Head>
-
       <div className="bg-surface-card dark:bg-surface-card-dark w-full max-w-md space-y-8 rounded-3xl border border-zinc-200 p-8 shadow-xl dark:border-zinc-800">
         <div className="text-center">
           <h1 className="text-brand-primary text-3xl font-black transition-colors">SmartMark</h1>

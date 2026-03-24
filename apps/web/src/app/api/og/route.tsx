@@ -1,11 +1,9 @@
-import { ImageResponse } from "@vercel/og";
+import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
-export const config = {
-  runtime: "edge",
-};
+export const runtime = "edge";
 
-export default function handler(req: NextRequest) {
+export function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const title = searchParams.get("title") ?? "SmartMark";
   const description =

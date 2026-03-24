@@ -1,15 +1,11 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import { crawlerService } from "@/server/services/crawler.service";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
-
-  const { url } = req.body;
+export async function POST(request: Request) {
+  const { url } = await request.json();
 
   if (!url) {
-    return res.status(400).json({ message: "URL이 누락되었습니다." });
+    return NextResponse.json({ message: "URL이 누락되었습니다." }, { status: 400 });
   }
 
   try {
@@ -27,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message = "분석 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
       }
 
-      return res.status(200).json({
+      return NextResponse.json({
         success: false,
         status: "manual_required",
         attempt: crawlResult.attempt,
@@ -36,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return res.status(200).json({
+    return NextResponse.json({
       success: true,
       data: {
         title: crawlResult.title,
@@ -47,9 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error) {
     console.error("[API Crawl] 오류:", error);
-    return res.status(500).json({
-      success: false,
-      message: "크롤링 중 예기치 않은 오류가 발생했습니다.",
-    });
+    return NextResponse.json(
+      { success: false, message: "크롤링 중 예기치 않은 오류가 발생했습니다." },
+      { status: 500 }
+    );
   }
 }

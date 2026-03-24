@@ -1,6 +1,7 @@
+"use client";
+
 import React from "react";
-import Head from "next/head";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { Bookmark, Sparkles, Shield, Zap, ArrowRight, Search } from "lucide-react";
 import storage from "@/shared/lib/storage";
 
@@ -18,11 +19,6 @@ export default function LandingPage() {
 
   return (
     <div className="bg-surface-card dark:bg-surface-base-dark selection:bg-brand-primary/10 selection:text-brand-primary min-h-screen overflow-x-hidden text-zinc-900 dark:text-zinc-50">
-      <Head>
-        <title>SmartMark - 똑똑한 북마크 관리의 시작</title>
-        <meta name="description" content="AI가 분류하고 정리하는 나만의 스마트 북마크 솔루션" />
-      </Head>
-
       {/* Decorative Background Elements */}
       <div className="pointer-events-none absolute top-0 left-1/2 -z-10 h-[600px] w-full -translate-x-1/2 overflow-hidden">
         <div className="bg-brand-primary/10 absolute top-[-100px] left-[-100px] h-[400px] w-[400px] rounded-full blur-[100px]" />

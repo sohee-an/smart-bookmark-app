@@ -1,9 +1,11 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { Input } from "@/shared/ui/input/Input";
 import { supabase } from "@/shared/api/supabase/client";
 import { Avatar } from "@/shared/ui/Avatar";
 import { User } from "@supabase/supabase-js";
-import { useRouter } from "next/router";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
 import Link from "next/link";
@@ -14,17 +16,15 @@ import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 
 export const Header = () => {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const { bookmarks } = useBookmarkStore();
 
-  const selectedTags = useMemo(() => {
-    const raw = router.query.tag;
-    if (!raw) return [];
-    return Array.isArray(raw) ? raw : [raw];
-  }, [router.query.tag]);
+  const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
 
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -51,17 +51,22 @@ export const Header = () => {
       .map(([tag]) => tag);
   }, [bookmarks]);
 
+  const buildBookmarksUrl = (tags: string[], q?: string) => {
+    const sp = new URLSearchParams();
+    tags.forEach((t) => sp.append("tag", t));
+    if (q) sp.set("q", q);
+    const qs = sp.toString();
+    return `/bookmarks${qs ? `?${qs}` : ""}`;
+  };
+
   const handleTagClick = (tag: string) => {
     const next = [...selectedTags, tag];
-    router.push({ pathname: "/bookmarks", query: { ...router.query, tag: next } });
+    router.push(buildBookmarksUrl(next, searchParams.get("q") ?? undefined));
   };
 
   const handleTagRemove = (tag: string) => {
     const next = selectedTags.filter((t) => t !== tag);
-    router.replace({
-      pathname: "/bookmarks",
-      query: { ...router.query, tag: next.length ? next : undefined },
-    });
+    router.replace(buildBookmarksUrl(next, searchParams.get("q") ?? undefined));
   };
 
   useEffect(() => {
@@ -100,21 +105,25 @@ export const Header = () => {
   };
 
   useEffect(() => {
-    setSearchQuery((router.query.q as string) ?? "");
-  }, [router.query.q]);
+    setSearchQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
 
   const handleSearchFocus = () => {
-    if (router.pathname !== "/bookmarks") {
-      router.push({ pathname: "/bookmarks", query: router.query });
+    if (pathname !== "/bookmarks") {
+      const sp = new URLSearchParams(searchParams.toString());
+      router.push(`/bookmarks${sp.size ? `?${sp.toString()}` : ""}`);
     }
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push({
-      pathname: "/bookmarks",
-      query: { ...router.query, q: searchQuery || undefined },
-    });
+    const sp = new URLSearchParams(searchParams.toString());
+    if (searchQuery) {
+      sp.set("q", searchQuery);
+    } else {
+      sp.delete("q");
+    }
+    router.push(`/bookmarks${sp.size ? `?${sp.toString()}` : ""}`);
   };
 
   const isGuest = !user && !loading && storage.cookie.get("is_guest") === "true";
