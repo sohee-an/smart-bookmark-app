@@ -1,15 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
+export async function POST(request: Request) {
   try {
-    const { title, description, bodyChunks } = req.body;
+    const { title, description, bodyChunks } = await request.json();
     const bodyText = bodyChunks ? bodyChunks.join(" ") : "";
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -33,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
-    return res.status(200).json({
+    return NextResponse.json({
       success: true,
       data: {
         title: data.title ?? null,
@@ -43,10 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: any) {
     console.error("[API AI Analyze] 오류:", error);
-    return res.status(500).json({
-      success: false,
-      message: "AI 분석 중 예기치 않은 오류가 발생했습니다.",
-      details: error.message,
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "AI 분석 중 예기치 않은 오류가 발생했습니다.",
+        details: error.message,
+      },
+      { status: 500 }
+    );
   }
 }

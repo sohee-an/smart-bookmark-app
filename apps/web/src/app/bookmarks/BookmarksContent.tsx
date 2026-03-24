@@ -1,5 +1,6 @@
-import Head from "next/head";
-import { useRouter } from "next/router";
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
@@ -18,8 +19,17 @@ interface SemanticBookmark extends Bookmark {
   similarity: number;
 }
 
-export default function BookmarksPage() {
+function buildBookmarksUrl(tags: string[], q?: string): string {
+  const sp = new URLSearchParams();
+  tags.forEach((t) => sp.append("tag", t));
+  if (q) sp.set("q", q);
+  const qs = sp.toString();
+  return `/bookmarks${qs ? `?${qs}` : ""}`;
+}
+
+export function BookmarksContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { bookmarks, setBookmarks, setSelectedBookmarkId, updateBookmark } = useBookmarkStore();
 
   const [semanticExact, setSemanticExact] = useState<SemanticBookmark[]>([]);
@@ -28,12 +38,8 @@ export default function BookmarksPage() {
   const [isGuest, setIsGuest] = useState(false);
   const [showGuestBanner, setShowGuestBanner] = useState(false);
 
-  const query = (router.query.q as string) ?? "";
-  const selectedTags = useMemo(() => {
-    const raw = router.query.tag;
-    if (!raw) return [];
-    return Array.isArray(raw) ? raw : [raw];
-  }, [router.query.tag]);
+  const query = searchParams.get("q") ?? "";
+  const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
 
   useEffect(() => {
     const check = async () => {
@@ -59,7 +65,6 @@ export default function BookmarksPage() {
     fetchBookmarks();
   }, [setBookmarks]);
 
-  // 시맨틱 검색: 검색어 또는 태그 변경 시 실행
   useEffect(() => {
     if (!query.trim()) return;
 
@@ -98,7 +103,6 @@ export default function BookmarksPage() {
     run();
   }, [query, selectedTags]);
 
-  // 검색어 없으면 시맨틱 결과 초기화
   useEffect(() => {
     if (!query.trim()) {
       setSemanticExact([]);
@@ -128,15 +132,12 @@ export default function BookmarksPage() {
     if (selectedTags.includes(tag)) return;
     setSelectedBookmarkId(null);
     const next = [...selectedTags, tag];
-    router.push({ pathname: "/bookmarks", query: { ...router.query, tag: next } });
+    router.push(buildBookmarksUrl(next, query || undefined));
   };
 
   const handleTagRemove = (tag: string) => {
     const next = selectedTags.filter((t) => t !== tag);
-    router.replace({
-      pathname: "/bookmarks",
-      query: { ...router.query, tag: next.length ? next : undefined },
-    });
+    router.replace(buildBookmarksUrl(next, query || undefined));
   };
 
   const keywordFilteredIds = useMemo(
@@ -158,13 +159,8 @@ export default function BookmarksPage() {
 
   return (
     <div className="selection:bg-brand-primary/20 selection:text-brand-primary min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Head>
-        <title>북마크 검색 — SmartMark</title>
-      </Head>
-
       <Header />
 
-      {/* 게스트 유저 로그인 유도 배너 */}
       {showGuestBanner && (
         <div className="bg-brand-primary/10 border-brand-primary/20 dark:bg-brand-primary/5 border-b">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">

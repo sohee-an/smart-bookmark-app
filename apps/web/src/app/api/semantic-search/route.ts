@@ -1,19 +1,15 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
+export async function POST(request: Request) {
   try {
-    const { query, userId, tags } = req.body;
+    const { query, userId, tags } = await request.json();
 
     if (!query?.trim()) {
-      return res.status(400).json({ success: false, message: "검색어가 없습니다." });
+      return NextResponse.json({ success: false, message: "검색어가 없습니다." }, { status: 400 });
     }
 
     // 1. 검색어 임베딩 생성
@@ -26,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const embedding = result.embedding.values;
 
     // 2. Supabase RPC로 유사도 검색
-    const supabase = createSupabaseServerClient(req, res);
+    const supabase = await createSupabaseServerClient();
 
     const { data, error } = await supabase.rpc("match_bookmarks", {
       query_embedding: embedding,
@@ -74,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       similarity: r.similarity,
     }));
 
-    return res.status(200).json({
+    return NextResponse.json({
       success: true,
       data: {
         exact: results.filter((r: any) => r.similarity >= EXACT_THRESHOLD),
@@ -83,10 +79,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (error: any) {
     console.error("[API SemanticSearch] 오류:", error);
-    return res.status(500).json({
-      success: false,
-      message: "시맨틱 검색 중 오류가 발생했습니다.",
-      details: error.message,
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "시맨틱 검색 중 오류가 발생했습니다.",
+        details: error.message,
+      },
+      { status: 500 }
+    );
   }
 }

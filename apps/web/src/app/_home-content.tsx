@@ -1,5 +1,6 @@
-import Head from "next/head";
-import { useRouter } from "next/router";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
@@ -9,7 +10,7 @@ import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
-export default function Home() {
+export default function HomeContent() {
   const router = useRouter();
   const { bookmarks, setBookmarks, setSelectedBookmarkId, updateBookmark } = useBookmarkStore();
 
@@ -45,10 +46,6 @@ export default function Home() {
 
   return (
     <div className="selection:bg-brand-primary/20 selection:text-brand-primary min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Head>
-        <title>SmartMark - 스마트 북마크 관리</title>
-      </Head>
-
       <Header />
 
       <BookmarkDetailPanel onSave={handlePanelSave} onTagClick={handleTagClick} />

@@ -1,3 +1,5 @@
+"use client";
+
 import { useReducer, useEffect } from "react";
 import { overlayEmitter } from "./overlay.emitter";
 import { overlayReducer, initialState } from "./overlay.reducer";

@@ -1,20 +1,19 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
+export async function POST(request: Request) {
   try {
-    const { title, summary } = req.body;
+    const { title, summary } = await request.json();
 
     const text = [title, summary].filter(Boolean).join(" ");
 
     if (!text.trim()) {
-      return res.status(400).json({ success: false, message: "임베딩할 텍스트가 없습니다." });
+      return NextResponse.json(
+        { success: false, message: "임베딩할 텍스트가 없습니다." },
+        { status: 400 }
+      );
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
@@ -24,16 +23,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       outputDimensionality: 3072,
     } as any);
 
-    return res.status(200).json({
+    return NextResponse.json({
       success: true,
       data: { embedding: result.embedding.values },
     });
   } catch (error: any) {
     console.error("[API Embed] 오류:", error);
-    return res.status(500).json({
-      success: false,
-      message: "임베딩 생성 중 오류가 발생했습니다.",
-      details: error.message,
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "임베딩 생성 중 오류가 발생했습니다.",
+        details: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
