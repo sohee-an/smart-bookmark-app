@@ -39,8 +39,8 @@ smart-bookmark/
 
 ## 프레임워크
 
-- Next.js Page Router 사용 (App Router 아님)
-- getServerSideProps, getStaticProps 방식 사용
+- Next.js App Router 사용
+- Server Components, Server Actions 방식 사용
 
 ## 데이터 저장
 

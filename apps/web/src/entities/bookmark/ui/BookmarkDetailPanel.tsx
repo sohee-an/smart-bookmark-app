@@ -5,14 +5,13 @@ import { TagGroup } from "@/shared/ui/tag/Tag";
 import type { Bookmark } from "../model/types";
 
 interface BookmarkDetailPanelProps {
+  bookmark: Bookmark | null;
   onSave?: (id: string, data: Pick<Bookmark, "title" | "tags">) => Promise<void>;
   onTagClick?: (tag: string) => void;
 }
 
-export const BookmarkDetailPanel = ({ onSave, onTagClick }: BookmarkDetailPanelProps) => {
-  const { bookmarks, selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
-
-  const bookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
+export const BookmarkDetailPanel = ({ bookmark, onSave, onTagClick }: BookmarkDetailPanelProps) => {
+  const { setSelectedBookmarkId } = useBookmarkStore();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
