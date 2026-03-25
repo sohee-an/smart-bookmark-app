@@ -150,6 +150,76 @@ private boolean isPrivateIp(InetAddress addr) {
 
 ---
 
+## 실제 적용 — smart-bookmark 프로젝트
+
+### 취약 지점
+
+`/api/crawl` — 사용자가 URL을 입력하면 서버가 직접 `fetch(url)` 호출.
+SSRF 발생 조건 그대로 해당.
+
+```
+사용자 URL 입력
+  ↓
+app/api/crawl/route.ts     ← 진입점
+  ↓
+server/services/crawler.service.ts → fetch(url)  ← 취약 지점
+```
+
+### 방어 구조
+
+검증 로직을 `shared/lib/validateSsrf.ts` 로 분리 → 다른 프로젝트에서도 재사용 가능.
+
+```ts
+// shared/lib/validateSsrf.ts
+
+export class SsrfError extends Error { ... }
+
+export async function validateSsrf(url: string): Promise<void> {
+  // 1. URL 파싱 — 형식 자체가 잘못됐으면 차단
+  const parsedUrl = new URL(url);
+
+  // 2. 프로토콜 체크 — http/https 만 허용 (file://, gopher:// 차단)
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new SsrfError("허용되지 않은 프로토콜입니다.");
+  }
+
+  // 3. DNS 조회 후 실제 IP 확인 — DNS Rebinding 방어 포인트
+  const resolved = await lookup(parsedUrl.hostname);
+
+  // 4. 사설 IP 대역 차단
+  if (PRIVATE_IP_RANGES.some((range) => range.test(resolved.address))) {
+    throw new SsrfError("허용되지 않은 주소입니다.");
+  }
+}
+```
+
+```ts
+// app/api/crawl/route.ts
+
+try {
+  await validateSsrf(url); // 통과 못하면 여기서 멈춤
+} catch (error) {
+  if (error instanceof SsrfError) {
+    return NextResponse.json({ message: error.message }, { status: 400 });
+  }
+  throw error;
+}
+```
+
+### 왜 hostname 검사가 아니라 DNS 조회 후 IP 검사인가
+
+```
+hostname만 검사하면:
+  evil.attacker.com → 검증 시 1.2.3.4 (통과) → 요청 시 169.254.169.254 로 바꿈 ❌
+
+DNS 조회 후 IP 검사하면:
+  evil.attacker.com → DNS 조회 → 169.254.169.254 → 사설 IP → 차단 ✅
+```
+
+→ DNS Rebinding 공격을 막으려면 반드시 **조회된 IP 기준**으로 검증해야 한다.
+
+---
+
 ## 참고
 
 - [OWASP SSRF](https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/)
