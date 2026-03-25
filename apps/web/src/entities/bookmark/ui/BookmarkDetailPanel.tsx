@@ -61,7 +61,7 @@ export const BookmarkDetailPanel = ({ bookmark, onSave, onTagClick }: BookmarkDe
     setTagInput("");
   };
 
-  const isOpen = !!selectedBookmarkId;
+  const isOpen = !!bookmark;
 
   useEffect(() => {
     if (isOpen) {
