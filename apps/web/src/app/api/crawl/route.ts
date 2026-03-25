@@ -1,8 +1,22 @@
 import { NextResponse } from "next/server";
 import { crawlerService } from "@/server/services/crawler.service";
 import { validateSsrf, SsrfError } from "@/shared/lib/validateSsrf";
+import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const cookieStore = await cookies();
+  const isGuest = cookieStore.get("is_guest")?.value === "true";
+
+  if (!user && !isGuest) {
+    return NextResponse.json({ success: false, message: "인증이 필요합니다." }, { status: 401 });
+  }
+
   const { url } = await request.json();
 
   if (!url) {

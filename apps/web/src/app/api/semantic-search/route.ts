@@ -6,7 +6,19 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(request: Request) {
   try {
-    const { query, userId, tags } = await request.json();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "로그인이 필요합니다." },
+        { status: 401 }
+      );
+    }
+
+    const { query, tags } = await request.json();
 
     if (!query?.trim()) {
       return NextResponse.json({ success: false, message: "검색어가 없습니다." }, { status: 400 });
@@ -21,12 +33,10 @@ export async function POST(request: Request) {
     } as any);
     const embedding = result.embedding.values;
 
-    // 2. Supabase RPC로 유사도 검색
-    const supabase = await createSupabaseServerClient();
-
+    // 2. Supabase RPC로 유사도 검색 (세션에서 추출한 user.id 사용)
     const { data, error } = await supabase.rpc("match_bookmarks", {
       query_embedding: embedding,
-      p_user_id: userId,
+      p_user_id: user.id,
       match_threshold: 0.65,
       match_count: 10,
       p_tags: tags?.length > 0 ? tags : null,
@@ -64,7 +74,7 @@ export async function POST(request: Request) {
       aiStatus: r.ai_status,
       status: r.status,
       tags: tagsMap[r.id] ?? [],
-      userId,
+      userId: user.id,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
       similarity: r.similarity,

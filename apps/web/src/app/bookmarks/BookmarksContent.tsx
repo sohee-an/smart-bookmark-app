@@ -77,7 +77,7 @@ export function BookmarksContent() {
         const res = await fetch("/api/semantic-search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, userId: user.id, tags: selectedTags }),
+          body: JSON.stringify({ query, tags: selectedTags }),
         });
         const json = await res.json();
 
