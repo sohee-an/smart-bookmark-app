@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useEffect } from "react";
+import { Fragment, useReducer, useEffect } from "react";
 import { overlayEmitter } from "./overlay.emitter";
 import { overlayReducer, initialState } from "./overlay.reducer";
 import { overlay } from "./overlay";
@@ -38,13 +38,15 @@ export function OverlayProvider({ children }: { children: React.ReactNode }) {
       {children}
 
       {/* overlay 목록 렌더링 */}
-      {state.overlays.map((item) =>
-        item.component({
-          isOpen: item.isOpen,
-          close: () => overlay.close(item.id),
-          unmount: () => overlay.unmount(item.id),
-        })
-      )}
+      {state.overlays.map((item) => (
+        <Fragment key={item.id}>
+          {item.component({
+            isOpen: item.isOpen,
+            close: () => overlay.close(item.id),
+            unmount: () => overlay.unmount(item.id),
+          })}
+        </Fragment>
+      ))}
     </>
   );
 }
