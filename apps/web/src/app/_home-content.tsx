@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
+import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { useBookmarks, useUpdateBookmark } from "@/features/bookmark/model/queries";
 import type { Bookmark } from "@/entities/bookmark/model/types";
@@ -41,6 +42,9 @@ export default function HomeContent() {
         bookmark={selectedBookmark}
         onSave={handlePanelSave}
         onTagClick={handleTagClick}
+        actions={
+          selectedBookmark ? <AddToCollectionButton bookmarkId={selectedBookmark.id} /> : undefined
+        }
       />
 
       <main className="pb-20">

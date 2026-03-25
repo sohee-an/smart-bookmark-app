@@ -41,6 +41,25 @@
 - `AddBookmarkOverlay` (URL + 메모 입력 모달) → `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx`
 - `RecentBookmarkSlider` → `apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx`
 
+## 컬렉션 (북마크 폴더, 공유)
+
+- `Collection`, `CollectionDetail`, `CollectionMember`, `CollectionRole` → `apps/web/src/entities/collection/model/types.ts`
+- `CollectionRepository` 인터페이스 → `apps/web/src/entities/collection/api/collection.repository.ts`
+- `SupabaseCollectionRepository` → `apps/web/src/entities/collection/api/supabase-collection.repository.ts`
+- `CollectionCard` (역할 뱃지, 북마크/멤버 수) → `apps/web/src/entities/collection/ui/CollectionCard.tsx`
+- `collectionKeys`, `useCollections`, `useCollection`, `useCollectionBookmarks`, `useCreateCollection`, `useUpdateCollection`, `useDeleteCollection`, `useAddBookmarkToCollection`, `useRemoveBookmarkFromCollection`, `useInviteMember`, `useUpdateMemberRole`, `useRemoveMember` → `apps/web/src/features/collection/model/queries.ts`
+- `CreateCollectionModal` → `apps/web/src/features/collection/ui/CreateCollectionModal.tsx`
+- `InviteMemberModal` (이메일 초대, 멤버 역할 관리) → `apps/web/src/features/collection/ui/InviteMemberModal.tsx`
+- `AddToCollectionButton` (북마크 상세 패널에서 컬렉션 추가/제거) → `apps/web/src/features/collection/ui/AddToCollectionButton.tsx`
+- 컬렉션 목록 페이지 → `apps/web/src/app/collections/page.tsx` + `CollectionsContent.tsx`
+- 컬렉션 상세 페이지 → `apps/web/src/app/collections/[id]/page.tsx` + `CollectionDetailContent.tsx`
+- API: 목록/생성 → `apps/web/src/app/api/collections/route.ts`
+- API: 상세/수정/삭제 → `apps/web/src/app/api/collections/[id]/route.ts`
+- API: 북마크 추가/제거 → `apps/web/src/app/api/collections/[id]/bookmarks/route.ts`
+- API: 멤버 역할변경/제거 → `apps/web/src/app/api/collections/[id]/members/route.ts`
+- API: 이메일 초대 → `apps/web/src/app/api/collections/invite/route.ts`
+- DB 스키마 (컬렉션 테이블 + RLS) → `docs/collections-schema.sql`
+
 ## 인증
 
 - 인증 미들웨어 (비회원→랜딩, 회원→메인) → `apps/web/src/middleware.ts`

@@ -8,9 +8,15 @@ interface BookmarkDetailPanelProps {
   bookmark: Bookmark | null;
   onSave?: (id: string, data: Pick<Bookmark, "title" | "tags">) => Promise<void>;
   onTagClick?: (tag: string) => void;
+  actions?: React.ReactNode;
 }
 
-export const BookmarkDetailPanel = ({ bookmark, onSave, onTagClick }: BookmarkDetailPanelProps) => {
+export const BookmarkDetailPanel = ({
+  bookmark,
+  onSave,
+  onTagClick,
+  actions,
+}: BookmarkDetailPanelProps) => {
   const { setSelectedBookmarkId } = useBookmarkStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -88,6 +94,7 @@ export const BookmarkDetailPanel = ({ bookmark, onSave, onTagClick }: BookmarkDe
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
           <span className="text-sm font-bold text-zinc-500 dark:text-zinc-400">북마크 상세</span>
           <div className="flex items-center gap-2">
+            {!isEditing && actions}
             {!isEditing ? (
               <button
                 onClick={handleEditStart}
