@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { crawlerService } from "@/server/services/crawler.service";
+import { validateSsrf, SsrfError } from "@/shared/lib/validateSsrf";
 
 export async function POST(request: Request) {
   const { url } = await request.json();
@@ -9,8 +10,16 @@ export async function POST(request: Request) {
   }
 
   try {
+    await validateSsrf(url);
+  } catch (error) {
+    if (error instanceof SsrfError) {
+      return NextResponse.json({ message: error.message }, { status: 400 });
+    }
+    throw error;
+  }
+
+  try {
     const crawlResult = await crawlerService.crawl(url);
-    console.log("cc", crawlResult);
 
     if (crawlResult.status === "manual_required") {
       let message = "웹사이트 정보를 자동으로 가져올 수 없습니다.";
