@@ -8,6 +8,7 @@ import { User } from "@supabase/supabase-js";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
+import { Folder } from "lucide-react";
 import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
@@ -168,6 +169,20 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          {user && (
+            <Link
+              href="/collections"
+              className={`hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all sm:flex ${
+                pathname.startsWith("/collections")
+                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Folder size={15} />
+              컬렉션
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={() =>
