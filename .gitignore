@@ -78,6 +78,7 @@ playwright/.cache/
 # 민감 정보 (MCP 토큰, API 키 등)
 .claude/settings.json
 .claude/settings.local.json
+.claude/setting.json
 
 # 로컬 전용 (올릴 필요 없음)
 .claude/.session
