@@ -7,18 +7,19 @@ const defaultProps = {
   onTagRemove: vi.fn(),
   allTags: ["React", "Next.js", "TypeScript"],
   recentTags: ["React"],
+  frequentTags: ["React"],
 };
 
 describe("FilterBar", () => {
   it("초기: 드롭다운 없음", () => {
     render(<FilterBar {...defaultProps} />);
-    expect(screen.queryByText("최근 북마크 태그")).not.toBeInTheDocument();
+    expect(screen.queryByText("최근")).not.toBeInTheDocument();
   });
 
   it("필터 버튼 클릭 → 드롭다운 표시", () => {
     render(<FilterBar {...defaultProps} />);
     fireEvent.click(screen.getByRole("button", { name: /필터/ }));
-    expect(screen.getByText("최근 북마크 태그")).toBeInTheDocument();
+    expect(screen.getByText("최근")).toBeInTheDocument();
   });
 
   it("태그 클릭 → onTagClick(tag) 호출", () => {
@@ -39,8 +40,8 @@ describe("FilterBar", () => {
   it("외부 클릭 → 드롭다운 닫힘", () => {
     render(<FilterBar {...defaultProps} />);
     fireEvent.click(screen.getByRole("button", { name: /필터/ }));
-    expect(screen.getByText("최근 북마크 태그")).toBeInTheDocument();
+    expect(screen.getByText("최근")).toBeInTheDocument();
     fireEvent.mouseDown(document.body);
-    expect(screen.queryByText("최근 북마크 태그")).not.toBeInTheDocument();
+    expect(screen.queryByText("최근")).not.toBeInTheDocument();
   });
 });
