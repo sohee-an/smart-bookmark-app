@@ -1,4 +1,5 @@
 import { OverlayProvider } from "@/shared/lib/overlay/OverlayProvider";
+import { QueryProvider } from "@/shared/lib/QueryProvider";
 import { Toaster } from "@/shared/ui/Toaster";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
@@ -39,12 +40,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <OverlayProvider>
-          {children}
-          <Toaster />
-          <Analytics />
-          <SpeedInsights />
-        </OverlayProvider>
+        <QueryProvider>
+          <OverlayProvider>
+            {children}
+            <Toaster />
+            <Analytics />
+            <SpeedInsights />
+          </OverlayProvider>
+        </QueryProvider>
       </body>
     </html>
   );

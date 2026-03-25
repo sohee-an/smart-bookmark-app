@@ -12,7 +12,7 @@ import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
 import { FilterBar } from "@/features/bookmark/ui/FilterBar";
-import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
+import { useBookmarks } from "@/features/bookmark/model/queries";
 
 export const Header = () => {
   const router = useRouter();
@@ -22,7 +22,7 @@ export const Header = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { bookmarks } = useBookmarkStore();
+  const { data: bookmarks = [] } = useBookmarks();
 
   const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
 

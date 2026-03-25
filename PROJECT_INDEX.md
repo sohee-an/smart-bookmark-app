@@ -30,7 +30,9 @@
 
 ## 북마크 상태 관리
 
-- `useBookmarkStore` (Zustand) → `apps/web/src/entities/bookmark/model/useBookmarkStore.ts`
+- `useBookmarkStore` (Zustand, UI 상태만: selectedBookmarkId) → `apps/web/src/entities/bookmark/model/useBookmarkStore.ts`
+- `useBookmarks`, `useUpdateBookmark` (TanStack Query) → `apps/web/src/features/bookmark/model/queries.ts`
+- `bookmarkKeys` (query key factory) → `apps/web/src/features/bookmark/model/queries.ts`
 
 ## 북마크 UI
 
@@ -56,6 +58,7 @@
 
 ## 공용 유틸
 
+- `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`
 - API 응답 표준 규격 `ApiResponse`, `ApiError`, `ErrorCode` → `apps/web/src/shared/lib/api-response.ts`
 - 비회원 익명 ID → `apps/web/src/shared/lib/guest.ts`

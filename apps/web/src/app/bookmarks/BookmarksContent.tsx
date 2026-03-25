@@ -8,7 +8,7 @@ import { TagFilter } from "@/features/bookmark/ui/TagFilter";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { SemanticResultSection } from "@/features/bookmark/ui/SemanticResultSection";
 import { filterBookmarks } from "@/features/bookmark/model/filterBookmarks";
-import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
+import { useBookmarks, useUpdateBookmark } from "@/features/bookmark/model/queries";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
 import storage from "@/shared/lib/storage";
@@ -30,7 +30,9 @@ function buildBookmarksUrl(tags: string[], q?: string): string {
 export function BookmarksContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { bookmarks, setBookmarks, setSelectedBookmarkId, updateBookmark } = useBookmarkStore();
+  const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
+  const { data: bookmarks = [] } = useBookmarks();
+  const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
 
   const [semanticExact, setSemanticExact] = useState<SemanticBookmark[]>([]);
   const [semanticRelated, setSemanticRelated] = useState<SemanticBookmark[]>([]);
@@ -40,6 +42,8 @@ export function BookmarksContent() {
 
   const query = searchParams.get("q") ?? "";
   const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
+
+  const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
 
   useEffect(() => {
     const check = async () => {
@@ -52,18 +56,6 @@ export function BookmarksContent() {
     };
     check();
   }, []);
-
-  useEffect(() => {
-    const fetchBookmarks = async () => {
-      try {
-        const data = await bookmarkService.getBookmarks();
-        setBookmarks(data);
-      } catch (error) {
-        console.error("북마크 로드 실패:", error);
-      }
-    };
-    fetchBookmarks();
-  }, [setBookmarks]);
 
   useEffect(() => {
     if (!query.trim()) return;
@@ -118,14 +110,12 @@ export function BookmarksContent() {
   const handleBookmarkClick = (bookmark: Bookmark) => {
     setSelectedBookmarkId(bookmark.id);
     if (bookmark.status === "unread") {
-      bookmarkService.updateBookmark(bookmark.id, { status: "read" });
-      updateBookmark(bookmark.id, { status: "read" });
+      updateBookmark({ id: bookmark.id, data: { status: "read" } });
     }
   };
 
   const handlePanelSave = async (id: string, data: Pick<Bookmark, "title" | "tags">) => {
-    await bookmarkService.updateBookmark(id, data);
-    updateBookmark(id, data);
+    await updateBookmarkAsync({ id, data });
   };
 
   const handleTagClick = (tag: string) => {
@@ -188,7 +178,11 @@ export function BookmarksContent() {
         </div>
       )}
 
-      <BookmarkDetailPanel onSave={handlePanelSave} onTagClick={handleTagClick} />
+      <BookmarkDetailPanel
+        bookmark={selectedBookmark}
+        onSave={handlePanelSave}
+        onTagClick={handleTagClick}
+      />
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="mb-3 text-3xl font-black tracking-tight text-zinc-900 dark:text-white">

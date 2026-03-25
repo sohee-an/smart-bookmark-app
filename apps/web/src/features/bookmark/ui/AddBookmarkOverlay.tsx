@@ -2,32 +2,35 @@ import React, { useState } from "react";
 import { Link2, FileText, X, Plus, Lock } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 import { bookmarkService } from "../model/bookmark.service";
-import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
+import { bookmarkKeys } from "../model/queries";
 import { validateUrl } from "@/shared/lib/validateUrl";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { toast } from "@/shared/lib/toast";
+import { useQueryClient } from "@tanstack/react-query";
+import type { Bookmark } from "@/entities/bookmark/model/types";
 
 interface AddBookmarkOverlayProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-/**
- * @description 북마크 추가를 위한 모달 오버레이 컴포넌트입니다.
- * URL과 메모를 입력받아 새로운 북마크를 생성합니다.
- */
 export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps) => {
   const [url, setUrl] = useState("");
   const [memo, setMemo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
-  const { addBookmark, updateBookmark, bookmarks } = useBookmarkStore();
-  const [isLimitReached, setIsLimitReached] = useState(bookmarks.length >= 5);
+  const [isLimitReached, setIsLimitReached] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const patchCache = (id: string, data: Partial<Bookmark>) => {
+    queryClient.setQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
+      old.map((b) => (b.id === id ? { ...b, ...data } : b))
+    );
+  };
 
   const handleClose = () => {
     setUrlError(null);
-    setIsLimitReached(bookmarks.length >= 5);
     onClose();
   };
 
@@ -40,12 +43,18 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
     }
 
     setIsLoading(true);
-    const isFifth = bookmarks.length === 4; // 저장 전 4개 = 이번이 5번째
-    let newBookmark;
+
+    const cachedBookmarks = queryClient.getQueryData<Bookmark[]>(bookmarkKeys.list()) ?? [];
+    const isFifth = cachedBookmarks.length === 4;
+
+    let newBookmark: Bookmark;
     try {
       // 1. DB 저장 (aiStatus: "crawling"), 카드 즉시 표시
       newBookmark = await bookmarkService.addBookmark(url, memo);
-      addBookmark(newBookmark);
+      queryClient.setQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all }, (old = []) => [
+        newBookmark,
+        ...old,
+      ]);
       handleClose();
       if (isFifth) {
         toast.show({
@@ -54,8 +63,9 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
           duration: 6000,
         });
       }
-    } catch (error: any) {
-      if (error?.message?.includes("무료 체험 한도")) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "";
+      if (msg.includes("무료 체험 한도")) {
         setIsLimitReached(true);
       } else {
         console.error(error);
@@ -78,7 +88,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
       if (!crawlJson.success) {
         await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-        updateBookmark(bookmarkId, { aiStatus: "failed" });
+        patchCache(bookmarkId, { aiStatus: "failed" });
         return;
       }
 
@@ -91,7 +101,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         ...(title ? { title } : {}),
       };
       await bookmarkService.updateBookmark(bookmarkId, crawlUpdate);
-      updateBookmark(bookmarkId, crawlUpdate);
+      patchCache(bookmarkId, crawlUpdate);
 
       // 4. 백그라운드 AI 분석
       const aiRes = await fetch("/api/ai-analyze", {
@@ -103,7 +113,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
       if (!aiJson.success) {
         await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-        updateBookmark(bookmarkId, { aiStatus: "failed" });
+        patchCache(bookmarkId, { aiStatus: "failed" });
         return;
       }
 
@@ -132,11 +142,12 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         ...(aiTitle ? { title: aiTitle } : {}),
       };
       await bookmarkService.updateBookmark(bookmarkId, finalUpdate);
-      updateBookmark(bookmarkId, finalUpdate);
+      patchCache(bookmarkId, finalUpdate);
+      queryClient.invalidateQueries({ queryKey: bookmarkKeys.all });
     } catch (error) {
       console.error("[Pipeline] 파이프라인 오류:", error);
       await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-      updateBookmark(bookmarkId, { aiStatus: "failed" });
+      patchCache(bookmarkId, { aiStatus: "failed" });
     }
   };
 
@@ -188,8 +199,6 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
           <div className="space-y-4">
             <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
               비회원은 북마크를 최대 <span className="font-bold">5개</span>까지 저장할 수 있어요.
-              {/* 추후 구현: 로그인 후 기존 북마크 이전 기능 완성 시 노출 */}
-              {/* 지금까지 저장한 북마크는 로그인 후에도 그대로 유지됩니다. */}
             </div>
             <div className="flex gap-3">
               <button
