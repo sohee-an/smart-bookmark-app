@@ -22,7 +22,8 @@ async function getUserFromBearer(authHeader: string | null) {
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice(7);
 
-  const supabase = createClient(
+  // 유저 검증용 클라이언트 (anon key)
+  const anonClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
   );
@@ -30,8 +31,24 @@ async function getUserFromBearer(authHeader: string | null) {
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser(token);
-  if (error || !user) return null;
+  } = await anonClient.auth.getUser(token);
+  if (error || !user) {
+    console.error("[save-bookmark] auth error:", error);
+    return null;
+  }
+
+  // RLS가 유저 JWT를 인식하도록 Authorization 헤더에 토큰 주입
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    }
+  );
 
   return { user, supabase, token };
 }
@@ -75,8 +92,9 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError || !bookmark) {
+    console.error("[save-bookmark] insert error:", insertError);
     return NextResponse.json(
-      { success: false, message: "저장 실패" },
+      { success: false, message: "저장 실패", detail: insertError?.message },
       { status: 500, headers: CORS_HEADERS }
     );
   }
