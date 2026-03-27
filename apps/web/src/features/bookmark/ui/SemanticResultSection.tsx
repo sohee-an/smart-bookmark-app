@@ -1,7 +1,7 @@
 import { Sparkles, LogIn } from "lucide-react";
 import { BookmarkCard } from "@/entities/bookmark/ui/BookmarkCard";
 import type { Bookmark } from "@/entities/bookmark/model/types";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 interface SemanticBookmark extends Bookmark {
   similarity: number;

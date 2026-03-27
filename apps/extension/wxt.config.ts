@@ -8,7 +8,6 @@ export default defineConfig({
     description: "AI가 자동으로 요약, 태그, 의미 검색을 해주는 북마크 앱",
     version: "0.1.0",
     permissions: ["storage", "tabs", "activeTab", "contextMenus", "sidePanel"],
-    host_permissions: ["<all_urls>"],
     action: {
       default_popup: "popup/index.html",
       default_icon: {
