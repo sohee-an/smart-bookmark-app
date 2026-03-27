@@ -1,0 +1,15 @@
+{
+  "extends": "@smart-bookmark/typescript-config/base.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [".wxt/types/**/*", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}

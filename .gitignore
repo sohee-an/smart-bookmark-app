@@ -23,6 +23,11 @@ node_modules
 # Turborepo
 .turbo
 
+# WXT (Chrome Extension)
+apps/extension/.output/
+apps/extension/.wxt/
+apps/extension/dev/
+
 # pnpm
 .pnpm-store
 .pnpm-debug.log*
