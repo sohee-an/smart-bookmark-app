@@ -1,31 +1,38 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/shared/api/supabase/client";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromExtension = searchParams.get("from") === "extension";
 
   useEffect(() => {
-    // Supabase가 URL fragment/code를 자동으로 처리하고 세션을 수립함
+    const redirect = (session: boolean) => {
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+      // extension에서 온 경우 토큰 전달 페이지로
+      router.replace(fromExtension ? "/auth/extension-token" : "/");
+    };
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        router.replace("/");
-      } else if (event === "SIGNED_OUT") {
-        router.replace("/login");
-      }
+      if (event === "SIGNED_IN") redirect(!!session);
+      if (event === "SIGNED_OUT") router.replace("/login");
     });
 
-    // 이미 세션이 있는 경우 (새로고침 등)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace("/");
+      if (session) redirect(true);
     });
 
     return () => subscription.unsubscribe();
-  }, [router]);
+  }, [router, fromExtension]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

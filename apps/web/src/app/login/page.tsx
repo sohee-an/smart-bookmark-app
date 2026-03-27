@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/shared/api/supabase/client";
@@ -11,6 +11,8 @@ import { authSchema, AuthFormData } from "@/features/auth/model/auth-schema";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromExtension = searchParams.get("from") === "extension";
   const [isLogin, setIsLogin] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -27,11 +29,12 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setServerError(null);
+    const redirectTo = fromExtension
+      ? `${window.location.origin}/auth/callback?from=extension`
+      : `${window.location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo },
     });
     if (error) setServerError(error.message);
   };

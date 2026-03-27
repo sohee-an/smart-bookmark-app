@@ -79,6 +79,7 @@ export async function middleware(request: NextRequest) {
     !isLandingPage &&
     !isLoginPage &&
     !pathname.startsWith("/auth/callback") &&
+    !pathname.startsWith("/auth/extension-token") &&
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/_next")
   ) {

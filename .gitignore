@@ -27,6 +27,7 @@ node_modules
 apps/extension/.output/
 apps/extension/.wxt/
 apps/extension/dev/
+apps/extension/.env
 
 # pnpm
 .pnpm-store
