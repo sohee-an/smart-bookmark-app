@@ -80,6 +80,7 @@ export async function middleware(request: NextRequest) {
     !isLoginPage &&
     !pathname.startsWith("/auth/callback") &&
     !pathname.startsWith("/auth/extension-token") &&
+    !pathname.startsWith("/auth/web-redirect") &&
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/_next")
   ) {

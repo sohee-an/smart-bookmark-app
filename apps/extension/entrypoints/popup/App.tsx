@@ -259,7 +259,20 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
 
       <button
         style={styles.secondaryBtn}
-        onClick={() => chrome.tabs.create({ url: `${WEB_URL}/` })}
+        onClick={async () => {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session) {
+            const params = new URLSearchParams({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token ?? "",
+            });
+            chrome.tabs.create({ url: `${WEB_URL}/auth/web-redirect#${params.toString()}` });
+          } else {
+            chrome.tabs.create({ url: `${WEB_URL}/` });
+          }
+        }}
       >
         앱에서 보기 →
       </button>
