@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { createClient } from "@supabase/supabase-js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import { crawlerService } from "@/server/services/crawler.service";
 import { validateSsrf, SsrfError } from "@/shared/lib/validateSsrf";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+// Vercel Hobby: 10s, Pro: 60s — 안전하게 8초 여유
+const PIPELINE_TIMEOUT_MS = 25_000;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -101,8 +104,13 @@ export async function POST(request: Request) {
   }
 
   // 4. 백그라운드 파이프라인 (waitUntil: 응답 후에도 Vercel 함수 유지)
+  const timeout = new Promise<void>((_, reject) =>
+    setTimeout(() => reject(new Error("pipeline timeout")), PIPELINE_TIMEOUT_MS)
+  );
+
   waitUntil(
-    runPipeline(supabase, bookmark.id, url).catch(async () => {
+    Promise.race([runPipeline(supabase, bookmark.id, url), timeout]).catch(async (err) => {
+      console.error("[save-bookmark] pipeline error:", err.message);
       await supabase.from("bookmarks").update({ ai_status: "failed" }).eq("id", bookmark.id);
     })
   );
@@ -171,6 +179,24 @@ async function runPipeline(supabase: any, bookmarkId: string, url: string) {
     if (tag) {
       await supabase.from("bookmark_tags").upsert({ bookmark_id: bookmarkId, tag_id: tag.id });
     }
+  }
+
+  // 임베딩 생성 (실패해도 북마크 저장은 completed 처리)
+  try {
+    const embeddingText = [finalTitle, summary].filter(Boolean).join(" ");
+    if (embeddingText.trim()) {
+      const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+      const embeddingResult = await embeddingModel.embedContent({
+        content: { parts: [{ text: embeddingText }], role: "user" },
+        taskType: TaskType.RETRIEVAL_DOCUMENT,
+        outputDimensionality: 3072,
+      } as any);
+      await supabase
+        .from("embeddings")
+        .upsert({ bookmark_id: bookmarkId, embedding: embeddingResult.embedding.values });
+    }
+  } catch (e) {
+    console.error("[save-bookmark] embedding error:", e);
   }
 
   // 최종 업데이트
