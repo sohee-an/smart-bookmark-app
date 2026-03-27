@@ -130,14 +130,18 @@ export async function POST(request: Request) {
 }
 
 async function runPipeline(supabase: any, bookmarkId: string, url: string) {
+  console.log("[Pipeline] 시작:", url);
+
   // 크롤링
   const crawlResult = await crawlerService.crawl(url);
-  if (!crawlResult.success || !crawlResult.data) {
+  console.log("[Pipeline] 크롤링 결과:", crawlResult.success, crawlResult.errorCode ?? "");
+
+  if (!crawlResult.success) {
     await supabase.from("bookmarks").update({ ai_status: "failed" }).eq("id", bookmarkId);
     return;
   }
 
-  const { title, thumbnailUrl, description, bodyChunks } = crawlResult.data;
+  const { title, thumbnailUrl, description, bodyChunks } = crawlResult;
 
   await supabase
     .from("bookmarks")
@@ -149,6 +153,7 @@ async function runPipeline(supabase: any, bookmarkId: string, url: string) {
     .eq("id", bookmarkId);
 
   // AI 분석
+  console.log("[Pipeline] AI 분석 시작");
   const bodyText = bodyChunks ? bodyChunks.join(" ") : "";
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const prompt = `당신은 전문적인 지식 큐레이터입니다. 다음 정보를 분석해 한국어 JSON 형식으로 응답하세요.
@@ -168,6 +173,7 @@ async function runPipeline(supabase: any, bookmarkId: string, url: string) {
   const finalTitle = aiData.title || title || "";
   const summary = aiData.summary ?? "";
   const tags: string[] = aiData.tags ?? [];
+  console.log("[Pipeline] AI 분석 완료 - title:", finalTitle, "tags:", tags);
 
   // 태그 저장
   for (const name of tags) {
@@ -182,6 +188,7 @@ async function runPipeline(supabase: any, bookmarkId: string, url: string) {
   }
 
   // 임베딩 생성 (실패해도 북마크 저장은 completed 처리)
+  console.log("[Pipeline] 임베딩 시작");
   try {
     const embeddingText = [finalTitle, summary].filter(Boolean).join(" ");
     if (embeddingText.trim()) {
@@ -208,4 +215,6 @@ async function runPipeline(supabase: any, bookmarkId: string, url: string) {
       ai_status: "completed",
     })
     .eq("id", bookmarkId);
+
+  console.log("[Pipeline] 완료:", bookmarkId);
 }
