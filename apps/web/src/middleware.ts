@@ -67,6 +67,7 @@ export async function middleware(request: NextRequest) {
 
   const isLandingPage = pathname === "/landing";
   const isLoginPage = pathname === "/login";
+  const isPublicPage = pathname === "/privacy";
 
   // 인증된 사용자가 랜딩/로그인 페이지 접근 시 메인('/')으로
   if (isAuth && (isLandingPage || isLoginPage)) {
@@ -78,6 +79,7 @@ export async function middleware(request: NextRequest) {
     !isAuth &&
     !isLandingPage &&
     !isLoginPage &&
+    !isPublicPage &&
     !pathname.startsWith("/auth/callback") &&
     !pathname.startsWith("/auth/extension-token") &&
     !pathname.startsWith("/auth/web-redirect") &&
