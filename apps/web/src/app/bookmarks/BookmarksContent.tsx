@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
+import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
 import { TagFilter } from "@/features/bookmark/ui/TagFilter";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { SemanticResultSection } from "@/features/bookmark/ui/SemanticResultSection";
@@ -182,6 +183,9 @@ export function BookmarksContent() {
         bookmark={selectedBookmark}
         onSave={handlePanelSave}
         onTagClick={handleTagClick}
+        actions={
+          selectedBookmark ? <AddToCollectionButton bookmarkId={selectedBookmark.id} /> : undefined
+        }
       />
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
