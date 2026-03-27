@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 
 type AuthMode = "login" | "signup";
+type SaveStatus = "idle" | "saving" | "done" | "error" | "duplicate";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL as string;
 
@@ -75,18 +76,7 @@ export default function App() {
   }
 
   if (user) {
-    return (
-      <div style={styles.container}>
-        <h1 style={styles.title}>SmartMark</h1>
-        <div style={styles.userBox}>
-          <p style={styles.userEmail}>{user.email}</p>
-          <p style={{ fontSize: 12, color: "#999", marginTop: 2 }}>로그인됨</p>
-        </div>
-        <button style={styles.logoutBtn} onClick={handleLogout}>
-          로그아웃
-        </button>
-      </div>
-    );
+    return <SaveView user={user} onLogout={handleLogout} />;
   }
 
   if (signupDone) {
@@ -180,6 +170,103 @@ export default function App() {
   );
 }
 
+function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [currentTitle, setCurrentTitle] = useState("");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      if (tab?.url) setCurrentUrl(tab.url);
+      if (tab?.title) setCurrentTitle(tab.title);
+    });
+  }, []);
+
+  const handleSave = async () => {
+    setSaveStatus("saving");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setSaveStatus("error");
+        return;
+      }
+
+      const res = await fetch(`${WEB_URL}/api/extension/save-bookmark`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ url: currentUrl }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setSaveStatus("error");
+        return;
+      }
+      setSaveStatus("done");
+    } catch {
+      setSaveStatus("error");
+    }
+  };
+
+  const isChromePage =
+    currentUrl.startsWith("chrome://") || currentUrl.startsWith("chrome-extension://");
+
+  return (
+    <div style={styles.container}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h1 style={styles.title}>SmartMark</h1>
+        <button style={styles.logoutBtn} onClick={onLogout}>
+          로그아웃
+        </button>
+      </div>
+
+      <div style={styles.urlBox}>
+        <p style={styles.urlTitle} title={currentTitle}>
+          {currentTitle || "제목 없음"}
+        </p>
+        <p style={styles.urlText} title={currentUrl}>
+          {currentUrl}
+        </p>
+      </div>
+
+      {saveStatus === "done" && (
+        <div style={styles.successBox}>✅ 저장 완료! AI가 분석 중이에요.</div>
+      )}
+      {saveStatus === "error" && <div style={styles.errorBox}>❌ 저장에 실패했습니다.</div>}
+
+      {saveStatus !== "done" && (
+        <button
+          style={{
+            ...styles.primaryBtn,
+            opacity: saveStatus === "saving" || isChromePage ? 0.5 : 1,
+          }}
+          onClick={handleSave}
+          disabled={saveStatus === "saving" || isChromePage}
+        >
+          {saveStatus === "saving"
+            ? "저장 중..."
+            : isChromePage
+              ? "저장 불가 (크롬 내부 페이지)"
+              : "이 페이지 저장"}
+        </button>
+      )}
+
+      <button
+        style={styles.secondaryBtn}
+        onClick={() => chrome.tabs.create({ url: `${WEB_URL}/` })}
+      >
+        앱에서 보기 →
+      </button>
+    </div>
+  );
+}
+
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: 300,
@@ -252,4 +339,50 @@ const styles: Record<string, React.CSSProperties> = {
   userBox: { backgroundColor: "#f4f4f5", borderRadius: 10, padding: "12px 14px" },
   userEmail: { fontSize: 13, fontWeight: 600, color: "#111", margin: 0 },
   error: { fontSize: 12, color: "#ef4444", margin: 0 },
+  urlBox: {
+    backgroundColor: "#f4f4f5",
+    borderRadius: 10,
+    padding: "10px 12px",
+  },
+  urlTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#111",
+    margin: 0,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  urlText: {
+    fontSize: 11,
+    color: "#888",
+    margin: "3px 0 0",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  successBox: {
+    fontSize: 13,
+    color: "#16a34a",
+    backgroundColor: "#f0fdf4",
+    borderRadius: 10,
+    padding: "10px 12px",
+  },
+  errorBox: {
+    fontSize: 13,
+    color: "#dc2626",
+    backgroundColor: "#fef2f2",
+    borderRadius: 10,
+    padding: "10px 12px",
+  },
+  secondaryBtn: {
+    width: "100%",
+    padding: 10,
+    backgroundColor: "#f4f4f5",
+    color: "#555",
+    border: "none",
+    borderRadius: 10,
+    fontSize: 12,
+    cursor: "pointer",
+  },
 };
