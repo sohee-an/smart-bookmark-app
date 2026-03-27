@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { crawlerService } from "@/server/services/crawler.service";
@@ -99,10 +100,12 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. 백그라운드 파이프라인
-  runPipeline(supabase, bookmark.id, url).catch(async () => {
-    await supabase.from("bookmarks").update({ ai_status: "failed" }).eq("id", bookmark.id);
-  });
+  // 4. 백그라운드 파이프라인 (waitUntil: 응답 후에도 Vercel 함수 유지)
+  waitUntil(
+    runPipeline(supabase, bookmark.id, url).catch(async () => {
+      await supabase.from("bookmarks").update({ ai_status: "failed" }).eq("id", bookmark.id);
+    })
+  );
 
   return NextResponse.json(
     {
