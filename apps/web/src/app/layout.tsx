@@ -1,5 +1,6 @@
 import { OverlayProvider } from "@/shared/lib/overlay/OverlayProvider";
 import { QueryProvider } from "@/shared/lib/QueryProvider";
+import { BookmarkRealtimeSync } from "@/shared/lib/BookmarkRealtimeSync";
 import { Toaster } from "@/shared/ui/Toaster";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <QueryProvider>
+          <BookmarkRealtimeSync />
           <OverlayProvider>
             {children}
             <Toaster />
