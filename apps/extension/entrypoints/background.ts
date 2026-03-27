@@ -32,25 +32,28 @@ export default defineBackground(() => {
     }
   });
 
-  // ⚠️ 로그인 플로우: 웹앱 로그인 완료 후 토큰 감지
-  // Supabase PKCE는 fragment(#)로 토큰을 전달하므로 content script에서 처리 필요
-  // URL 예: https://yourapp.com/auth/callback#access_token=xxx
+  // 구글 로그인 후 /auth/extension-token 페이지에서 토큰 감지
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status !== "complete" || !tab.url) return;
 
     const url = new URL(tab.url);
-    if (!url.pathname.includes("/auth/callback")) return;
+    if (!url.pathname.includes("/auth/extension-token")) return;
+    if (!url.hash) return;
 
-    // fragment(#) 파싱 — Supabase 기본 PKCE 흐름
-    const fragmentParams = new URLSearchParams(url.hash.slice(1));
-    const accessToken = fragmentParams.get("access_token") ?? url.searchParams.get("access_token");
-    const refreshToken =
-      fragmentParams.get("refresh_token") ?? url.searchParams.get("refresh_token");
+    const params = new URLSearchParams(url.hash.slice(1));
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const expiresAt = params.get("expires_at");
 
     if (!accessToken) return;
 
-    chrome.storage.local.set({ accessToken, refreshToken }, () => {
-      chrome.tabs.remove(tabId);
-    });
+    chrome.storage.local.set(
+      {
+        "sb-access-token": accessToken,
+        "sb-refresh-token": refreshToken,
+        "sb-expires-at": expiresAt,
+      },
+      () => chrome.tabs.remove(tabId)
+    );
   });
 });
