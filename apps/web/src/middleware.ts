@@ -69,8 +69,19 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = pathname === "/login";
   const isPublicPage = pathname === "/privacy";
 
-  // 인증된 사용자가 랜딩/로그인 페이지 접근 시 메인('/')으로
+  // 인증된 사용자가 랜딩/로그인 페이지 접근 시
   if (isAuth && (isLandingPage || isLoginPage)) {
+    // 익스텐션에서 온 경우 → 토큰을 익스텐션에 전달
+    const fromExtension = request.nextUrl.searchParams.get("from") === "extension";
+    if (fromExtension && session) {
+      const params = new URLSearchParams({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token ?? "",
+      });
+      return NextResponse.redirect(
+        new URL(`/auth/extension-token#${params.toString()}`, request.url)
+      );
+    }
     return NextResponse.redirect(new URL("/", request.url));
   }
 
