@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-zinc-950 antialiased`}>
         <QueryProvider>
           <BookmarkRealtimeSync />
           <OverlayProvider>

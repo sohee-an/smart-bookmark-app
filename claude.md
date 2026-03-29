@@ -230,6 +230,9 @@ apps/web/e2e/                     ← e2e 테스트
 
 - `새 할일 등록해줘 [내용]` → /project:new-task 실행
 - `노션 댓글 확인해줘` → /project:review 실행
+- `리뷰해줘 [대상]` → /project:code-review 실행 (백그라운드)
+- `보안 검토해줘 [대상]` → /project:security-review 실행 (백그라운드)
+- `QA 해줘 [대상]` → /project:qa-review 실행 (백그라운드)
 
 ## 참고 스킬
 
@@ -237,3 +240,4 @@ apps/web/e2e/                     ← e2e 테스트
 - 시나리오 작성법: `.claude/skills/task-pipeline/SCENARIO.md`
 - 상태 전환 규칙: `.claude/skills/task-pipeline/STATUS.md`
 - 에스컬레이션 기준: `.claude/skills/task-pipeline/ESCALATION.md`
+- 코드/구조 리뷰 (공격적 비평가): `.claude/skills/code-review/SKILL.md`
