@@ -1,3 +1,5 @@
+import { supabase } from "../lib/supabase";
+
 export default defineBackground(() => {
   // Side Panel: 아이콘 클릭 시 Side Panel 열기
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(console.error);
@@ -43,17 +45,21 @@ export default defineBackground(() => {
     const params = new URLSearchParams(url.hash.slice(1));
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");
-    const expiresAt = params.get("expires_at");
 
     if (!accessToken) return;
 
-    chrome.storage.local.set(
-      {
-        "sb-access-token": accessToken,
-        "sb-refresh-token": refreshToken,
-        "sb-expires-at": expiresAt,
-      },
-      () => chrome.tabs.remove(tabId)
-    );
+    supabase.auth.refreshSession({ refresh_token: refreshToken ?? "" }).then(({ error }) => {
+      if (error) {
+        console.error("[SmartMark] session refresh failed:", error.message);
+        return;
+      }
+      chrome.tabs.remove(tabId);
+      chrome.storage.local.get("returnToTabId", ({ returnToTabId }) => {
+        if (returnToTabId) {
+          chrome.tabs.update(returnToTabId, { active: true });
+          chrome.storage.local.remove("returnToTabId");
+        }
+      });
+    });
   });
 });

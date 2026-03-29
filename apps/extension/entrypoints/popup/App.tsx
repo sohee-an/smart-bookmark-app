@@ -259,6 +259,20 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
 
       <button
         style={styles.secondaryBtn}
+        onClick={() => {
+          chrome.windows.getCurrent((win) => {
+            if (win.id !== undefined) {
+              chrome.sidePanel.open({ windowId: win.id });
+              window.close();
+            }
+          });
+        }}
+      >
+        📥 즐겨찾기 한번에 가져오기
+      </button>
+
+      <button
+        style={styles.secondaryBtn}
         onClick={async () => {
           const {
             data: { session },

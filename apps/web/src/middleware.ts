@@ -74,13 +74,7 @@ export async function middleware(request: NextRequest) {
     // 익스텐션에서 온 경우 → 토큰을 익스텐션에 전달
     const fromExtension = request.nextUrl.searchParams.get("from") === "extension";
     if (fromExtension && session) {
-      const params = new URLSearchParams({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token ?? "",
-      });
-      return NextResponse.redirect(
-        new URL(`/auth/extension-token#${params.toString()}`, request.url)
-      );
+      return NextResponse.redirect(new URL(`/auth/extension-token`, request.url));
     }
     return NextResponse.redirect(new URL("/", request.url));
   }
