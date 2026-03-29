@@ -56,6 +56,17 @@
 /* -------------------------------------------------------------------------- */
 
 @layer base {
+  /* html에 배경을 설정하면 CSS 로드 전에도 FOUC 없이 배경색이 바로 칠해짐 */
+  html {
+    background-color: var(--color-surface-base);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html {
+      background-color: var(--color-surface-base-dark);
+    }
+  }
+
   body {
     background-color: var(--color-surface-base);
     color: #18181b;
