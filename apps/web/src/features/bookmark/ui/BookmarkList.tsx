@@ -6,6 +6,7 @@ interface BookmarkListProps {
   bookmarks: Bookmark[];
   onBookmarkClick: (bookmark: Bookmark) => void;
   onTagClick: (tag: string) => void;
+  onRetry?: (bookmark: Bookmark) => void;
   emptyMessage?: string;
 }
 
@@ -13,6 +14,7 @@ export const BookmarkList = ({
   bookmarks,
   onBookmarkClick,
   onTagClick,
+  onRetry,
   emptyMessage = "검색 결과가 없습니다.",
 }: BookmarkListProps) => {
   if (bookmarks.length === 0) {
@@ -34,6 +36,7 @@ export const BookmarkList = ({
           bookmark={bookmark}
           onClick={onBookmarkClick}
           onTagClick={onTagClick}
+          onRetry={onRetry}
         />
       ))}
     </div>

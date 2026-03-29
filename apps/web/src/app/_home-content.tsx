@@ -8,6 +8,7 @@ import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel"
 import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { useBookmarks, useUpdateBookmark } from "@/features/bookmark/model/queries";
+import { useBookmarkPipeline } from "@/features/bookmark/model/useBookmarkPipeline";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
 export default function HomeContent() {
@@ -15,6 +16,7 @@ export default function HomeContent() {
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
   const { data: bookmarks = [] } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
+  const { runPipeline, patchCache } = useBookmarkPipeline();
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
 
@@ -41,6 +43,11 @@ export default function HomeContent() {
     await updateBookmarkAsync({ id, data });
   };
 
+  const handleRetry = (bookmark: Bookmark) => {
+    patchCache(bookmark.id, { aiStatus: "crawling" });
+    runPipeline(bookmark.id, bookmark.url);
+  };
+
   return (
     <div className="selection:bg-brand-primary/20 selection:text-brand-primary min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
       <Header />
@@ -62,13 +69,19 @@ export default function HomeContent() {
         />
 
         <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
-          <h2 className="mb-6 text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
-            나의 모든 북마크
-          </h2>
+          <div className="mb-6 flex items-baseline gap-2">
+            <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
+              나의 모든 북마크
+            </h2>
+            <span className="text-sm text-zinc-400 dark:text-zinc-500">
+              {allBookmarks.length}개
+            </span>
+          </div>
           <BookmarkList
             bookmarks={allBookmarks}
             onBookmarkClick={handleBookmarkClick}
             onTagClick={handleTagClick}
+            onRetry={handleRetry}
             emptyMessage="북마크를 추가하세요."
           />
         </section>

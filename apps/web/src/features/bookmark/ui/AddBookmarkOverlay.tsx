@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link2, FileText, X, Plus, Lock } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 import { bookmarkService } from "../model/bookmark.service";
 import { bookmarkKeys } from "../model/queries";
+import { useBookmarkPipeline } from "../model/useBookmarkPipeline";
 import { validateUrl } from "@/shared/lib/validateUrl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/shared/lib/toast";
@@ -22,12 +23,20 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [isLimitReached, setIsLimitReached] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { runPipeline, patchCache } = useBookmarkPipeline();
 
-  const patchCache = (id: string, data: Partial<Bookmark>) => {
-    queryClient.setQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
-      old.map((b) => (b.id === id ? { ...b, ...data } : b))
-    );
-  };
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
 
   const handleClose = () => {
     setUrlError(null);
@@ -69,6 +78,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         setIsLimitReached(true);
       } else {
         console.error(error);
+        toast.show({ message: "저장에 실패했습니다. 다시 시도해 주세요." });
       }
       setIsLoading(false);
       return;
@@ -77,78 +87,8 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
     const bookmarkId = newBookmark.id;
 
-    // 2. 백그라운드 크롤링
-    try {
-      const crawlRes = await fetch("/api/crawl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const crawlJson = await crawlRes.json();
-
-      if (!crawlJson.success) {
-        await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-        patchCache(bookmarkId, { aiStatus: "failed" });
-        return;
-      }
-
-      const { title, thumbnailUrl, description, bodyChunks } = crawlJson.data;
-
-      // 3. 크롤링 결과 반영 + AI 분석 중 상태로 전환
-      const crawlUpdate = {
-        thumbnailUrl,
-        aiStatus: "processing" as const,
-        ...(title ? { title } : {}),
-      };
-      await bookmarkService.updateBookmark(bookmarkId, crawlUpdate);
-      patchCache(bookmarkId, crawlUpdate);
-
-      // 4. 백그라운드 AI 분석
-      const aiRes = await fetch("/api/ai-analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, bodyChunks }),
-      });
-      const aiJson = await aiRes.json();
-
-      if (!aiJson.success) {
-        await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-        patchCache(bookmarkId, { aiStatus: "failed" });
-        return;
-      }
-
-      const { title: aiTitle, summary, tags } = aiJson.data;
-
-      // 5. 임베딩 생성 (백그라운드, 실패해도 북마크 저장은 완료 처리)
-      const resolvedTitle = aiTitle || title || "";
-      fetch("/api/embed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, summary }),
-      })
-        .then((r) => r.json())
-        .then(async (embedJson) => {
-          if (embedJson.success) {
-            await bookmarkService.saveEmbedding(bookmarkId, embedJson.data.embedding);
-          }
-        })
-        .catch((e) => console.error("[Pipeline] 임베딩 오류:", e));
-
-      // 6. AI 결과 반영 + 완료
-      const finalUpdate = {
-        summary,
-        tags,
-        aiStatus: "completed" as const,
-        ...(aiTitle ? { title: aiTitle } : {}),
-      };
-      await bookmarkService.updateBookmark(bookmarkId, finalUpdate);
-      patchCache(bookmarkId, finalUpdate);
-      queryClient.invalidateQueries({ queryKey: bookmarkKeys.all });
-    } catch (error) {
-      console.error("[Pipeline] 파이프라인 오류:", error);
-      await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-      patchCache(bookmarkId, { aiStatus: "failed" });
-    }
+    // 2. 백그라운드 파이프라인 (크롤링 → AI 분석 → 임베딩)
+    runPipeline(bookmarkId, url);
   };
 
   if (!isOpen) return null;

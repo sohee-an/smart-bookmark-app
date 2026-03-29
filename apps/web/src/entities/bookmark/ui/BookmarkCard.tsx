@@ -6,13 +6,14 @@ interface BookmarkCardProps {
   bookmark: Bookmark;
   onClick?: (bookmark: Bookmark) => void;
   onTagClick?: (tag: string) => void;
+  onRetry?: (bookmark: Bookmark) => void;
 }
 
 /**
  * @description 북마크 정보를 카드 형태로 보여주는 엔티티 컴포넌트입니다.
  * AI 분석 상태(aiStatus), 읽음 상태(status), 크롤링 결과에 따른 대응 UI를 포함합니다.
  */
-export const BookmarkCard = ({ bookmark, onClick, onTagClick }: BookmarkCardProps) => {
+export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: BookmarkCardProps) => {
   const { title, url, thumbnailUrl, summary, tags, aiStatus, status } = bookmark;
 
   const isCrawling = aiStatus === "crawling";
@@ -106,9 +107,23 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick }: BookmarkCardProp
               <div className="h-3 w-[80%] animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
             </div>
           ) : isFailed ? (
-            <div className="bg-status-error/5 text-status-error flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
-              <AlertCircle size={14} />
-              <span>AI 요약에 실패했습니다.</span>
+            <div className="space-y-2">
+              <div className="bg-status-error/10 text-status-error flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
+                <AlertCircle size={14} />
+                <span>AI 요약에 실패했습니다.</span>
+              </div>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRetry(bookmark);
+                  }}
+                  className="text-brand-primary hover:bg-brand-primary/10 w-full rounded-xl px-3 py-2 text-xs font-bold transition-colors"
+                >
+                  다시 시도
+                </button>
+              )}
             </div>
           ) : (
             <p className="line-clamp-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
