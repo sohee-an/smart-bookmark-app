@@ -21,3 +21,8 @@ Agent 호출:
 ```
 
 에이전트를 호출한 뒤 사용자에게 "백그라운드에서 보안 분석 중입니다. 완료되면 알려드릴게요." 라고 안내한다.
+
+## 결과 저장
+
+분석 완료 후 결과를 반드시 아래 경로에 저장한다:
+`.claude/project/reviews/security-review-YYYY-MM-DD.md`
