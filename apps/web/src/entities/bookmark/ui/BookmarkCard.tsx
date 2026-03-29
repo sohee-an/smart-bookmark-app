@@ -20,6 +20,7 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick }: BookmarkCardProp
   const isFailed = aiStatus === "failed";
   const isUnread = status === "unread";
   const isPending = isCrawling || isProcessing;
+  const isNew = Date.now() - new Date(bookmark.createdAt).getTime() <= 24 * 60 * 60 * 1000;
 
   return (
     <div
@@ -66,8 +67,8 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick }: BookmarkCardProp
           </div>
         )}
 
-        {/* Unread Badge */}
-        {isUnread && !isPending && (
+        {/* New Badge */}
+        {isNew && !isPending && (
           <div className="bg-brand-primary absolute top-4 right-4 flex h-6 w-14 items-center justify-center rounded-full px-2 text-[10px] font-black text-white shadow-lg">
             NEW
           </div>

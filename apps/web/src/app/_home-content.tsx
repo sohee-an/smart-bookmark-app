@@ -18,6 +18,13 @@ export default function HomeContent() {
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
 
+  const now = Date.now();
+  const recentBookmarks = bookmarks.filter(
+    (b) => now - new Date(b.createdAt).getTime() <= 24 * 60 * 60 * 1000
+  );
+  const recentIds = new Set(recentBookmarks.map((b) => b.id));
+  const allBookmarks = bookmarks.filter((b) => !recentIds.has(b.id));
+
   const handleBookmarkClick = (bookmark: Bookmark) => {
     setSelectedBookmarkId(bookmark.id);
     if (bookmark.status === "unread") {
@@ -49,7 +56,7 @@ export default function HomeContent() {
 
       <main className="pb-20">
         <RecentBookmarkSlider
-          bookmarks={bookmarks.slice(0, 5)}
+          bookmarks={recentBookmarks}
           onBookmarkClick={handleBookmarkClick}
           onTagClick={handleTagClick}
         />
@@ -59,7 +66,7 @@ export default function HomeContent() {
             나의 모든 북마크
           </h2>
           <BookmarkList
-            bookmarks={bookmarks}
+            bookmarks={allBookmarks}
             onBookmarkClick={handleBookmarkClick}
             onTagClick={handleTagClick}
             emptyMessage="북마크를 추가하세요."

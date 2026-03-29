@@ -1,7 +1,9 @@
 import type { Bookmark } from "../model/types";
 import type { BookmarkFilter, CreateBookmarkRequest } from "./bookmark.types.db";
 
-export type UpdateBookmarkData = Partial<Pick<Bookmark, "title" | "summary" | "tags" | "aiStatus">>;
+export type UpdateBookmarkData = Partial<
+  Pick<Bookmark, "title" | "summary" | "tags" | "aiStatus" | "status">
+>;
 
 /**
  * @description 북마크 데이터에 접근하는 추상화된 인터페이스 (Repository)

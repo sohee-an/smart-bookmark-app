@@ -98,6 +98,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
     if (data.title !== undefined) updateFields.title = data.title;
     if (data.summary !== undefined) updateFields.summary = data.summary;
     if (data.aiStatus !== undefined) updateFields.ai_status = data.aiStatus;
+    if (data.status !== undefined) updateFields.status = data.status;
 
     const { error } = await supabase.from("bookmarks").update(updateFields).eq("id", id);
     if (error) throw new Error(`업데이트 실패: ${error.message}`);
