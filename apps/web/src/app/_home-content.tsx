@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
@@ -19,12 +19,13 @@ import type { Bookmark } from "@/entities/bookmark/model/types";
 export default function HomeContent() {
   const router = useRouter();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
-  const { data: bookmarks = [] } = useBookmarks();
+  const { data: bookmarks = [], isLoading } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
   const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
   const { runPipeline, patchCache } = useBookmarkPipeline();
 
   const retryCounts = useRef<Record<string, number>>({});
+  const [exhaustedIds, setExhaustedIds] = useState<Set<string>>(new Set());
 
   // 마운트 시 5분+ stuck 북마크 자동 failed 처리
   useEffect(() => {
@@ -76,8 +77,7 @@ export default function HomeContent() {
   const handleRetry = (bookmark: Bookmark) => {
     const count = retryCounts.current[bookmark.id] ?? 0;
     if (count >= 3) {
-      const failedStatus = bookmark.aiStatus === "crawl_failed" ? "crawl_failed" : "failed";
-      updateBookmark({ id: bookmark.id, data: { aiStatus: failedStatus } });
+      setExhaustedIds((prev) => new Set(prev).add(bookmark.id));
       return;
     }
     retryCounts.current[bookmark.id] = count + 1;
@@ -104,6 +104,7 @@ export default function HomeContent() {
           bookmarks={recentBookmarks}
           onBookmarkClick={handleBookmarkClick}
           onTagClick={handleTagClick}
+          isLoading={isLoading}
         />
 
         <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
@@ -117,9 +118,11 @@ export default function HomeContent() {
           </div>
           <BookmarkList
             bookmarks={allBookmarks}
+            isLoading={isLoading}
             onBookmarkClick={handleBookmarkClick}
             onTagClick={handleTagClick}
             onRetry={handleRetry}
+            getRetryExhausted={(id) => exhaustedIds.has(id)}
             emptyMessage="북마크를 추가하세요."
           />
         </section>

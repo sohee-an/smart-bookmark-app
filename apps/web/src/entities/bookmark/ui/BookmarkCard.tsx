@@ -7,13 +7,20 @@ interface BookmarkCardProps {
   onClick?: (bookmark: Bookmark) => void;
   onTagClick?: (tag: string) => void;
   onRetry?: (bookmark: Bookmark) => void;
+  retryExhausted?: boolean;
 }
 
 /**
  * @description 북마크 정보를 카드 형태로 보여주는 엔티티 컴포넌트입니다.
  * AI 분석 상태(aiStatus), 읽음 상태(status), 크롤링 결과에 따른 대응 UI를 포함합니다.
  */
-export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: BookmarkCardProps) => {
+export const BookmarkCard = ({
+  bookmark,
+  onClick,
+  onTagClick,
+  onRetry,
+  retryExhausted,
+}: BookmarkCardProps) => {
   const { title, url, thumbnailUrl, summary, tags, aiStatus, status } = bookmark;
 
   const isCrawling = aiStatus === "crawling";
@@ -52,7 +59,13 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
               <ExternalLink size={32} strokeWidth={1.5} className="text-zinc-400" />
             </div>
             <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
-              {new URL(url).hostname}
+              {(() => {
+                try {
+                  return new URL(url).hostname;
+                } catch {
+                  return url;
+                }
+              })()}
             </span>
           </div>
         )}
@@ -113,17 +126,23 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
                 <AlertCircle size={14} />
                 <span>URL을 불러오는데 실패했어요.</span>
               </div>
-              {onRetry && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRetry(bookmark);
-                  }}
-                  className="text-brand-primary hover:bg-brand-primary/10 w-full rounded-xl px-3 py-2 text-xs font-bold transition-colors"
-                >
-                  다시 시도
-                </button>
+              {retryExhausted ? (
+                <p className="px-3 py-2 text-center text-xs text-zinc-400">
+                  재시도 횟수를 초과했어요.
+                </p>
+              ) : (
+                onRetry && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRetry(bookmark);
+                    }}
+                    className="text-brand-primary hover:bg-brand-primary/10 w-full rounded-xl px-3 py-2 text-xs font-bold transition-colors"
+                  >
+                    다시 시도
+                  </button>
+                )
               )}
             </div>
           ) : isFailed ? (
@@ -132,17 +151,23 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
                 <AlertCircle size={14} />
                 <span>AI 요약에 실패했어요.</span>
               </div>
-              {onRetry && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRetry(bookmark);
-                  }}
-                  className="text-brand-primary hover:bg-brand-primary/10 w-full rounded-xl px-3 py-2 text-xs font-bold transition-colors"
-                >
-                  다시 시도
-                </button>
+              {retryExhausted ? (
+                <p className="px-3 py-2 text-center text-xs text-zinc-400">
+                  재시도 횟수를 초과했어요.
+                </p>
+              ) : (
+                onRetry && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRetry(bookmark);
+                    }}
+                    className="text-brand-primary hover:bg-brand-primary/10 w-full rounded-xl px-3 py-2 text-xs font-bold transition-colors"
+                  >
+                    다시 시도
+                  </button>
+                )
               )}
             </div>
           ) : (
