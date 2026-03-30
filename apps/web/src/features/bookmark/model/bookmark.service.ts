@@ -15,11 +15,11 @@ export class BookmarkService {
    */
   private async getRepository(): Promise<BookmarkRepository> {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (user) {
-      return new SupabaseBookmarkRepository(user.id);
+    if (session?.user) {
+      return new SupabaseBookmarkRepository(session.user.id);
     }
     return new LocalRepository();
   }
@@ -36,11 +36,13 @@ export class BookmarkService {
    * @description 새로운 북마크를 추가합니다.
    */
   async addBookmark(url: string, userMemo?: string): Promise<Bookmark> {
-    const repo = await this.getRepository();
-
     const {
       data: { session },
     } = await supabase.auth.getSession();
+
+    const repo = session?.user
+      ? new SupabaseBookmarkRepository(session.user.id)
+      : new LocalRepository();
 
     return repo.save({
       url,

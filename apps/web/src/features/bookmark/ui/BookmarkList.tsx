@@ -1,4 +1,4 @@
-import { Bookmark as BookmarkIcon } from "lucide-react";
+import { Bookmark as BookmarkIcon, Plus } from "lucide-react";
 import { BookmarkCard } from "@/entities/bookmark/ui/BookmarkCard";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
@@ -10,6 +10,7 @@ interface BookmarkListProps {
   onRetry?: (bookmark: Bookmark) => void;
   getRetryExhausted?: (id: string) => boolean;
   emptyMessage?: string;
+  onAddClick?: () => void;
 }
 
 export const BookmarkList = ({
@@ -20,6 +21,7 @@ export const BookmarkList = ({
   onRetry,
   getRetryExhausted,
   emptyMessage = "검색 결과가 없습니다.",
+  onAddClick,
 }: BookmarkListProps) => {
   if (isLoading) {
     return (
@@ -43,11 +45,20 @@ export const BookmarkList = ({
 
   if (bookmarks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-zinc-200 py-20 dark:border-zinc-800">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-zinc-200 py-20 dark:border-zinc-800">
         <div className="rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-800">
           <BookmarkIcon size={28} className="text-zinc-400 dark:text-zinc-500" />
         </div>
         <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{emptyMessage}</p>
+        {onAddClick && (
+          <button
+            type="button"
+            onClick={onAddClick}
+            className="bg-brand-primary hover:bg-brand-primary-hover flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all active:scale-95"
+          >
+            <Plus size={16} />첫 북마크 추가하기
+          </button>
+        )}
       </div>
     );
   }

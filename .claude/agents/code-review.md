@@ -56,14 +56,36 @@ allowed-tools: Read, Grep, Glob, Bash
 - 순차 await가 병렬 가능한 경우 → **Promise.all로 교체**
 - try/catch에서 에러 무시 또는 console.error만 → **에러 전파 또는 사용자 피드백**
 - loading/error 상태 미처리 → **UI에서 실패가 조용히 묻힘**
+  ㄴ
 
-### 6. 보안
+## 성능 분석 (Performance)
 
-- API 키, 시크릿이 클라이언트 코드에 노출
-- 비회원 제한 로직 우회 가능 여부
-- 에러 메시지에 내부 구현 노출
-- SSRF 취약점 (외부 URL 크롤링 시 검증 로직)
-- CORS 설정 과도하게 열려있는지
+### 네트워크 / 인증
+
+- [ ] N+1 쿼리 패턴 여부
+- [ ] 클라이언트 waterfall fetch 구조 — 직렬 await가 병렬 가능한지
+- [ ] `getUser()` vs `getSession()` 오남용 — 단순 로그인 분기에 서버 검증 호출 시 지적 (클라이언트 분기는 `getSession()`으로 충분)
+- [ ] 동일 요청에서 `getUser()` + `getSession()` 이중 호출 여부
+
+### 쿼리 최적화
+
+- [ ] DB 인덱스 활용 여부 (특히 pgvector, created_at, user_id 등)
+- [ ] 불필요한 데이터 over-fetching — SELECT \* 대신 필요한 컬럼만 지정했는지
+- [ ] DB 필터 vs JS 필터 오남용 — 전체 조회 후 클라이언트에서 filter() 처리하는 패턴 (tag 필터 등)
+- [ ] JOIN depth — 다단계 JOIN이 실제로 필요한지, 별도 쿼리로 분리가 나은지
+- [ ] RLS 정책이 쿼리 성능에 미치는 영향
+
+### React 렌더링
+
+- [ ] 고비용 계산이 `useMemo` 없이 매 렌더에 재실행 — 배열 filter/map/reduce 등
+- [ ] `useEffect` 의존성 배열 불완전 — `[!!data.length]` 같은 파생값으로 실제 변화를 못 잡는 패턴
+- [ ] 불필요한 리렌더 유발 — 인라인 객체/함수가 props로 전달되는 경우
+
+### TanStack Query 캐싱
+
+- [ ] `staleTime` 미설정 — 기본값 0이라 창 포커스마다 refetch 발생
+- [ ] `refetchInterval` 범위 점검 — pending 외 상태까지 폴링하거나, 조건 없이 항상 켜져 있는지
+- [ ] `invalidateQueries` 범위가 너무 넓어 불필요한 refetch 유발하는지
 
 ---
 

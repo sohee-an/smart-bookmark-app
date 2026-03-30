@@ -14,6 +14,8 @@ import {
   useDeleteBookmark,
 } from "@/features/bookmark/model/queries";
 import { useBookmarkPipeline } from "@/features/bookmark/model/useBookmarkPipeline";
+import { overlay } from "@/shared/lib/overlay/overlay";
+import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
 export default function HomeContent() {
@@ -124,6 +126,11 @@ export default function HomeContent() {
             onRetry={handleRetry}
             getRetryExhausted={(id) => exhaustedIds.has(id)}
             emptyMessage="북마크를 추가하세요."
+            onAddClick={() =>
+              overlay.open(({ isOpen, close }) => (
+                <AddBookmarkOverlay isOpen={isOpen} onClose={close} />
+              ))
+            }
           />
         </section>
       </main>
