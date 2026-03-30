@@ -7,7 +7,11 @@ import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
 import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
-import { useBookmarks, useUpdateBookmark } from "@/features/bookmark/model/queries";
+import {
+  useBookmarks,
+  useUpdateBookmark,
+  useDeleteBookmark,
+} from "@/features/bookmark/model/queries";
 import { useBookmarkPipeline } from "@/features/bookmark/model/useBookmarkPipeline";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
@@ -16,6 +20,7 @@ export default function HomeContent() {
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
   const { data: bookmarks = [] } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
+  const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
   const { runPipeline, patchCache } = useBookmarkPipeline();
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
@@ -43,6 +48,11 @@ export default function HomeContent() {
     await updateBookmarkAsync({ id, data });
   };
 
+  const handlePanelDelete = async (id: string) => {
+    await deleteBookmarkAsync(id);
+    setSelectedBookmarkId(null);
+  };
+
   const handleRetry = (bookmark: Bookmark) => {
     patchCache(bookmark.id, { aiStatus: "crawling" });
     runPipeline(bookmark.id, bookmark.url);
@@ -55,6 +65,7 @@ export default function HomeContent() {
       <BookmarkDetailPanel
         bookmark={selectedBookmark}
         onSave={handlePanelSave}
+        onDelete={handlePanelDelete}
         onTagClick={handleTagClick}
         actions={
           selectedBookmark ? <AddToCollectionButton bookmarkId={selectedBookmark.id} /> : undefined

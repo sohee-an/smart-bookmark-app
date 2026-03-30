@@ -12,6 +12,12 @@ export function useBookmarks(filter?: BookmarkFilter) {
   return useQuery({
     queryKey: bookmarkKeys.list(filter),
     queryFn: () => bookmarkService.getBookmarks(filter),
+    // processing 중인 북마크가 있으면 3초마다 자동 갱신
+    refetchInterval: (query) => {
+      const data = query.state.data as Bookmark[] | undefined;
+      const hasProcessing = data?.some((b) => b.aiStatus === "processing");
+      return hasProcessing ? 3000 : false;
+    },
   });
 }
 
@@ -25,6 +31,29 @@ export function useUpdateBookmark() {
       const previousData = queryClient.getQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all });
       queryClient.setQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
         old.map((b) => (b.id === id ? { ...b, ...data } : b))
+      );
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      context?.previousData.forEach(([key, value]) => {
+        queryClient.setQueryData(key, value);
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: bookmarkKeys.all });
+    },
+  });
+}
+
+export function useDeleteBookmark() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bookmarkService.deleteBookmark(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: bookmarkKeys.all });
+      const previousData = queryClient.getQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all });
+      queryClient.setQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
+        old.filter((b) => b.id !== id)
       );
       return { previousData };
     },
