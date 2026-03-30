@@ -54,15 +54,15 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 1. Supabase 세션 확인
+  // 1. Supabase 유저 확인 (getSession은 쿠키 위변조 가능 → getUser로 서버 검증)
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // 2. 게스트 쿠키 확인
   const isGuest = request.cookies.get("is_guest")?.value === "true";
 
-  const isAuth = !!session || isGuest;
+  const isAuth = !!user || isGuest;
   const { pathname } = request.nextUrl;
 
   const isLandingPage = pathname === "/landing";
@@ -73,7 +73,7 @@ export async function middleware(request: NextRequest) {
   if (isAuth && (isLandingPage || isLoginPage)) {
     // 익스텐션에서 온 경우 → 토큰을 익스텐션에 전달
     const fromExtension = request.nextUrl.searchParams.get("from") === "extension";
-    if (fromExtension && session) {
+    if (fromExtension && user) {
       return NextResponse.redirect(new URL(`/auth/extension-token`, request.url));
     }
     return NextResponse.redirect(new URL("/", request.url));

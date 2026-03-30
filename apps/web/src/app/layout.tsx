@@ -1,7 +1,7 @@
 import { OverlayProvider } from "@/shared/lib/overlay/OverlayProvider";
 import { QueryProvider } from "@/shared/lib/QueryProvider";
 import { AuthProvider } from "@/shared/lib/AuthProvider";
-import { BookmarkRealtimeSync } from "@/shared/lib/BookmarkRealtimeSync";
+import { ConditionalRealtimeSync } from "@/shared/lib/ConditionalRealtimeSync";
 import { Toaster } from "@/shared/ui/Toaster";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <QueryProvider>
           <AuthProvider>
-            <BookmarkRealtimeSync />
+            <ConditionalRealtimeSync />
             <OverlayProvider>
               {children}
               <Toaster />

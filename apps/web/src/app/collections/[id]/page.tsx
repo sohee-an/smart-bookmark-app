@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { CollectionDetailContent } from "./CollectionDetailContent";
+import { PageLoadingSkeleton } from "@/shared/ui/PageLoadingSkeleton";
 
 export default async function CollectionDetailPage({
   params,
@@ -8,7 +9,7 @@ export default async function CollectionDetailPage({
 }) {
   const { id } = await params;
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoadingSkeleton />}>
       <CollectionDetailContent id={id} />
     </Suspense>
   );
