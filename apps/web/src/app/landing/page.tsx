@@ -1,22 +1,14 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Bookmark, Sparkles, Shield, Zap, Search } from "lucide-react";
+import { LandingActions } from "./LandingActions";
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import { Bookmark, Sparkles, Shield, Zap, ArrowRight, Search } from "lucide-react";
-import storage from "@/shared/lib/storage";
+export const metadata: Metadata = {
+  title: "SmartMark — AI 북마크 관리",
+  description: "저장은 했는데, 어디 있는지 모르겠다고요? AI가 내용을 읽고 의미로 찾아드려요.",
+};
 
 export default function LandingPage() {
-  const router = useRouter();
-
-  const handleStartAsGuest = () => {
-    storage.cookie.set("is_guest", "true", 7);
-    router.push("/");
-  };
-
-  const handleLogin = () => {
-    router.push("/login");
-  };
-
   return (
     <div className="bg-surface-card dark:bg-surface-base-dark selection:bg-brand-primary/10 selection:text-brand-primary min-h-screen overflow-x-hidden text-zinc-900 dark:text-zinc-50">
       {/* Decorative Background Elements */}
@@ -33,12 +25,12 @@ export default function LandingPage() {
             </div>
             <span className="text-gradient text-2xl font-black tracking-tight">SmartMark</span>
           </div>
-          <button
-            onClick={handleLogin}
-            className="hover:text-brand-primary cursor-pointer text-sm font-bold text-zinc-600 transition-colors dark:text-zinc-400 dark:hover:text-white"
+          <Link
+            href="/login"
+            className="hover:text-brand-primary text-sm font-bold text-zinc-600 transition-colors dark:text-zinc-400 dark:hover:text-white"
           >
             이미 계정이 있으신가요?
-          </button>
+          </Link>
         </header>
 
         <section className="mx-auto max-w-4xl pt-20 pb-32 text-center">
@@ -60,21 +52,8 @@ export default function LandingPage() {
             나도 괜찮아요. 의미만 알아도 관련된 북마크를 찾아드려요.
           </p>
 
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <button
-              onClick={handleStartAsGuest}
-              className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-zinc-900 px-8 py-4 text-lg font-bold text-white shadow-xl shadow-zinc-200 transition-all hover:scale-[1.02] active:scale-[0.98] sm:w-auto dark:bg-white dark:text-zinc-900 dark:shadow-none"
-            >
-              비회원으로 시작하기
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </button>
-            <button
-              onClick={handleLogin}
-              className="bg-surface-card w-full cursor-pointer rounded-2xl border border-zinc-200 px-8 py-4 text-lg font-bold text-zinc-900 transition-all hover:bg-zinc-50 sm:w-auto dark:border-zinc-800 dark:bg-transparent dark:text-white dark:hover:bg-zinc-900"
-            >
-              로그인 / 회원가입
-            </button>
-          </div>
+          {/* 인터랙티브 버튼만 Client Component */}
+          <LandingActions />
 
           <div className="mt-16 flex items-center justify-center gap-8 text-sm font-medium text-zinc-500 dark:text-zinc-500">
             <div className="flex items-center gap-2">
