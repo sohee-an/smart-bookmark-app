@@ -9,7 +9,11 @@ import { TagFilter } from "@/features/bookmark/ui/TagFilter";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { SemanticResultSection } from "@/features/bookmark/ui/SemanticResultSection";
 import { filterBookmarks } from "@/features/bookmark/model/filterBookmarks";
-import { useBookmarks, useUpdateBookmark } from "@/features/bookmark/model/queries";
+import {
+  useBookmarks,
+  useUpdateBookmark,
+  useDeleteBookmark,
+} from "@/features/bookmark/model/queries";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
 import storage from "@/shared/lib/storage";
@@ -34,6 +38,7 @@ export function BookmarksContent() {
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
   const { data: bookmarks = [] } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
+  const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
 
   const [semanticExact, setSemanticExact] = useState<SemanticBookmark[]>([]);
   const [semanticRelated, setSemanticRelated] = useState<SemanticBookmark[]>([]);
@@ -119,6 +124,11 @@ export function BookmarksContent() {
     await updateBookmarkAsync({ id, data });
   };
 
+  const handlePanelDelete = async (id: string) => {
+    await deleteBookmarkAsync(id);
+    setSelectedBookmarkId(null);
+  };
+
   const handleTagClick = (tag: string) => {
     if (selectedTags.includes(tag)) return;
     setSelectedBookmarkId(null);
@@ -182,6 +192,7 @@ export function BookmarksContent() {
       <BookmarkDetailPanel
         bookmark={selectedBookmark}
         onSave={handlePanelSave}
+        onDelete={handlePanelDelete}
         onTagClick={handleTagClick}
         actions={
           selectedBookmark ? <AddToCollectionButton bookmarkId={selectedBookmark.id} /> : undefined
