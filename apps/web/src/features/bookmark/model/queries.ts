@@ -12,11 +12,13 @@ export function useBookmarks(filter?: BookmarkFilter) {
   return useQuery({
     queryKey: bookmarkKeys.list(filter),
     queryFn: () => bookmarkService.getBookmarks(filter),
-    // processing 중인 북마크가 있으면 3초마다 자동 갱신
+    // crawling/processing 중인 북마크가 있으면 3초마다 자동 갱신
     refetchInterval: (query) => {
       const data = query.state.data as Bookmark[] | undefined;
-      const hasProcessing = data?.some((b) => b.aiStatus === "processing");
-      return hasProcessing ? 3000 : false;
+      const hasPending = data?.some(
+        (b) => b.aiStatus === "processing" || b.aiStatus === "crawling"
+      );
+      return hasPending ? 3000 : false;
     },
   });
 }

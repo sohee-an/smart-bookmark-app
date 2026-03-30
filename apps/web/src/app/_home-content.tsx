@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
@@ -22,6 +23,25 @@ export default function HomeContent() {
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
   const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
   const { runPipeline, patchCache } = useBookmarkPipeline();
+
+  const retryCounts = useRef<Record<string, number>>({});
+
+  // 마운트 시 5분+ stuck 북마크 자동 failed 처리
+  useEffect(() => {
+    if (!bookmarks.length) return;
+    const STALE_MS = 5 * 60 * 1000;
+    const now = Date.now();
+    bookmarks.forEach((b) => {
+      if (
+        (b.aiStatus === "crawling" || b.aiStatus === "processing") &&
+        now - new Date(b.createdAt).getTime() > STALE_MS
+      ) {
+        const failedStatus = b.aiStatus === "crawling" ? "crawl_failed" : "failed";
+        updateBookmark({ id: b.id, data: { aiStatus: failedStatus } });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!bookmarks.length]);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
 
@@ -54,6 +74,13 @@ export default function HomeContent() {
   };
 
   const handleRetry = (bookmark: Bookmark) => {
+    const count = retryCounts.current[bookmark.id] ?? 0;
+    if (count >= 3) {
+      const failedStatus = bookmark.aiStatus === "crawl_failed" ? "crawl_failed" : "failed";
+      updateBookmark({ id: bookmark.id, data: { aiStatus: failedStatus } });
+      return;
+    }
+    retryCounts.current[bookmark.id] = count + 1;
     patchCache(bookmark.id, { aiStatus: "crawling" });
     runPipeline(bookmark.id, bookmark.url);
   };

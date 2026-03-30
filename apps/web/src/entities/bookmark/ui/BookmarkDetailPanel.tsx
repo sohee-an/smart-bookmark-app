@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, ExternalLink, Pencil, Check, XCircle, Trash2 } from "lucide-react";
+import { X, ExternalLink, Pencil, Check, XCircle, Trash2, Copy, CopyCheck } from "lucide-react";
 import { useBookmarkStore } from "../model/useBookmarkStore";
 import { TagGroup } from "@/shared/ui/tag/Tag";
 import { toast } from "@/shared/lib/toast";
@@ -89,6 +89,15 @@ export const BookmarkDetailPanel = ({
     setTagInput("");
     setIsConfirmingDelete(false);
     setDeleteError(null);
+  };
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyUrl = async () => {
+    if (!bookmark) return;
+    await navigator.clipboard.writeText(bookmark.url);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   const isOpen = !!bookmark;
@@ -185,15 +194,29 @@ export const BookmarkDetailPanel = ({
                   <label className="mb-1.5 block text-xs font-bold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
                     URL
                   </label>
-                  <a
-                    href={bookmark.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand-primary flex items-center gap-1.5 truncate text-sm font-medium hover:underline"
-                  >
-                    <ExternalLink size={14} />
-                    {bookmark.url}
-                  </a>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyUrl}
+                      className="shrink-0 rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                      title="URL 복사"
+                    >
+                      {isCopied ? (
+                        <CopyCheck size={14} className="text-green-500" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                    </button>
+                    <a
+                      href={bookmark.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-primary flex min-w-0 items-center gap-1.5 text-sm font-medium hover:underline"
+                    >
+                      <ExternalLink size={14} className="shrink-0" />
+                      <span className="truncate">{bookmark.url}</span>
+                    </a>
+                  </div>
                 </div>
 
                 {bookmark.summary && (

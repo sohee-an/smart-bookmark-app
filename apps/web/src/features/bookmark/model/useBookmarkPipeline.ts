@@ -27,8 +27,8 @@ export function useBookmarkPipeline() {
       const crawlJson = await crawlRes.json();
 
       if (!crawlJson.success) {
-        await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "failed" });
-        patchCache(bookmarkId, { aiStatus: "failed" });
+        await bookmarkService.updateBookmark(bookmarkId, { aiStatus: "crawl_failed" });
+        patchCache(bookmarkId, { aiStatus: "crawl_failed" });
         return;
       }
 

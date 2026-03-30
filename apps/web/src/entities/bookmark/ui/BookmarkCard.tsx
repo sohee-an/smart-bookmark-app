@@ -19,6 +19,7 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
   const isCrawling = aiStatus === "crawling";
   const isProcessing = aiStatus === "processing";
   const isFailed = aiStatus === "failed";
+  const isCrawlFailed = aiStatus === "crawl_failed";
   const isUnread = status === "unread";
   const isPending = isCrawling || isProcessing;
   const isNew = Date.now() - new Date(bookmark.createdAt).getTime() <= 24 * 60 * 60 * 1000;
@@ -106,11 +107,30 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
               <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
               <div className="h-3 w-[80%] animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
             </div>
+          ) : isCrawlFailed ? (
+            <div className="space-y-2">
+              <div className="bg-status-error/10 text-status-error flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
+                <AlertCircle size={14} />
+                <span>URL을 불러오는데 실패했어요.</span>
+              </div>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRetry(bookmark);
+                  }}
+                  className="text-brand-primary hover:bg-brand-primary/10 w-full rounded-xl px-3 py-2 text-xs font-bold transition-colors"
+                >
+                  다시 시도
+                </button>
+              )}
+            </div>
           ) : isFailed ? (
             <div className="space-y-2">
               <div className="bg-status-error/10 text-status-error flex items-center gap-2 rounded-xl p-3 text-xs font-medium">
                 <AlertCircle size={14} />
-                <span>AI 요약에 실패했습니다.</span>
+                <span>AI 요약에 실패했어요.</span>
               </div>
               {onRetry && (
                 <button
@@ -134,7 +154,7 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
 
         {/* 3. Bottom Info: Tags & AI completed badge */}
         <div className="mt-auto flex items-center justify-between pt-4">
-          {!isPending && (
+          {!isPending && !isCrawlFailed && (
             <TagGroup
               tags={tags}
               maxVisible={2}
@@ -145,7 +165,7 @@ export const BookmarkCard = ({ bookmark, onClick, onTagClick, onRetry }: Bookmar
           )}
 
           {/* AI Completed Indicator */}
-          {!isPending && !isFailed && summary && (
+          {!isPending && !isFailed && !isCrawlFailed && summary && (
             <div
               className="bg-brand-primary/10 text-brand-primary flex h-8 w-8 items-center justify-center rounded-xl shadow-sm"
               title="AI 요약 완료"

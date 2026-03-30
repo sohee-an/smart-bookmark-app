@@ -1,7 +1,7 @@
 /**
  * @description 북마크의 AI 처리 상태
  */
-export type AIStatus = "crawling" | "processing" | "completed" | "failed";
+export type AIStatus = "crawling" | "processing" | "completed" | "failed" | "crawl_failed";
 
 /**
  * @description 북마크의 읽음 상태
