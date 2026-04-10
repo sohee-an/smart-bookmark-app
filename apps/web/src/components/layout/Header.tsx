@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, FormEvent } from "react";
 import { Input } from "@/shared/ui/input/Input";
 import { supabase } from "@/shared/api/supabase/client";
 import { Avatar } from "@/shared/ui/Avatar";
@@ -30,6 +30,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const {
@@ -105,7 +106,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   };
 
   // 검색 제출 (엔터 or 드롭다운 "전체 결과 보기")
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     navigateSearch(searchQuery);
   };
@@ -149,6 +150,8 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   };
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     storage.cookie.remove("is_guest");
     await supabase.auth.signOut();
     router.push("/landing");
@@ -221,7 +224,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
           <button
             type="button"
             onClick={() => setShowMobileSearch(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             aria-label="검색"
           >
             <SearchIcon size={18} />
@@ -282,10 +285,11 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
                     )}
                     <button
                       onClick={handleLogout}
-                      className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                      disabled={isLoggingOut}
+                      className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <LogOutIcon />
-                      <span>로그아웃</span>
+                      <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
                     </button>
                   </div>
                 </div>

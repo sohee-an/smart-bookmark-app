@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint --max-warnings 5",
     "test": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "ai": "node scripts/gemini-cli.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
@@ -38,6 +40,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.0.1",
+    "@playwright/test": "^1.59.1",
     "@smart-bookmark/eslint-config": "workspace:*",
     "@smart-bookmark/typescript-config": "workspace:*",
     "@storybook/addon-a11y": "^10.2.13",
@@ -60,7 +63,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-storybook": "^10.2.13",
     "jsdom": "^28.1.0",
-    "playwright": "^1.58.2",
+    "playwright": "1.59.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "storybook": "^10.2.13",
     "tailwindcss": "^4",

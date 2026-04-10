@@ -69,6 +69,8 @@ pnpm test       # 테스트 실행
 - 변수 선언은 const, let만 사용 (var 금지)
 - 컴포넌트 파일명은 PascalCase
 - 유틸 함수 파일명은 camelCase
+- 타입만 import할 때는 반드시 `import type` 사용 (예: `import type { ReactNode } from "react"`)
+- `React.ReactNode` 같은 네임스페이스 접근 방식 금지, named import 사용
 
 ## 패키지 매니저
 
