@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useClientNow } from "@/shared/lib/useClientNow";
 import { useRouter } from "next/navigation";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
@@ -47,9 +48,10 @@ export default function HomeContent() {
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
 
-  const now = Date.now();
+  const now = useClientNow();
+
   const recentBookmarks = bookmarks.filter(
-    (b) => now - new Date(b.createdAt).getTime() <= 24 * 60 * 60 * 1000
+    (b) => now !== null && now - new Date(b.createdAt).getTime() <= 24 * 60 * 60 * 1000
   );
   const recentIds = new Set(recentBookmarks.map((b) => b.id));
   const allBookmarks = bookmarks.filter((b) => !recentIds.has(b.id));
