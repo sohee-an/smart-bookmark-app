@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useClientNow } from "@/shared/lib/useClientNow";
 import { useRouter } from "next/navigation";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
@@ -18,7 +17,7 @@ import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
-export default function HomeContent() {
+export function HomeContent() {
   const router = useRouter();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
   const { data: bookmarks = [], isLoading } = useBookmarks();
@@ -48,10 +47,9 @@ export default function HomeContent() {
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
 
-  const now = useClientNow();
-
+  const now = Date.now();
   const recentBookmarks = bookmarks.filter(
-    (b) => now !== null && now - new Date(b.createdAt).getTime() <= 24 * 60 * 60 * 1000
+    (b) => now - new Date(b.createdAt).getTime() <= 24 * 60 * 60 * 1000
   );
   const recentIds = new Set(recentBookmarks.map((b) => b.id));
   const allBookmarks = bookmarks.filter((b) => !recentIds.has(b.id));
@@ -105,7 +103,6 @@ export default function HomeContent() {
           bookmarks={recentBookmarks}
           onBookmarkClick={handleBookmarkClick}
           onTagClick={handleTagClick}
-          isLoading={isLoading}
         />
 
         <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">

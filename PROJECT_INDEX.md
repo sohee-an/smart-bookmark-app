@@ -40,6 +40,7 @@
 - `BookmarkDetailPanel` (우측 슬라이드 상세 패널, 뷰/편집 모드) → `apps/web/src/entities/bookmark/ui/BookmarkDetailPanel.tsx`
 - `AddBookmarkOverlay` (URL + 메모 입력 모달) → `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx`
 - `RecentBookmarkSlider` → `apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx`
+- `HomeContent` (메인 페이지 전체 콘텐츠) → `apps/web/src/widgets/home/ui/HomeContent.tsx`
 
 ## 컬렉션 (북마크 폴더, 공유)
 
