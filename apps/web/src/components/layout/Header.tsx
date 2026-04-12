@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, FormEvent } from "react";
 import { Input } from "@/shared/ui/input/Input";
 import { supabase } from "@/shared/api/supabase/client";
 import { Avatar } from "@/shared/ui/Avatar";
@@ -17,15 +17,20 @@ import { MobileSearchOverlay } from "@/features/bookmark/ui/MobileSearchOverlay"
 import { useBookmarks } from "@/features/bookmark/model/queries";
 import { useAuthStore } from "@/shared/model/useAuthStore";
 import { useRecentSearches } from "@/shared/lib/useRecentSearches";
+import type { User } from "@supabase/supabase-js";
 
-export const Header = () => {
+export const Header = ({ initialUser }: { initialUser: User | null }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, initialized } = useAuthStore();
+
+  // 클라이언트 인증 초기화 전엔 서버에서 받은 initialUser로 표시
+  const currentUser = initialized ? user : (initialUser ?? null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const {
@@ -101,7 +106,7 @@ export const Header = () => {
   };
 
   // 검색 제출 (엔터 or 드롭다운 "전체 결과 보기")
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     navigateSearch(searchQuery);
   };
@@ -145,13 +150,15 @@ export const Header = () => {
   };
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     storage.cookie.remove("is_guest");
     await supabase.auth.signOut();
     router.push("/landing");
   };
 
   const isGuest = initialized && !user && storage.cookie.get("is_guest") === "true";
-  const nickname = user?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
+  const nickname = currentUser?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
   const isOnBookmarks = pathname === "/bookmarks";
 
   return (
@@ -217,13 +224,13 @@ export const Header = () => {
           <button
             type="button"
             onClick={() => setShowMobileSearch(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 md:hidden dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             aria-label="검색"
           >
             <SearchIcon size={18} />
           </button>
 
-          {user && (
+          {currentUser && (
             <Link
               href="/collections"
               className={`hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all sm:flex ${
@@ -252,10 +259,8 @@ export const Header = () => {
 
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-          {/* 유저 영역 — 초기화 전엔 스켈레톤 */}
-          {!initialized ? (
-            <div className="h-9 w-9 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
-          ) : user || isGuest ? (
+          {/* 유저 영역 — initialUser로 즉시 표시, 클라이언트 초기화 후 교체 */}
+          {currentUser || isGuest ? (
             <div className="flex items-center gap-3">
               <div className="hidden flex-col items-end lg:flex">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -266,7 +271,7 @@ export const Header = () => {
                 </span>
               </div>
               <div className="group relative cursor-pointer">
-                <Avatar username={nickname} src={user?.user_metadata?.avatar_url} />
+                <Avatar username={nickname} src={currentUser?.user_metadata?.avatar_url} />
                 <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 hidden pt-2 duration-200 group-hover:block">
                   <div className="bg-surface-card dark:bg-surface-card-dark flex min-w-[140px] flex-col gap-1 rounded-2xl border border-zinc-200 p-1.5 shadow-xl dark:border-zinc-800">
                     {isGuest && (
@@ -280,10 +285,11 @@ export const Header = () => {
                     )}
                     <button
                       onClick={handleLogout}
-                      className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                      disabled={isLoggingOut}
+                      className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <LogOutIcon />
-                      <span>로그아웃</span>
+                      <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
                     </button>
                   </div>
                 </div>

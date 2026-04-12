@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { ExternalLink, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
 import { TagGroup } from "@/shared/ui/tag/Tag";
+import { useClientNow } from "@/shared/lib/useClientNow";
 import type { Bookmark } from "../model/types";
 
 interface BookmarkCardProps {
@@ -29,7 +31,9 @@ export const BookmarkCard = ({
   const isCrawlFailed = aiStatus === "crawl_failed";
   const isUnread = status === "unread";
   const isPending = isCrawling || isProcessing;
-  const isNew = Date.now() - new Date(bookmark.createdAt).getTime() <= 24 * 60 * 60 * 1000;
+
+  const now = useClientNow();
+  const isNew = now !== null && now - new Date(bookmark.createdAt).getTime() <= 24 * 60 * 60 * 1000;
 
   return (
     <div
@@ -48,10 +52,12 @@ export const BookmarkCard = ({
             </div>
           </div>
         ) : thumbnailUrl ? (
-          <img
+          <Image
             src={thumbnailUrl}
             alt={title}
-            className={`h-full w-full object-cover transition-transform duration-700 ${isProcessing ? "blur-md grayscale" : "group-hover:scale-110"}`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            className={`object-cover transition-transform duration-700 ${isProcessing ? "blur-md grayscale" : "group-hover:scale-110"}`}
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900">

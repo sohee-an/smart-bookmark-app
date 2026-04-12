@@ -40,6 +40,7 @@
 - `BookmarkDetailPanel` (우측 슬라이드 상세 패널, 뷰/편집 모드) → `apps/web/src/entities/bookmark/ui/BookmarkDetailPanel.tsx`
 - `AddBookmarkOverlay` (URL + 메모 입력 모달) → `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx`
 - `RecentBookmarkSlider` → `apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx`
+- `HomeContent` (메인 페이지 전체 콘텐츠) → `apps/web/src/widgets/home/ui/HomeContent.tsx`
 
 ## 컬렉션 (북마크 폴더, 공유)
 
@@ -79,6 +80,7 @@
 
 - `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`
+- `useClientNow` (SSR hydration 방지용 클라이언트 현재 시간 훅) → `apps/web/src/shared/lib/useClientNow.ts`
 - API 응답 표준 규격 `ApiResponse`, `ApiError`, `ErrorCode` → `apps/web/src/shared/lib/api-response.ts`
 - 비회원 익명 ID → `apps/web/src/shared/lib/guest.ts`
 - localStorage + cookie 관리 → `apps/web/src/shared/lib/storage.ts`

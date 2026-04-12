@@ -1,27 +1,32 @@
 class Storage {
   get<T>(key: string): T | null {
+    if (typeof window === "undefined") return null;
     const value = localStorage.getItem(key);
     if (!value) return null;
     return JSON.parse(value);
   }
   set<T>(key: string, value: T) {
+    if (typeof window === "undefined") return;
     const json = JSON.stringify(value);
     localStorage.setItem(key, json);
   }
 
   remove(key: string) {
+    if (typeof window === "undefined") return;
     localStorage.removeItem(key);
   }
 
   // Cookie 관리 (Middleware와의 동기화를 위해)
   cookie = {
     set(key: string, value: string, days = 7) {
+      if (typeof document === "undefined") return;
       const date = new Date();
       date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
       const expires = "expires=" + date.toUTCString();
       document.cookie = `${key}=${value};${expires};path=/;SameSite=Lax`;
     },
     get(key: string) {
+      if (typeof document === "undefined") return "";
       const name = key + "=";
       const decodedCookie = decodeURIComponent(document.cookie);
       const ca = decodedCookie.split(";");
@@ -37,6 +42,7 @@ class Storage {
       return "";
     },
     remove(key: string) {
+      if (typeof document === "undefined") return;
       document.cookie = `${key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
     },
   };

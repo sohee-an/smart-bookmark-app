@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Header } from "@/components/layout/Header";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
 import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
 import { TagFilter } from "@/features/bookmark/ui/TagFilter";
@@ -160,8 +159,6 @@ export function BookmarksContent() {
 
   return (
     <div className="selection:bg-brand-primary/20 selection:text-brand-primary min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Header />
-
       {showGuestBanner && (
         <div className="bg-brand-primary/10 border-brand-primary/20 dark:bg-brand-primary/5 border-b">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">

@@ -5,7 +5,10 @@ import { bookmarkService } from "./bookmark.service";
 
 export const bookmarkKeys = {
   all: ["bookmarks"] as const,
-  list: (filter?: BookmarkFilter) => [...bookmarkKeys.all, "list", filter] as const,
+  list: (filter?: BookmarkFilter) =>
+    filter
+      ? ([...bookmarkKeys.all, "list", filter] as const)
+      : ([...bookmarkKeys.all, "list"] as const),
 };
 
 export function useBookmarks(filter?: BookmarkFilter) {

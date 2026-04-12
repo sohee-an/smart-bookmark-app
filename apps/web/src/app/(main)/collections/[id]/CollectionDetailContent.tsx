@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Users, Trash2, Pencil, Check, X } from "lucide-react";
-import { Header } from "@/components/layout/Header";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { InviteMemberModal } from "@/features/collection/ui/InviteMemberModal";
 import {
@@ -72,7 +71,6 @@ export function CollectionDetailContent({ id }: Props) {
   if (colLoading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <Header />
         <div className="mx-auto max-w-7xl px-4 py-10">
           <div className="h-8 w-48 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
         </div>
@@ -83,7 +81,6 @@ export function CollectionDetailContent({ id }: Props) {
   if (!collection) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <Header />
         <div className="flex flex-col items-center justify-center py-32 text-center">
           <p className="font-bold text-zinc-700 dark:text-zinc-300">컬렉션을 찾을 수 없어요</p>
           <button
@@ -99,8 +96,6 @@ export function CollectionDetailContent({ id }: Props) {
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Header />
-
       <BookmarkDetailPanel
         bookmark={selectedBookmark}
         onSave={canEdit ? handlePanelSave : undefined}

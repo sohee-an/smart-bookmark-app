@@ -1,7 +1,7 @@
 ---
 name: qa-reviewer
 description: 웹 제품 완성도 QA 전문가. "QA 해줘", "UX 봐줘", "깜빡임", "버벅임", "엣지 케이스 확인" 요청 시 자동 호출.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---
 
@@ -102,6 +102,77 @@ model: sonnet
 - 색상 대비 미달 (텍스트 4.5:1, 대형 텍스트 3:1)
 - `role`, `aria-expanded`, `aria-haspopup` 누락 (드롭다운, 모달)
 - 키보드로 모든 인터랙션 가능한지
+
+---
+
+## Playwright 자동화 단계
+
+코드 패턴 분석이 끝난 후 아래 순서로 실행한다.
+
+### 1. 테스트 파일 생성/업데이트
+
+분석에서 발견한 Critical / High 문제를 Playwright 테스트로 변환한다.
+
+- 테스트 파일 위치: `apps/web/e2e/qa-[대상].spec.ts`
+- 이미 파일이 있으면 덮어쓰지 말고 누락된 케이스만 추가
+- 깜빡임(FOUC) 의심 → 네트워크 쓰로틀링 + 즉시 스크린샷 패턴 사용
+- 빈 상태/엣지 케이스 → 조건별 시나리오로 분리
+
+**케이스별 패턴:**
+
+```ts
+// 깜빡임(FOUC) 테스트
+test("로그인 유저: 헤더 깜빡임 없어야 함", async ({ page, context }) => {
+  await page.emulateNetworkConditions?.({
+    offline: false,
+    downloadThroughput: (500 * 1024) / 8,
+    uploadThroughput: (500 * 1024) / 8,
+    latency: 400,
+  });
+  await page.goto("/");
+  // hydration 전에 로그인 버튼이 보이면 깜빡임 발생
+  await expect(page.getByText("로그인", { exact: true })).not.toBeVisible();
+});
+
+// CLS(레이아웃 쉬프트) 테스트
+test("북마크 로딩 중 레이아웃 쉬프트 없어야 함", async ({ page }) => {
+  await page.goto("/");
+  // 로딩 직후 스켈레톤이 보여야 함 (빈 화면 아님)
+  await expect(page.locator("[data-testid='bookmark-skeleton']")).toBeVisible();
+});
+
+// 버튼 피드백 테스트
+test("북마크 추가 버튼 클릭 후 로딩 표시 되어야 함", async ({ page }) => {
+  await page.goto("/");
+  await page.getByText("북마크 추가").click();
+  await expect(page.locator("[aria-busy='true']")).toBeVisible();
+});
+```
+
+### 2. 테스트 실행
+
+```bash
+cd apps/web && pnpm test:e2e --reporter=list
+```
+
+- 개발 서버가 이미 실행 중이면 그대로 사용 (`reuseExistingServer: true`)
+- 실행 실패 시 에러 로그 전체를 리포트에 포함
+
+### 3. 결과 통합
+
+코드 분석 결과 + Playwright 실행 결과를 합쳐서 최종 리포트를 작성한다:
+
+```
+## QA 리뷰 결과
+
+### Critical (즉시 수정)
+- [코드 분석으로 발견] 또는 [Playwright 테스트 실패]로 출처 표시
+
+### Playwright 테스트 결과
+- ✅ 통과: N개
+- ❌ 실패: N개
+  - [테스트명]: 실패 원인
+```
 
 ---
 

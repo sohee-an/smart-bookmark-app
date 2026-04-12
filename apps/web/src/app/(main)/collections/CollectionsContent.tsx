@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, FolderOpen } from "lucide-react";
-import { Header } from "@/components/layout/Header";
 import { CollectionCard } from "@/entities/collection/ui/CollectionCard";
 import { CreateCollectionModal } from "@/features/collection/ui/CreateCollectionModal";
 import { useCollections } from "@/features/collection/model/queries";
@@ -15,8 +14,6 @@ export function CollectionsContent() {
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Header />
-
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-center justify-between">
           <div>

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/layout/Header";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
@@ -18,7 +17,7 @@ import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
-export default function HomeContent() {
+export function HomeContent() {
   const router = useRouter();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
   const { data: bookmarks = [], isLoading } = useBookmarks();
@@ -89,8 +88,6 @@ export default function HomeContent() {
 
   return (
     <div className="selection:bg-brand-primary/20 selection:text-brand-primary min-h-screen bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <Header />
-
       <BookmarkDetailPanel
         bookmark={selectedBookmark}
         onSave={handlePanelSave}
@@ -106,7 +103,6 @@ export default function HomeContent() {
           bookmarks={recentBookmarks}
           onBookmarkClick={handleBookmarkClick}
           onTagClick={handleTagClick}
-          isLoading={isLoading}
         />
 
         <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">

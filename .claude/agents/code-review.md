@@ -87,6 +87,16 @@ allowed-tools: Read, Grep, Glob, Bash
 - [ ] `refetchInterval` 범위 점검 — pending 외 상태까지 폴링하거나, 조건 없이 항상 켜져 있는지
 - [ ] `invalidateQueries` 범위가 너무 넓어 불필요한 refetch 유발하는지
 
+### 6. Next.js 렌더링 전략
+
+- [ ] 불필요한 `"use client"` 남용 — 상태/이벤트 없이 순수 렌더링만 하는 컴포넌트에 `"use client"` 붙은 경우 → 서버 컴포넌트로 전환
+- [ ] 서버에서 할 수 있는 fetch를 클라이언트에서 하는 경우 — `useEffect`로 데이터 가져오는 패턴이 서버 컴포넌트 fetch로 대체 가능한지 확인
+- [ ] `layout.tsx` vs `page.tsx` 역할 혼재 — 레이아웃에 페이지 전용 로직, 페이지에 레이아웃 전용 UI 섞인 경우
+- [ ] 서버 액션 vs API Route 적절성 — 단순 mutation은 서버 액션으로 충분한데 불필요하게 API Route 만든 경우, 반대로 복잡한 로직을 서버 액션에 때려넣은 경우
+- [ ] `initialUser` 같은 서버 데이터를 props로 내려줄 때 클라이언트 hydration 깜빡임 방지 처리 여부
+- [ ] Route Group 구조 적절성 — 레이아웃 분리 목적에 맞게 `(group)` 폴더를 사용했는지
+- [ ] `Suspense` 경계 누락 — 클라이언트 컴포넌트가 `useSearchParams` 등 사용 시 `Suspense`로 감싸지 않은 경우
+
 ---
 
 ## 출력 형식

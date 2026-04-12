@@ -1,12 +1,11 @@
 import { OverlayProvider } from "@/shared/lib/overlay/OverlayProvider";
 import { QueryProvider } from "@/shared/lib/QueryProvider";
 import { AuthProvider } from "@/shared/lib/AuthProvider";
-import { ConditionalRealtimeSync } from "@/shared/lib/ConditionalRealtimeSync";
 import { Toaster } from "@/shared/ui/Toaster";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import React from "react";
+import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -38,13 +37,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" style={{ colorScheme: "dark light" }}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <QueryProvider>
           <AuthProvider>
-            <ConditionalRealtimeSync />
             <OverlayProvider>
               {children}
               <Toaster />

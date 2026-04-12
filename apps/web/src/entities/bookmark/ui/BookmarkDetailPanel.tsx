@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { X, ExternalLink, Pencil, Check, XCircle, Trash2, Copy, CopyCheck } from "lucide-react";
 import { useBookmarkStore } from "../model/useBookmarkStore";
 import { TagGroup } from "@/shared/ui/tag/Tag";
@@ -161,11 +162,13 @@ export const BookmarkDetailPanel = ({
               {/* sticky: 썸네일 + 제목 */}
               <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900">
                 {bookmark.thumbnailUrl && (
-                  <div className="aspect-[16/9] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                    <img
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                    <Image
                       src={bookmark.thumbnailUrl}
                       alt={bookmark.title}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="448px"
+                      className="object-cover"
                     />
                   </div>
                 )}
