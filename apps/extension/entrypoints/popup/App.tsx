@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
+import "../../assets/globals.css";
 
 type AuthMode = "login" | "signup";
 type SaveStatus = "idle" | "saving" | "done" | "error" | "duplicate";
@@ -67,10 +68,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.center}>
-          <p style={{ color: "#999", fontSize: 13 }}>로딩 중...</p>
-        </div>
+      <div className="flex w-[300px] items-center justify-center py-10 font-sans">
+        <p className="text-sm text-zinc-400">로딩 중...</p>
       </div>
     );
   }
@@ -81,13 +80,13 @@ export default function App() {
 
   if (signupDone) {
     return (
-      <div style={styles.container}>
-        <h1 style={styles.title}>SmartMark</h1>
-        <div style={styles.center}>
-          <p style={{ fontSize: 14, color: "#333", marginBottom: 8 }}>이메일을 확인해주세요</p>
-          <p style={{ fontSize: 12, color: "#999" }}>{email}으로 인증 링크를 보냈습니다.</p>
+      <div className="flex w-[300px] flex-col gap-3 px-4 py-5 font-sans">
+        <h1 className="m-0 text-center text-xl font-extrabold text-zinc-900">SmartMark</h1>
+        <div className="py-4 text-center">
+          <p className="mb-2 text-sm text-zinc-800">이메일을 확인해주세요</p>
+          <p className="text-xs text-zinc-400">{email}으로 인증 링크를 보냈습니다.</p>
           <button
-            style={{ ...styles.linkBtn, marginTop: 16 }}
+            className="mt-4 cursor-pointer border-none bg-transparent text-xs text-indigo-500"
             onClick={() => {
               setSignupDone(false);
               setMode("login");
@@ -101,12 +100,12 @@ export default function App() {
   }
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>SmartMark</h1>
+    <div className="flex w-[300px] flex-col gap-3 px-4 py-5 font-sans">
+      <h1 className="m-0 text-center text-xl font-extrabold text-zinc-900">SmartMark</h1>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
         <input
-          style={styles.input}
+          className="box-border w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm outline-none"
           type="email"
           placeholder="이메일"
           value={email}
@@ -114,7 +113,7 @@ export default function App() {
           required
         />
         <input
-          style={styles.input}
+          className="box-border w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm outline-none"
           type="password"
           placeholder="비밀번호"
           value={password}
@@ -122,20 +121,27 @@ export default function App() {
           required
         />
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && <p className="m-0 text-xs text-red-500">{error}</p>}
 
-        <button style={styles.primaryBtn} type="submit" disabled={submitting}>
+        <button
+          className="w-full cursor-pointer rounded-xl border-none bg-zinc-900 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          type="submit"
+          disabled={submitting}
+        >
           {submitting ? "처리 중..." : mode === "login" ? "로그인" : "회원가입"}
         </button>
       </form>
 
-      <div style={styles.divider}>
-        <div style={styles.dividerLine} />
-        <span style={styles.dividerText}>또는</span>
-        <div style={styles.dividerLine} />
+      <div className="flex items-center gap-2">
+        <div className="h-px flex-1 bg-zinc-200" />
+        <span className="text-[11px] text-zinc-400">또는</span>
+        <div className="h-px flex-1 bg-zinc-200" />
       </div>
 
-      <button style={styles.googleBtn} onClick={handleGoogleLogin}>
+      <button
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white py-2.5 text-sm font-medium text-zinc-700"
+        onClick={handleGoogleLogin}
+      >
         <svg width="16" height="16" viewBox="0 0 18 18">
           <path
             fill="#4285F4"
@@ -158,7 +164,7 @@ export default function App() {
       </button>
 
       <button
-        style={styles.linkBtn}
+        className="cursor-pointer border-none bg-transparent p-0 text-center text-xs text-indigo-500"
         onClick={() => {
           setMode(mode === "login" ? "signup" : "login");
           setError("");
@@ -218,34 +224,46 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
     currentUrl.startsWith("chrome://") || currentUrl.startsWith("chrome-extension://");
 
   return (
-    <div style={styles.container}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 style={styles.title}>SmartMark</h1>
-        <button style={styles.logoutBtn} onClick={onLogout}>
+    <div className="flex w-[300px] flex-col gap-3 px-4 py-5 font-sans">
+      <div className="flex items-center justify-between">
+        <h1 className="m-0 text-xl font-extrabold text-zinc-900">SmartMark</h1>
+        <button
+          className="cursor-pointer rounded-lg border-none bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700"
+          onClick={onLogout}
+        >
           로그아웃
         </button>
       </div>
 
-      <div style={styles.urlBox}>
-        <p style={styles.urlTitle} title={currentTitle}>
+      <div className="rounded-xl bg-zinc-100 px-3 py-2.5">
+        <p
+          className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-zinc-900"
+          title={currentTitle}
+        >
           {currentTitle || "제목 없음"}
         </p>
-        <p style={styles.urlText} title={currentUrl}>
+        <p
+          className="mb-0 mt-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-zinc-400"
+          title={currentUrl}
+        >
           {currentUrl}
         </p>
       </div>
 
       {saveStatus === "done" && (
-        <div style={styles.successBox}>✅ 저장 완료! AI가 분석 중이에요.</div>
+        <div className="rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-700">
+          ✅ 저장 완료! AI가 분석 중이에요.
+        </div>
       )}
-      {saveStatus === "error" && <div style={styles.errorBox}>❌ 저장에 실패했습니다.</div>}
+      {saveStatus === "error" && (
+        <div className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-600">
+          ❌ 저장에 실패했습니다.
+        </div>
+      )}
 
       {saveStatus !== "done" && (
         <button
-          style={{
-            ...styles.primaryBtn,
-            opacity: saveStatus === "saving" || isChromePage ? 0.5 : 1,
-          }}
+          className="w-full cursor-pointer rounded-xl border-none bg-zinc-900 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           onClick={handleSave}
           disabled={saveStatus === "saving" || isChromePage}
         >
@@ -258,7 +276,7 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
       )}
 
       <button
-        style={styles.secondaryBtn}
+        className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-600"
         onClick={() => {
           chrome.windows.getCurrent((win) => {
             if (win.id !== undefined) {
@@ -272,7 +290,7 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
       </button>
 
       <button
-        style={styles.secondaryBtn}
+        className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-600"
         onClick={async () => {
           const {
             data: { session },
@@ -293,123 +311,3 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    width: 300,
-    padding: "20px 16px",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  },
-  title: { fontSize: 20, fontWeight: 800, color: "#111", margin: 0, textAlign: "center" },
-  center: { textAlign: "center", padding: "16px 0" },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    border: "1px solid #e4e4e7",
-    borderRadius: 10,
-    fontSize: 13,
-    outline: "none",
-    boxSizing: "border-box",
-  },
-  primaryBtn: {
-    width: "100%",
-    padding: 11,
-    backgroundColor: "#18181b",
-    color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-  googleBtn: {
-    width: "100%",
-    padding: 10,
-    backgroundColor: "#fff",
-    color: "#333",
-    border: "1px solid #e4e4e7",
-    borderRadius: 10,
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  logoutBtn: {
-    width: "100%",
-    padding: 10,
-    backgroundColor: "#f4f4f5",
-    color: "#333",
-    border: "none",
-    borderRadius: 10,
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-  },
-  linkBtn: {
-    background: "none",
-    border: "none",
-    color: "#6366f1",
-    fontSize: 12,
-    cursor: "pointer",
-    textAlign: "center",
-    padding: 0,
-  },
-  divider: { display: "flex", alignItems: "center", gap: 8 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#e4e4e7" },
-  dividerText: { fontSize: 11, color: "#a1a1aa" },
-  userBox: { backgroundColor: "#f4f4f5", borderRadius: 10, padding: "12px 14px" },
-  userEmail: { fontSize: 13, fontWeight: 600, color: "#111", margin: 0 },
-  error: { fontSize: 12, color: "#ef4444", margin: 0 },
-  urlBox: {
-    backgroundColor: "#f4f4f5",
-    borderRadius: 10,
-    padding: "10px 12px",
-  },
-  urlTitle: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#111",
-    margin: 0,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  urlText: {
-    fontSize: 11,
-    color: "#888",
-    margin: "3px 0 0",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  successBox: {
-    fontSize: 13,
-    color: "#16a34a",
-    backgroundColor: "#f0fdf4",
-    borderRadius: 10,
-    padding: "10px 12px",
-  },
-  errorBox: {
-    fontSize: 13,
-    color: "#dc2626",
-    backgroundColor: "#fef2f2",
-    borderRadius: 10,
-    padding: "10px 12px",
-  },
-  secondaryBtn: {
-    width: "100%",
-    padding: 10,
-    backgroundColor: "#f4f4f5",
-    color: "#555",
-    border: "none",
-    borderRadius: 10,
-    fontSize: 12,
-    cursor: "pointer",
-  },
-};
