@@ -13,7 +13,11 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
   return (
     <>
       <ConditionalRealtimeSync />
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <div className="h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950" />
+        }
+      >
         <Header initialUser={user} />
       </Suspense>
       {children}
