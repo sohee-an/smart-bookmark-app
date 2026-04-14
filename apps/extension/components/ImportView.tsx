@@ -5,7 +5,6 @@ import { TreeNode } from "./TreeNode";
 import type { BookmarkNode } from "./TreeNode";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL as string;
-const BATCH_SIZE = 5;
 
 type ImportStatus = "idle" | "importing" | "done" | "error";
 
@@ -33,12 +32,19 @@ function toggleNode(id: string, nodes: BookmarkNode[]): BookmarkNode[] {
 
 function collectSelected(nodes: BookmarkNode[]): { url: string; title: string }[] {
   const items: { url: string; title: string }[] = [];
-  for (const node of nodes) {
-    if (node.url && node.checked && node.url.startsWith("http")) {
-      items.push({ url: node.url, title: node.title });
+  const seen = new Set<string>();
+
+  function traverse(nodes: BookmarkNode[]) {
+    for (const node of nodes) {
+      if (node.url && node.checked && node.url.startsWith("http") && !seen.has(node.url)) {
+        seen.add(node.url);
+        items.push({ url: node.url, title: node.title });
+      }
+      if (node.children) traverse(node.children);
     }
-    if (node.children) items.push(...collectSelected(node.children));
   }
+
+  traverse(nodes);
   return items;
 }
 
@@ -46,8 +52,7 @@ export function ImportView({ user }: { user: User }) {
   const [tree, setTree] = useState<BookmarkNode[]>([]);
   const [treeLoading, setTreeLoading] = useState(true);
   const [status, setStatus] = useState<ImportStatus>("idle");
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [errorCount, setErrorCount] = useState(0);
+  const [result, setResult] = useState({ saved: 0, skipped: 0, failed: 0 });
 
   useEffect(() => {
     chrome.bookmarks.getTree((rawTree) => {
@@ -78,39 +83,28 @@ export function ImportView({ user }: { user: User }) {
     if (!session) return;
 
     setStatus("importing");
-    setProgress({ current: 0, total: selectedItems.length });
-    setErrorCount(0);
 
-    let errors = 0;
-    let completed = 0;
+    try {
+      const res = await fetch(`${WEB_URL}/api/extension/bulk-import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ items: selectedItems }),
+      });
 
-    for (let i = 0; i < selectedItems.length; i += BATCH_SIZE) {
-      const batch = selectedItems.slice(i, i + BATCH_SIZE);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setStatus("error");
+        return;
+      }
 
-      await Promise.all(
-        batch.map(async ({ url, title }) => {
-          try {
-            const res = await fetch(`${WEB_URL}/api/extension/save-bookmark`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({ url, title }),
-            });
-            if (!res.ok) errors++;
-          } catch {
-            errors++;
-          }
-          completed++;
-        })
-      );
-
-      setProgress({ current: completed, total: selectedItems.length });
-      setErrorCount(errors);
+      setResult({ saved: json.saved, skipped: json.skipped, failed: json.failed });
+      setStatus(json.saved === 0 && json.failed > 0 ? "error" : "done");
+    } catch {
+      setStatus("error");
     }
-
-    setStatus(errors === selectedItems.length ? "error" : "done");
   };
 
   if (treeLoading) {
@@ -122,31 +116,25 @@ export function ImportView({ user }: { user: User }) {
   }
 
   if (status === "importing") {
-    const pct = Math.round((progress.current / progress.total) * 100);
     return (
-      <div className="flex flex-1 flex-col justify-center gap-3">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
         <p className="text-center text-sm font-semibold text-zinc-900">가져오는 중...</p>
         <p className="text-center text-xs text-zinc-400">
-          {progress.current} / {progress.total}
+          {selectedItems.length}개를 저장하고 있어요
         </p>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
-          <div
-            className="h-full rounded-full bg-zinc-900 transition-all duration-200"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <p className="text-center text-xs text-zinc-400">{pct}%</p>
       </div>
     );
   }
 
   if (status === "done") {
-    const successCount = progress.total - errorCount;
     return (
       <div className="flex flex-col gap-3">
         <div className="rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-700">
-          저장 완료! {successCount}개 저장, AI가 분석 중이에요.
-          {errorCount > 0 && <span className="text-red-500"> ({errorCount}개 실패)</span>}
+          저장 완료! {result.saved}개 저장, AI가 분석 중이에요.
+          {result.skipped > 0 && (
+            <span className="text-zinc-500"> ({result.skipped}개는 이미 저장됨)</span>
+          )}
+          {result.failed > 0 && <span className="text-red-500"> ({result.failed}개 실패)</span>}
         </div>
         <button
           className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-500"
