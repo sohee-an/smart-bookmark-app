@@ -3,10 +3,19 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { TreeNode } from "./TreeNode";
 import type { BookmarkNode } from "./TreeNode";
+import { OrganizePreview } from "./OrganizePreview";
+import type { Category } from "./OrganizePreview";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL as string;
 
-type ImportStatus = "idle" | "importing" | "done" | "error";
+type ImportStatus =
+  | "idle"
+  | "ai-loading"
+  | "ai-preview"
+  | "importing"
+  | "done"
+  | "error"
+  | "ai-limit";
 
 function setAllChecked(nodes: BookmarkNode[], checked: boolean): BookmarkNode[] {
   return nodes.map((n) => ({
@@ -53,6 +62,7 @@ export function ImportView({ user }: { user: User }) {
   const [treeLoading, setTreeLoading] = useState(true);
   const [status, setStatus] = useState<ImportStatus>("idle");
   const [result, setResult] = useState({ saved: 0, skipped: 0, failed: 0 });
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     chrome.bookmarks.getTree((rawTree) => {
@@ -74,12 +84,18 @@ export function ImportView({ user }: { user: User }) {
   const selectedItems = collectSelected(tree);
   const allChecked = tree.length > 0 && tree.every((n) => n.checked);
 
-  const handleImport = async () => {
-    if (selectedItems.length === 0) return;
-
+  const getSession = async () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
+    return session;
+  };
+
+  // 바로 가져오기
+  const handleImport = async (items: { url: string; title: string }[]) => {
+    if (items.length === 0) return;
+
+    const session = await getSession();
     if (!session) return;
 
     setStatus("importing");
@@ -91,7 +107,7 @@ export function ImportView({ user }: { user: User }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ items: selectedItems }),
+        body: JSON.stringify({ items }),
       });
 
       const json = await res.json();
@@ -107,6 +123,54 @@ export function ImportView({ user }: { user: User }) {
     }
   };
 
+  // AI로 정리
+  const handleOrganize = async () => {
+    if (selectedItems.length === 0) return;
+
+    const session = await getSession();
+    if (!session) return;
+
+    setStatus("ai-loading");
+
+    try {
+      const res = await fetch(`${WEB_URL}/api/extension/organize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ items: selectedItems }),
+      });
+
+      const json = await res.json();
+      if (res.status === 429) {
+        setStatus("ai-limit");
+        return;
+      }
+      if (!res.ok || !json.success) {
+        setStatus("error");
+        return;
+      }
+
+      setCategories(json.categories);
+      setStatus("ai-preview");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  // AI 정리 확정 후 저장
+  const handleConfirmOrganize = (confirmedCategories: Category[]) => {
+    const items = confirmedCategories.flatMap((cat) => cat.items);
+    handleImport(items);
+  };
+
+  const resetToIdle = () => {
+    setStatus("idle");
+    setTree((prev) => setAllChecked(prev, false));
+  };
+
+  // --- 로딩 ---
   if (treeLoading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center">
@@ -115,17 +179,57 @@ export function ImportView({ user }: { user: User }) {
     );
   }
 
-  if (status === "importing") {
+  // --- 월 사용 한도 초과 ---
+  if (status === "ai-limit") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3">
-        <p className="text-center text-sm font-semibold text-zinc-900">가져오는 중...</p>
-        <p className="text-center text-xs text-zinc-400">
-          {selectedItems.length}개를 저장하고 있어요
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-2">
+        <p className="text-center text-sm font-semibold text-zinc-900">
+          이번 달 AI 정리를 이미 사용하셨어요.
         </p>
+        <p className="text-center text-xs text-zinc-400">다음 달에 다시 시도해주세요.</p>
+        <button
+          className="mt-2 w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-500"
+          onClick={() => setStatus("idle")}
+        >
+          돌아가기
+        </button>
       </div>
     );
   }
 
+  // --- AI 분석 중 ---
+  if (status === "ai-loading") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+        <p className="text-center text-sm font-semibold text-zinc-900">AI가 분류 중이에요...</p>
+        <p className="text-center text-xs text-zinc-400">{selectedItems.length}개 분석 중</p>
+      </div>
+    );
+  }
+
+  // --- AI 미리보기 ---
+  if (status === "ai-preview") {
+    return (
+      <OrganizePreview
+        categories={categories}
+        onConfirm={handleConfirmOrganize}
+        onBack={() => setStatus("idle")}
+      />
+    );
+  }
+
+  // --- 저장 중 ---
+  if (status === "importing") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+        <p className="text-center text-sm font-semibold text-zinc-900">가져오는 중...</p>
+      </div>
+    );
+  }
+
+  // --- 완료 ---
   if (status === "done") {
     return (
       <div className="flex flex-col gap-3">
@@ -138,10 +242,7 @@ export function ImportView({ user }: { user: User }) {
         </div>
         <button
           className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-500"
-          onClick={() => {
-            setStatus("idle");
-            setTree((prev) => setAllChecked(prev, false));
-          }}
+          onClick={resetToIdle}
         >
           더 가져오기
         </button>
@@ -167,6 +268,7 @@ export function ImportView({ user }: { user: User }) {
     );
   }
 
+  // --- 선택 화면 (idle) ---
   return (
     <>
       <p className="text-xs text-zinc-400">{user.email}</p>
@@ -199,11 +301,19 @@ export function ImportView({ user }: { user: User }) {
       )}
 
       <button
+        className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-white py-2.5 text-xs text-zinc-600 disabled:opacity-40"
+        disabled={selectedItems.length === 0}
+        onClick={handleOrganize}
+      >
+        ✨ AI로 정리해서 가져오기
+      </button>
+
+      <button
         className="w-full cursor-pointer rounded-xl border-none bg-zinc-900 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
         disabled={selectedItems.length === 0}
-        onClick={handleImport}
+        onClick={() => handleImport(selectedItems)}
       >
-        선택한 {selectedItems.length}개 가져오기
+        선택한 {selectedItems.length}개 바로 가져오기
       </button>
     </>
   );
