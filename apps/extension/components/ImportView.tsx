@@ -3,11 +3,19 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { TreeNode } from "./TreeNode";
 import type { BookmarkNode } from "./TreeNode";
+import { OrganizePreview } from "./OrganizePreview";
+import type { Category } from "./OrganizePreview";
 
 const WEB_URL = import.meta.env.VITE_WEB_URL as string;
-const BATCH_SIZE = 5;
 
-type ImportStatus = "idle" | "importing" | "done" | "error";
+type ImportStatus =
+  | "idle"
+  | "ai-loading"
+  | "ai-preview"
+  | "importing"
+  | "done"
+  | "error"
+  | "ai-limit";
 
 function setAllChecked(nodes: BookmarkNode[], checked: boolean): BookmarkNode[] {
   return nodes.map((n) => ({
@@ -33,12 +41,19 @@ function toggleNode(id: string, nodes: BookmarkNode[]): BookmarkNode[] {
 
 function collectSelected(nodes: BookmarkNode[]): { url: string; title: string }[] {
   const items: { url: string; title: string }[] = [];
-  for (const node of nodes) {
-    if (node.url && node.checked && node.url.startsWith("http")) {
-      items.push({ url: node.url, title: node.title });
+  const seen = new Set<string>();
+
+  function traverse(nodes: BookmarkNode[]) {
+    for (const node of nodes) {
+      if (node.url && node.checked && node.url.startsWith("http") && !seen.has(node.url)) {
+        seen.add(node.url);
+        items.push({ url: node.url, title: node.title });
+      }
+      if (node.children) traverse(node.children);
     }
-    if (node.children) items.push(...collectSelected(node.children));
   }
+
+  traverse(nodes);
   return items;
 }
 
@@ -46,8 +61,8 @@ export function ImportView({ user }: { user: User }) {
   const [tree, setTree] = useState<BookmarkNode[]>([]);
   const [treeLoading, setTreeLoading] = useState(true);
   const [status, setStatus] = useState<ImportStatus>("idle");
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [errorCount, setErrorCount] = useState(0);
+  const [result, setResult] = useState({ saved: 0, skipped: 0, failed: 0 });
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     chrome.bookmarks.getTree((rawTree) => {
@@ -69,50 +84,93 @@ export function ImportView({ user }: { user: User }) {
   const selectedItems = collectSelected(tree);
   const allChecked = tree.length > 0 && tree.every((n) => n.checked);
 
-  const handleImport = async () => {
-    if (selectedItems.length === 0) return;
-
+  const getSession = async () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
+    return session;
+  };
+
+  // 바로 가져오기
+  const handleImport = async (items: { url: string; title: string }[]) => {
+    if (items.length === 0) return;
+
+    const session = await getSession();
     if (!session) return;
 
     setStatus("importing");
-    setProgress({ current: 0, total: selectedItems.length });
-    setErrorCount(0);
 
-    let errors = 0;
-    let completed = 0;
+    try {
+      const res = await fetch(`${WEB_URL}/api/extension/bulk-import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ items }),
+      });
 
-    for (let i = 0; i < selectedItems.length; i += BATCH_SIZE) {
-      const batch = selectedItems.slice(i, i + BATCH_SIZE);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setStatus("error");
+        return;
+      }
 
-      await Promise.all(
-        batch.map(async ({ url, title }) => {
-          try {
-            const res = await fetch(`${WEB_URL}/api/extension/save-bookmark`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({ url, title }),
-            });
-            if (!res.ok) errors++;
-          } catch {
-            errors++;
-          }
-          completed++;
-        })
-      );
-
-      setProgress({ current: completed, total: selectedItems.length });
-      setErrorCount(errors);
+      setResult({ saved: json.saved, skipped: json.skipped, failed: json.failed });
+      setStatus(json.saved === 0 && json.failed > 0 ? "error" : "done");
+    } catch {
+      setStatus("error");
     }
-
-    setStatus(errors === selectedItems.length ? "error" : "done");
   };
 
+  // AI로 정리
+  const handleOrganize = async () => {
+    if (selectedItems.length === 0) return;
+
+    const session = await getSession();
+    if (!session) return;
+
+    setStatus("ai-loading");
+
+    try {
+      const res = await fetch(`${WEB_URL}/api/extension/organize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ items: selectedItems }),
+      });
+
+      const json = await res.json();
+      if (res.status === 429) {
+        setStatus("ai-limit");
+        return;
+      }
+      if (!res.ok || !json.success) {
+        setStatus("error");
+        return;
+      }
+
+      setCategories(json.categories);
+      setStatus("ai-preview");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  // AI 정리 확정 후 저장
+  const handleConfirmOrganize = (confirmedCategories: Category[]) => {
+    const items = confirmedCategories.flatMap((cat) => cat.items);
+    handleImport(items);
+  };
+
+  const resetToIdle = () => {
+    setStatus("idle");
+    setTree((prev) => setAllChecked(prev, false));
+  };
+
+  // --- 로딩 ---
   if (treeLoading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center">
@@ -121,39 +179,70 @@ export function ImportView({ user }: { user: User }) {
     );
   }
 
-  if (status === "importing") {
-    const pct = Math.round((progress.current / progress.total) * 100);
+  // --- 월 사용 한도 초과 ---
+  if (status === "ai-limit") {
     return (
-      <div className="flex flex-1 flex-col justify-center gap-3">
-        <p className="text-center text-sm font-semibold text-zinc-900">가져오는 중...</p>
-        <p className="text-center text-xs text-zinc-400">
-          {progress.current} / {progress.total}
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-2">
+        <p className="text-center text-sm font-semibold text-zinc-900">
+          이번 달 AI 정리를 이미 사용하셨어요.
         </p>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
-          <div
-            className="h-full rounded-full bg-zinc-900 transition-all duration-200"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <p className="text-center text-xs text-zinc-400">{pct}%</p>
+        <p className="text-center text-xs text-zinc-400">다음 달에 다시 시도해주세요.</p>
+        <button
+          className="mt-2 w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-500"
+          onClick={() => setStatus("idle")}
+        >
+          돌아가기
+        </button>
       </div>
     );
   }
 
+  // --- AI 분석 중 ---
+  if (status === "ai-loading") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+        <p className="text-center text-sm font-semibold text-zinc-900">AI가 분류 중이에요...</p>
+        <p className="text-center text-xs text-zinc-400">{selectedItems.length}개 분석 중</p>
+      </div>
+    );
+  }
+
+  // --- AI 미리보기 ---
+  if (status === "ai-preview") {
+    return (
+      <OrganizePreview
+        categories={categories}
+        onConfirm={handleConfirmOrganize}
+        onBack={() => setStatus("idle")}
+      />
+    );
+  }
+
+  // --- 저장 중 ---
+  if (status === "importing") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+        <p className="text-center text-sm font-semibold text-zinc-900">가져오는 중...</p>
+      </div>
+    );
+  }
+
+  // --- 완료 ---
   if (status === "done") {
-    const successCount = progress.total - errorCount;
     return (
       <div className="flex flex-col gap-3">
         <div className="rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-700">
-          저장 완료! {successCount}개 저장, AI가 분석 중이에요.
-          {errorCount > 0 && <span className="text-red-500"> ({errorCount}개 실패)</span>}
+          저장 완료! {result.saved}개 저장, AI가 분석 중이에요.
+          {result.skipped > 0 && (
+            <span className="text-zinc-500"> ({result.skipped}개는 이미 저장됨)</span>
+          )}
+          {result.failed > 0 && <span className="text-red-500"> ({result.failed}개 실패)</span>}
         </div>
         <button
           className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-500"
-          onClick={() => {
-            setStatus("idle");
-            setTree((prev) => setAllChecked(prev, false));
-          }}
+          onClick={resetToIdle}
         >
           더 가져오기
         </button>
@@ -179,6 +268,7 @@ export function ImportView({ user }: { user: User }) {
     );
   }
 
+  // --- 선택 화면 (idle) ---
   return (
     <>
       <p className="text-xs text-zinc-400">{user.email}</p>
@@ -211,11 +301,19 @@ export function ImportView({ user }: { user: User }) {
       )}
 
       <button
+        className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-white py-2.5 text-xs text-zinc-600 disabled:opacity-40"
+        disabled={selectedItems.length === 0}
+        onClick={handleOrganize}
+      >
+        ✨ AI로 정리해서 가져오기
+      </button>
+
+      <button
         className="w-full cursor-pointer rounded-xl border-none bg-zinc-900 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
         disabled={selectedItems.length === 0}
-        onClick={handleImport}
+        onClick={() => handleImport(selectedItems)}
       >
-        선택한 {selectedItems.length}개 가져오기
+        선택한 {selectedItems.length}개 바로 가져오기
       </button>
     </>
   );
