@@ -121,3 +121,32 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 | Factory 패턴    | `features/bookmark/model/bookmark.service.ts` |
 | Zustand 상태    | `entities/bookmark/model/useBookmarkStore.ts` |
 | Overlay 시스템  | `shared/lib/overlay/`                         |
+
+---
+
+## 문서 (docs/)
+
+에이전트가 참조할 스펙 문서는 `docs/spec/` 아래에만 있다.
+
+### 기획/스펙 (docs/spec/)
+
+| 문서                                              | 내용                                                         |
+| ------------------------------------------------- | ------------------------------------------------------------ |
+| `docs/spec/web/api.md`                            | 웹 API 스펙                                                  |
+| `docs/spec/web/features.md`                       | 웹 기능 목록                                                 |
+| `docs/spec/web/deployment.md`                     | 배포 설정                                                    |
+| `docs/spec/extension/extension-browser-import.md` | 익스텐션 기획 (가져오기 탭 + 북마크 정리 탭) — **메인 스펙** |
+| `docs/spec/extension/chrome-extension-plan.md`    | 익스텐션 초기 계획                                           |
+| `docs/spec/extension/extension-auth-flow.md`      | 익스텐션 인증 흐름                                           |
+| `docs/spec/extension/extension-import-tasks.md`   | 익스텐션 태스크 목록                                         |
+| `docs/spec/architecture/architecture.md`          | 아키텍처 결정사항                                            |
+
+### 보안 (docs/security/)
+
+- 보안 취약점 분석 결과 → `docs/security/`
+- 보안 에이전트가 참조하는 기준 문서
+
+### 개인 학습/포폴 (docs/personal/)
+
+- 에이전트가 참조하지 않는 개인 학습 노트 및 포폴 어필용 문서
+- `docs/personal/decisions/` — 구현 결정사항 학습 기록

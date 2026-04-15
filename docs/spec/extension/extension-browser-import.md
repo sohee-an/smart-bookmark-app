@@ -302,8 +302,16 @@ SmartMark DB에 저장          AI 분류 → OrganizePreview
 - 전체 북마크 트리 표시
 - 중복 감지: URL 완전 일치 기준, `⚠️` 뱃지 표시 + 어느 폴더에 있는지 표시
 - 삭제: `chrome.bookmarks.remove()` / `removeTree()`
-- 제목 편집: 인라인 편집 → `chrome.bookmarks.update()`
+- 제목 편집: 더블클릭 인라인 편집 → `chrome.bookmarks.update()`
+- 이동: 📂 버튼(폴더 검색 모달) 또는 드래그 앤 드롭 → `chrome.bookmarks.move()`
 - AI로 정리하기: 전체 북마크 → OrganizePreview (브라우저 저장만, SmartMark 버튼 없음)
+
+**주의: 모든 편집(삭제/이동/수정)은 chrome.bookmarks API를 직접 호출하므로 즉시 반영되고 되돌리기 불가.**
+
+**백로그 (추후 고려):**
+
+- 삭제/이동 시 확인 다이얼로그 추가 (실수 방지)
+- 실행 취소(Undo) 기능 — `chrome.bookmarks` API에 undo가 없어서 직접 구현 필요 (삭제 전 데이터 스냅샷 보관 → 복원)
 
 **AI 정리 결과 저장 위치:**
 
