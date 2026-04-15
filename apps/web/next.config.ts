@@ -6,14 +6,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-      { protocol: "http", hostname: "**" },
-    ],
-  },
-
-  typescript: {
-    ignoreBuildErrors: true, // ← 이거 추가
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
 
   async headers() {

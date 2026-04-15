@@ -22,7 +22,7 @@ export default function AuthCallbackPage() {
         </svg>
         <p className="text-sm text-zinc-500">로그인 처리 중...</p>
       </div>
-      <Suspense>
+      <Suspense fallback={null}>
         <AuthCallbackClient />
       </Suspense>
     </div>
