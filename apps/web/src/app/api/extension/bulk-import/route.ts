@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. Bulk INSERT — ai_status: "pending" (AI는 즉시 실행 안 함)
+  // 5. Bulk INSERT — ai_status: "crawling" (AI 파이프라인 대기 상태)
   const { data: inserted, error: insertError } = await supabase
     .from("bookmarks")
     .insert(
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
         title: item.title || null,
         user_id: user.id,
         status: "unread",
-        ai_status: "pending",
+        ai_status: "crawling",
       }))
     )
     .select("id, url");
