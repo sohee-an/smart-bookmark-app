@@ -68,8 +68,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex w-[300px] items-center justify-center py-10 font-sans">
-        <p className="text-sm text-zinc-400">로딩 중...</p>
+      <div className="flex w-[300px] items-center justify-center bg-surface-base py-10 font-sans dark:bg-surface-base-dark">
+        <p className="text-sm text-zinc-400 dark:text-zinc-500">로딩 중...</p>
       </div>
     );
   }
@@ -80,13 +80,15 @@ export default function App() {
 
   if (signupDone) {
     return (
-      <div className="flex w-[300px] flex-col gap-3 px-4 py-5 font-sans">
-        <h1 className="m-0 text-center text-xl font-extrabold text-zinc-900">SmartMark</h1>
+      <div className="flex w-[300px] flex-col gap-3 bg-surface-base px-4 py-5 font-sans dark:bg-surface-base-dark">
+        <h1 className="m-0 text-center text-xl font-extrabold text-brand-primary">SmartMark</h1>
         <div className="py-4 text-center">
-          <p className="mb-2 text-sm text-zinc-800">이메일을 확인해주세요</p>
-          <p className="text-xs text-zinc-400">{email}으로 인증 링크를 보냈습니다.</p>
+          <p className="mb-2 text-sm text-zinc-800 dark:text-zinc-200">이메일을 확인해주세요</p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            {email}으로 인증 링크를 보냈습니다.
+          </p>
           <button
-            className="mt-4 cursor-pointer border-none bg-transparent text-xs text-indigo-500"
+            className="mt-4 cursor-pointer border-none bg-transparent text-xs text-brand-primary"
             onClick={() => {
               setSignupDone(false);
               setMode("login");
@@ -100,12 +102,12 @@ export default function App() {
   }
 
   return (
-    <div className="flex w-[300px] flex-col gap-3 px-4 py-5 font-sans">
-      <h1 className="m-0 text-center text-xl font-extrabold text-zinc-900">SmartMark</h1>
+    <div className="flex w-[300px] flex-col gap-3 bg-surface-base px-4 py-5 font-sans dark:bg-surface-base-dark">
+      <h1 className="m-0 text-center text-xl font-extrabold text-brand-primary">SmartMark</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
         <input
-          className="box-border w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm outline-none"
+          className="box-border w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-primary dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-brand-primary"
           type="email"
           placeholder="이메일"
           value={email}
@@ -113,7 +115,7 @@ export default function App() {
           required
         />
         <input
-          className="box-border w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm outline-none"
+          className="box-border w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-brand-primary dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:border-brand-primary"
           type="password"
           placeholder="비밀번호"
           value={password}
@@ -121,10 +123,10 @@ export default function App() {
           required
         />
 
-        {error && <p className="m-0 text-xs text-red-500">{error}</p>}
+        {error && <p className="m-0 text-xs text-red-500 dark:text-red-400">{error}</p>}
 
         <button
-          className="w-full cursor-pointer rounded-xl border-none bg-zinc-900 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full cursor-pointer rounded-xl border-none bg-brand-primary py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
           type="submit"
           disabled={submitting}
         >
@@ -133,13 +135,13 @@ export default function App() {
       </form>
 
       <div className="flex items-center gap-2">
-        <div className="h-px flex-1 bg-zinc-200" />
-        <span className="text-[11px] text-zinc-400">또는</span>
-        <div className="h-px flex-1 bg-zinc-200" />
+        <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
+        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">또는</span>
+        <div className="h-px flex-1 bg-zinc-200 dark:bg-zinc-700" />
       </div>
 
       <button
-        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white py-2.5 text-sm font-medium text-zinc-700"
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
         onClick={handleGoogleLogin}
       >
         <svg width="16" height="16" viewBox="0 0 18 18">
@@ -164,7 +166,7 @@ export default function App() {
       </button>
 
       <button
-        className="cursor-pointer border-none bg-transparent p-0 text-center text-xs text-indigo-500"
+        className="cursor-pointer border-none bg-transparent p-0 text-center text-xs text-brand-primary"
         onClick={() => {
           setMode(mode === "login" ? "signup" : "login");
           setError("");
@@ -224,26 +226,26 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
     currentUrl.startsWith("chrome://") || currentUrl.startsWith("chrome-extension://");
 
   return (
-    <div className="flex w-[300px] flex-col gap-3 px-4 py-5 font-sans">
+    <div className="flex w-[300px] flex-col gap-3 bg-surface-base px-4 py-5 font-sans dark:bg-surface-base-dark">
       <div className="flex items-center justify-between">
-        <h1 className="m-0 text-xl font-extrabold text-zinc-900">SmartMark</h1>
+        <h1 className="m-0 text-xl font-extrabold text-brand-primary">SmartMark</h1>
         <button
-          className="cursor-pointer rounded-lg border-none bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-700"
+          className="cursor-pointer rounded-lg border-none bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
           onClick={onLogout}
         >
           로그아웃
         </button>
       </div>
 
-      <div className="rounded-xl bg-zinc-100 px-3 py-2.5">
+      <div className="rounded-xl border border-zinc-200 bg-surface-card px-3 py-2.5 dark:border-zinc-700 dark:bg-surface-card-dark">
         <p
-          className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-zinc-900"
+          className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-zinc-900 dark:text-zinc-100"
           title={currentTitle}
         >
           {currentTitle || "제목 없음"}
         </p>
         <p
-          className="mb-0 mt-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-zinc-400"
+          className="mb-0 mt-1 overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-zinc-400 dark:text-zinc-500"
           title={currentUrl}
         >
           {currentUrl}
@@ -251,19 +253,19 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
       </div>
 
       {saveStatus === "done" && (
-        <div className="rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-700">
-          ✅ 저장 완료! AI가 분석 중이에요.
+        <div className="rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-700 dark:bg-green-950 dark:text-green-400">
+          저장 완료! AI가 분석 중이에요.
         </div>
       )}
       {saveStatus === "error" && (
-        <div className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-600">
-          ❌ 저장에 실패했습니다.
+        <div className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
+          저장에 실패했습니다.
         </div>
       )}
 
       {saveStatus !== "done" && (
         <button
-          className="w-full cursor-pointer rounded-xl border-none bg-zinc-900 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="w-full cursor-pointer rounded-xl border-none bg-brand-primary py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
           onClick={handleSave}
           disabled={saveStatus === "saving" || isChromePage}
         >
@@ -276,7 +278,7 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
       )}
 
       <button
-        className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-600"
+        className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-transparent py-2.5 text-xs text-zinc-600 transition-colors hover:border-brand-primary hover:text-brand-primary dark:border-zinc-700 dark:text-zinc-400"
         onClick={() => {
           chrome.windows.getCurrent((win) => {
             if (win.id !== undefined) {
@@ -290,7 +292,7 @@ function SaveView({ user, onLogout }: { user: User; onLogout: () => void }) {
       </button>
 
       <button
-        className="w-full cursor-pointer rounded-xl border-none bg-zinc-100 py-2.5 text-xs text-zinc-600"
+        className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-transparent py-2.5 text-xs text-zinc-600 transition-colors hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600"
         onClick={async () => {
           const {
             data: { session },

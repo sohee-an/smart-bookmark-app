@@ -23,18 +23,18 @@ export function TreeNode({
   return (
     <div>
       <div
-        className="flex items-center py-1 pr-2 hover:bg-zinc-50"
+        className="flex items-center py-1.5 pr-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
         style={{ paddingLeft: 8 + depth * 16 }}
       >
         <input
           type="checkbox"
           checked={node.checked}
           onChange={() => onToggle(node.id)}
-          className="mr-1.5 shrink-0 cursor-pointer"
+          className="mr-1.5 shrink-0 cursor-pointer accent-brand-primary"
         />
         {isFolder && (
           <button
-            className="shrink-0 cursor-pointer border-none bg-transparent px-1 text-xs text-zinc-400"
+            className="shrink-0 cursor-pointer border-none bg-transparent px-1 text-xs text-zinc-400 dark:text-zinc-500"
             onClick={() => setExpanded((v) => !v)}
           >
             {expanded ? "▾" : "▸"}
@@ -42,7 +42,9 @@ export function TreeNode({
         )}
         <span
           className={`flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs ${
-            isFolder ? "cursor-pointer font-semibold text-zinc-900" : "text-zinc-500"
+            isFolder
+              ? "cursor-pointer font-semibold text-zinc-800 dark:text-zinc-200"
+              : "text-zinc-600 dark:text-zinc-400"
           }`}
           onClick={isFolder ? () => setExpanded((v) => !v) : undefined}
           title={node.url ?? node.title}
