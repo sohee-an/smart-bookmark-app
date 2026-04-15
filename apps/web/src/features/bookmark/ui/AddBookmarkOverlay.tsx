@@ -71,6 +71,28 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
           action: { label: "로그인", onClick: () => router.push("/login") },
           duration: 6000,
         });
+      } else {
+        const isExtInstalled = (window as Window & { __smartmark_ext?: boolean }).__smartmark_ext;
+        if (!isExtInstalled) {
+          const count = Number(localStorage.getItem("save_count") ?? "0") + 1;
+          localStorage.setItem("save_count", String(count));
+          if (count % 3 === 0) {
+            setTimeout(() => {
+              toast.show({
+                message: "익스텐션으로 브라우징 중에 바로 저장할 수 있어요 🔖",
+                action: {
+                  label: "설치하기",
+                  onClick: () =>
+                    window.open(
+                      "https://chromewebstore.google.com/detail/jmoedoefcinmibboekbampkdmgnmokad",
+                      "_blank"
+                    ),
+                },
+                duration: 8000,
+              });
+            }, 1500);
+          }
+        }
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "";

@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Bookmark, Sparkles, Shield, Zap, Search } from "lucide-react";
+import {
+  Bookmark,
+  Sparkles,
+  Shield,
+  Zap,
+  Search,
+  Puzzle,
+  FolderOpen,
+  MousePointerClick,
+} from "lucide-react";
 import { LandingActions } from "./LandingActions";
 
 export const metadata: Metadata = {
@@ -102,6 +111,72 @@ export default function LandingPage() {
               <p className="leading-relaxed text-zinc-600 dark:text-zinc-400">{feature.desc}</p>
             </div>
           ))}
+        </section>
+
+        {/* 익스텐션 섹션 */}
+        <section className="pb-32">
+          <div className="from-brand-primary/5 to-brand-accent/5 dark:from-brand-primary/10 dark:to-brand-accent/10 relative overflow-hidden rounded-3xl border border-zinc-100 bg-gradient-to-br via-white p-12 dark:border-zinc-800 dark:via-zinc-900">
+            <div className="bg-brand-primary/10 pointer-events-none absolute top-0 right-0 -z-0 h-64 w-64 translate-x-1/3 -translate-y-1/3 rounded-full blur-3xl" />
+
+            <div className="relative flex flex-col items-start gap-10 md:flex-row md:items-center">
+              <div className="flex-1">
+                <div className="border-brand-primary/20 bg-brand-primary/10 mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                  <Puzzle className="text-brand-primary h-4 w-4" />
+                  <span className="text-brand-primary text-xs font-bold tracking-wider uppercase">
+                    Chrome Extension
+                  </span>
+                </div>
+                <h2 className="mb-4 text-3xl font-black tracking-tight text-zinc-900 md:text-4xl dark:text-white">
+                  브라우징 중에도
+                  <br />
+                  <span className="text-gradient">원클릭으로 저장</span>
+                </h2>
+                <p className="mb-8 max-w-md leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  탭 전환 없이 지금 보는 페이지를 바로 저장. 기존 북마크 수백 개도 AI가 한 번에
+                  정리해드려요.
+                </p>
+                <a
+                  href="https://chromewebstore.google.com/detail/jmoedoefcinmibboekbampkdmgnmokad"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-zinc-900 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-zinc-700 active:scale-[0.98] dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
+                >
+                  Chrome에 추가하기 →
+                </a>
+              </div>
+
+              <div className="flex flex-col gap-4 md:min-w-[280px]">
+                {[
+                  {
+                    icon: <MousePointerClick className="text-brand-primary h-5 w-5" />,
+                    title: "원클릭 저장",
+                    desc: "지금 보는 페이지 즉시 저장",
+                  },
+                  {
+                    icon: <FolderOpen className="text-brand-accent h-5 w-5" />,
+                    title: "북마크 일괄 가져오기",
+                    desc: "기존 즐겨찾기 한 번에 이전",
+                  },
+                  {
+                    icon: <Sparkles className="text-brand-secondary h-5 w-5" />,
+                    title: "AI 자동 분류",
+                    desc: "수백 개도 카테고리별로 정리",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-3 rounded-2xl border border-zinc-100 bg-white/70 p-4 backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-800/50"
+                  >
+                    <div className="mt-0.5 shrink-0">{item.icon}</div>
+                    <div>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 
