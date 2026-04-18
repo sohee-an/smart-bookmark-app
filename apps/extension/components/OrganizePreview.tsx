@@ -6,6 +6,53 @@ type Item = { url: string; title: string; excluded: boolean };
 type InternalCategory = { name: string; items: Item[] };
 type ActionStatus = "idle" | "saving" | "done" | "error";
 
+async function isDescendant(
+  node: chrome.bookmarks.BookmarkTreeNode,
+  ancestorId: string
+): Promise<boolean> {
+  if (!node.parentId) return false;
+  if (node.parentId === ancestorId) return true;
+  const parents = await new Promise<chrome.bookmarks.BookmarkTreeNode[]>((resolve) => {
+    chrome.bookmarks.get(node.parentId!, (r) => {
+      void chrome.runtime.lastError;
+      resolve(r ?? []);
+    });
+  });
+  if (!parents[0]) return false;
+  return isDescendant(parents[0], ancestorId);
+}
+
+async function removeEmptyFolders(nodeId: string): Promise<void> {
+  const children = await new Promise<chrome.bookmarks.BookmarkTreeNode[]>((resolve) => {
+    chrome.bookmarks.getChildren(nodeId, (c) => {
+      void chrome.runtime.lastError;
+      resolve(c ?? []);
+    });
+  });
+
+  for (const child of children) {
+    if (!child.url) {
+      await removeEmptyFolders(child.id);
+    }
+  }
+
+  const remaining = await new Promise<chrome.bookmarks.BookmarkTreeNode[]>((resolve) => {
+    chrome.bookmarks.getChildren(nodeId, (c) => {
+      void chrome.runtime.lastError;
+      resolve(c ?? []);
+    });
+  });
+
+  if (remaining.length === 0) {
+    await new Promise<void>((resolve) => {
+      chrome.bookmarks.removeTree(nodeId, () => {
+        void chrome.runtime.lastError;
+        resolve();
+      });
+    });
+  }
+}
+
 function toInternal(categories: Category[]): InternalCategory[] {
   return categories.map((cat) => ({
     ...cat,
@@ -121,23 +168,45 @@ export function OrganizePreview({
     try {
       const activeCategories = getActiveCategories(categories);
 
-      // "기타 즐겨찾기(id:2)" 아래 SmartMark 정리 폴더 생성
-      const parentFolder = await new Promise<chrome.bookmarks.BookmarkTreeNode>(
-        (resolve, reject) => {
-          chrome.bookmarks.create(
-            { parentId: "2", title: `SmartMark 정리 (${new Date().toLocaleDateString("ko-KR")})` },
-            (folder) => {
-              if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-              else resolve(folder);
-            }
-          );
+      // 전부 포함(대체) → 기존 SmartMark 정리 폴더 삭제 후 즐겨찾기 바(id:1)에 카테고리 직접 생성
+      // 일부 누락 → 기타 즐겨찾기(id:2)에 SmartMark 정리 래퍼 생성
+      if (allIncluded) {
+        const existingSmartmark = await new Promise<chrome.bookmarks.BookmarkTreeNode[]>(
+          (resolve) => {
+            chrome.bookmarks.search("SmartMark 정리", (r) => {
+              void chrome.runtime.lastError;
+              resolve((r ?? []).filter((b) => !b.url));
+            });
+          }
+        );
+        for (const folder of existingSmartmark) {
+          await new Promise<void>((resolve) => {
+            chrome.bookmarks.removeTree(folder.id, () => {
+              void chrome.runtime.lastError;
+              resolve();
+            });
+          });
         }
-      );
+      }
+      const categoryParentId = allIncluded
+        ? "1"
+        : await new Promise<string>((resolve, reject) => {
+            chrome.bookmarks.create(
+              {
+                parentId: "2",
+                title: `SmartMark 정리 (${new Date().toLocaleDateString("ko-KR")})`,
+              },
+              (folder) => {
+                if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
+                else resolve(folder.id);
+              }
+            );
+          });
 
       // 카테고리별 서브폴더 + 북마크 생성
       for (const cat of activeCategories) {
         const folder = await new Promise<chrome.bookmarks.BookmarkTreeNode>((resolve, reject) => {
-          chrome.bookmarks.create({ parentId: parentFolder.id, title: cat.name }, (f) => {
+          chrome.bookmarks.create({ parentId: categoryParentId, title: cat.name }, (f) => {
             if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
             else resolve(f);
           });
@@ -159,15 +228,45 @@ export function OrganizePreview({
       // 정리된 URL에 해당하는 원본 북마크 삭제
       if (urlToIds) {
         const organizedUrls = new Set(activeCategories.flatMap((c) => c.items.map((i) => i.url)));
-        for (const [url, ids] of urlToIds) {
-          if (organizedUrls.has(url)) {
-            for (const id of ids) {
+        const newBookmarkIds = new Set(activeCategories.flatMap((c) => c.items.map((i) => i.url)));
+
+        for (const url of newBookmarkIds) {
+          const results = await new Promise<chrome.bookmarks.BookmarkTreeNode[]>((resolve) => {
+            chrome.bookmarks.search({ url }, (r) => {
+              void chrome.runtime.lastError;
+              resolve(r ?? []);
+            });
+          });
+
+          for (const bookmark of results) {
+            // SmartMark 정리 폴더 안에 새로 만든 건 제외
+            if (bookmark.id && !(await isDescendant(bookmark, categoryParentId))) {
               await new Promise<void>((resolve) => {
-                chrome.bookmarks.remove(id, () => {
-                  void chrome.runtime.lastError;
+                chrome.bookmarks.remove(bookmark.id, () => {
+                  if (chrome.runtime.lastError) {
+                    console.warn(
+                      "[organize] remove failed:",
+                      bookmark.id,
+                      chrome.runtime.lastError.message
+                    );
+                  }
                   resolve();
                 });
               });
+            }
+          }
+        }
+
+        // 북마크 삭제 후 빈 폴더 정리
+        const rootTree = await new Promise<chrome.bookmarks.BookmarkTreeNode[]>((resolve) => {
+          chrome.bookmarks.getTree((t) => resolve(t[0]?.children ?? []));
+        });
+        for (const rootNode of rootTree) {
+          if (!rootNode.url) {
+            for (const child of rootNode.children ?? []) {
+              if (!child.url && child.id !== categoryParentId) {
+                await removeEmptyFolders(child.id);
+              }
             }
           }
         }
@@ -187,8 +286,8 @@ export function OrganizePreview({
   };
 
   return (
-    <>
-      <div className="flex items-center gap-2">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex items-center gap-2 px-0 pb-2">
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
           {originalCount
             ? `${originalCount}개 중 ${totalCount}개 · ${categories.length}개 카테고리`
@@ -299,70 +398,75 @@ export function OrganizePreview({
         </button>
       </div>
 
-      {/* 액션 상태 피드백 */}
-      {(browserStatus === "done" || browserStatus === "error") && (
-        <div
-          className={`rounded-xl px-3 py-2 text-xs ${
-            browserStatus === "done"
-              ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
-              : "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
-          }`}
-        >
-          {browserStatus === "done"
-            ? "브라우저 즐겨찾기에 저장됐어요."
-            : "브라우저 저장에 실패했어요."}
-        </div>
-      )}
-      {(smartmarkStatus === "done" || smartmarkStatus === "error") && (
-        <div
-          className={`rounded-xl px-3 py-2 text-xs ${
-            smartmarkStatus === "done"
-              ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
-              : "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
-          }`}
-        >
-          {smartmarkStatus === "done" ? "SmartMark에 가져왔어요." : "SmartMark 저장에 실패했어요."}
-        </div>
-      )}
-
-      {/* 버튼 영역 */}
-      <button
-        className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-transparent py-2.5 text-xs text-zinc-500 transition-colors hover:border-zinc-300 hover:text-zinc-700 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600"
-        onClick={onBack}
-      >
-        ← 다시 선택
-      </button>
-
-      <div className={`flex gap-2 ${hideSmartmark ? "" : ""}`}>
-        <button
-          className={`cursor-pointer rounded-xl border border-zinc-200 bg-transparent py-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 ${hideSmartmark ? "flex-1" : "flex-1"}`}
-          disabled={totalCount === 0 || browserStatus === "saving"}
-          onClick={handleBrowserSave}
-        >
-          {browserStatus === "saving"
-            ? "저장 중..."
-            : browserStatus === "done"
-              ? "✓ 완료"
-              : allIncluded
-                ? "📁 기존 북마크 대체"
-                : missingCount > 0
-                  ? `📁 정리 적용 (${missingCount}개 원위치 유지)`
-                  : "📁 브라우저 폴더로 정리"}
-        </button>
-        {!hideSmartmark && (
-          <button
-            className="flex-1 cursor-pointer rounded-xl border-none bg-brand-primary py-2.5 text-xs font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-40"
-            disabled={totalCount === 0 || smartmarkStatus === "saving"}
-            onClick={handleSmartmarkSave}
+      {/* 하단 고정 영역 */}
+      <div className="shrink-0 border-t border-zinc-100 bg-surface-base pt-3 dark:border-zinc-800 dark:bg-surface-base-dark">
+        {/* 상태 피드백 */}
+        {(browserStatus === "done" || browserStatus === "error") && (
+          <div
+            className={`mb-2 rounded-xl px-3 py-2 text-xs ${
+              browserStatus === "done"
+                ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
+                : "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
+            }`}
           >
-            {smartmarkStatus === "saving"
-              ? "가져오는 중..."
-              : smartmarkStatus === "done"
-                ? "✓ SmartMark 저장됨"
-                : "SmartMark로 가져오기"}
-          </button>
+            {browserStatus === "done"
+              ? "✓ 브라우저 즐겨찾기에 저장됐어요."
+              : "브라우저 저장에 실패했어요."}
+          </div>
         )}
+        {(smartmarkStatus === "done" || smartmarkStatus === "error") && (
+          <div
+            className={`mb-2 rounded-xl px-3 py-2 text-xs ${
+              smartmarkStatus === "done"
+                ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
+                : "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400"
+            }`}
+          >
+            {smartmarkStatus === "done"
+              ? "✓ SmartMark에 가져왔어요."
+              : "SmartMark 저장에 실패했어요."}
+          </div>
+        )}
+
+        {/* 버튼 */}
+        <button
+          className="mb-2 w-full cursor-pointer rounded-xl border border-zinc-200 bg-transparent py-2 text-xs text-zinc-400 transition-colors hover:border-zinc-300 hover:text-zinc-600 dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-zinc-600"
+          onClick={onBack}
+        >
+          {browserStatus === "done" ? "북마크 정리로 돌아가기 →" : "← 다시 선택"}
+        </button>
+
+        <div className="flex gap-2">
+          <button
+            className="flex-1 cursor-pointer rounded-xl border border-zinc-200 bg-transparent py-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            disabled={totalCount === 0 || browserStatus === "saving"}
+            onClick={handleBrowserSave}
+          >
+            {browserStatus === "saving"
+              ? "저장 중..."
+              : browserStatus === "done"
+                ? "✓ 완료"
+                : allIncluded
+                  ? "📁 기존 북마크 대체"
+                  : missingCount > 0
+                    ? `📁 정리 적용 (${missingCount}개 유지)`
+                    : "📁 브라우저 폴더로 정리"}
+          </button>
+          {!hideSmartmark && (
+            <button
+              className="flex-1 cursor-pointer rounded-xl border-none bg-brand-primary py-2.5 text-xs font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-40"
+              disabled={totalCount === 0 || smartmarkStatus === "saving"}
+              onClick={handleSmartmarkSave}
+            >
+              {smartmarkStatus === "saving"
+                ? "가져오는 중..."
+                : smartmarkStatus === "done"
+                  ? "✓ SmartMark 저장됨"
+                  : "SmartMark로 가져오기"}
+            </button>
+          )}
+        </div>
       </div>
-    </>
+    </div>
   );
 }

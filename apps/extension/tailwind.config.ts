@@ -5,6 +5,16 @@ export default {
   darkMode: "media",
   theme: {
     extend: {
+      keyframes: {
+        "loading-bar": {
+          "0%": { transform: "translateX(-100%)" },
+          "50%": { transform: "translateX(200%)" },
+          "100%": { transform: "translateX(-100%)" },
+        },
+      },
+      animation: {
+        "loading-bar": "loading-bar 2s ease-in-out infinite",
+      },
       colors: {
         brand: {
           primary: "#4f46e5",

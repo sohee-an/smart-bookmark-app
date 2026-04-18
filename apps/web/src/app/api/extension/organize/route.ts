@@ -1,6 +1,37 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Resend } from "resend";
 import { getUserFromBearer, CORS_HEADERS } from "../_lib/auth";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const ADMIN_EMAIL = "ansoso634@gmail.com";
+
+async function sendErrorAlert(params: {
+  userEmail: string;
+  situation: string;
+  error: string;
+  itemCount?: number;
+}) {
+  try {
+    await resend.emails.send({
+      from: "SmartMark <onboarding@resend.dev>",
+      to: ADMIN_EMAIL,
+      subject: `[SmartMark] AI 정리 오류 — ${params.situation}`,
+      html: `
+        <h2>AI 북마크 정리 오류 알림</h2>
+        <table>
+          <tr><td><b>유저 이메일</b></td><td>${params.userEmail}</td></tr>
+          <tr><td><b>상황</b></td><td>${params.situation}</td></tr>
+          ${params.itemCount !== undefined ? `<tr><td><b>북마크 수</b></td><td>${params.itemCount}개</td></tr>` : ""}
+          <tr><td><b>에러</b></td><td>${params.error}</td></tr>
+          <tr><td><b>시각</b></td><td>${new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}</td></tr>
+        </table>
+      `,
+    });
+  } catch {
+    console.error("[organize] 알림 이메일 발송 실패");
+  }
+}
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -79,6 +110,12 @@ export async function POST(request: Request) {
 
   // 2. 아이템 수 제한
   if (items.length > MAX_ITEMS) {
+    await sendErrorAlert({
+      userEmail: user.email ?? "unknown",
+      situation: `북마크 수 초과 (${MAX_ITEMS}개 제한)`,
+      error: `요청 수: ${items.length}개`,
+      itemCount: items.length,
+    });
     return NextResponse.json(
       { success: false, message: `한 번에 최대 ${MAX_ITEMS}개까지 정리할 수 있어요.` },
       { status: 400, headers: CORS_HEADERS }
@@ -142,6 +179,16 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[organize] Gemini API 오류:", err);
     const message = err instanceof Error ? err.message : String(err);
+    const isQuotaError =
+      message.includes("quota") ||
+      message.includes("429") ||
+      message.includes("RESOURCE_EXHAUSTED");
+    await sendErrorAlert({
+      userEmail: user.email ?? "unknown",
+      situation: isQuotaError ? "Gemini API 토큰/할당량 초과" : "Gemini API 오류",
+      error: message,
+      itemCount: items.length,
+    });
     return NextResponse.json(
       { success: false, message: `AI 분류 중 오류가 발생했어요: ${message}` },
       { status: 500, headers: CORS_HEADERS }

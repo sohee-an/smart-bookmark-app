@@ -60,9 +60,9 @@ export default function App() {
   }
 
   return (
-    <div className="box-border flex min-h-screen flex-col bg-surface-base font-sans dark:bg-surface-base-dark">
+    <div className="box-border flex h-screen flex-col bg-surface-base font-sans dark:bg-surface-base-dark">
       {/* 헤더 */}
-      <div className="border-b border-zinc-200 px-4 pt-4 dark:border-zinc-800">
+      <div className="sticky top-0 z-10 border-b border-zinc-200 bg-surface-base px-4 pt-4 dark:border-zinc-800 dark:bg-surface-base-dark">
         <h1 className="mb-3 text-xl font-extrabold text-brand-primary">SmartMark</h1>
 
         {/* 탭 */}
@@ -84,7 +84,7 @@ export default function App() {
       </div>
 
       {/* 탭 콘텐츠 */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4">
         {tab === "import" ? <ImportView user={user} /> : <BookmarkManager />}
       </div>
     </div>

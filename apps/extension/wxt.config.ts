@@ -6,8 +6,9 @@ export default defineConfig({
   manifest: {
     name: "SmartMark",
     description: "AI가 자동으로 요약, 태그, 의미 검색을 해주는 북마크 앱",
-    version: "0.2.0",
+    version: "0.3.0",
     permissions: ["storage", "tabs", "activeTab", "contextMenus", "sidePanel", "bookmarks"],
+    host_permissions: ["https://smartmark.wooyou.co.kr/*"],
     action: {
       default_popup: "popup/index.html",
       default_icon: {

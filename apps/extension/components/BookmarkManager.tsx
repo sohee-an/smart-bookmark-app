@@ -57,13 +57,124 @@ function getFolderOptions(nodes: RawNode[], path = ""): FolderOption[] {
 }
 
 // AI 정리용 북마크 평탄화
+const ALLOWED_PROTOCOLS = ["http://", "https://", "chrome://", "file://"];
+
+const LOADING_TIPS = [
+  {
+    icon: "🔖",
+    title: "원클릭 저장",
+    desc: "브라우징 중 좋은 글 발견했을 때\n익스텐션 아이콘 한 번만 누르면\n바로 저장돼요.",
+  },
+  {
+    icon: "🤖",
+    title: "AI 자동 요약 & 태깅",
+    desc: "저장하면 AI가 자동으로 요약하고\n태그를 달아줘요.\n나중에 내용이 기억 안 나도 괜찮아요.",
+  },
+  {
+    icon: "🔍",
+    title: "시맨틱 서치",
+    desc: '"다이어트 방법"으로 검색하면\n단어가 달라도 비슷한 의미의 글들을\n함께 찾아줘요.',
+  },
+  {
+    icon: "⚠️",
+    title: "중복 북마크 감지",
+    desc: "같은 URL이 여러 폴더에 저장된 경우\n자동으로 감지해서 알려줘요.",
+  },
+  {
+    icon: "🗂️",
+    title: "브라우저 북마크 가져오기",
+    desc: "기존 브라우저 북마크를\nSmartMark로 한 번에 가져와서\nAI 요약과 시맨틱 검색을 활용해보세요.",
+  },
+];
+
+function OrganizeLoadingScreen({ onAbort }: { onAbort: () => void }) {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % LOADING_TIPS.length);
+        setVisible(true);
+      }, 350);
+    }, 3800);
+    return () => clearInterval(interval);
+  }, []);
+
+  const tip = LOADING_TIPS[index];
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 px-4 py-6">
+      {/* AI 작업 상태 */}
+      <div className="flex w-full flex-col items-center gap-2.5">
+        <div className="relative flex items-center justify-center">
+          <div className="h-14 w-14 animate-spin rounded-full border-[3px] border-zinc-100 border-t-brand-primary dark:border-zinc-800 dark:border-t-brand-primary" />
+          <div className="absolute flex h-9 w-9 items-center justify-center rounded-full bg-brand-primary shadow-lg">
+            <span className="text-base">✨</span>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm font-bold text-zinc-800 dark:text-zinc-100">AI가 작업 중이에요</p>
+          <p className="mt-0.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+            북마크 수에 따라 30초 정도 걸릴 수 있어요
+          </p>
+        </div>
+
+        <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <div className="h-full w-1/3 animate-[loading-bar_2s_ease-in-out_infinite] rounded-full bg-brand-primary" />
+        </div>
+      </div>
+
+      {/* 팁 카드 */}
+      <div className="w-full transition-opacity duration-300" style={{ opacity: visible ? 1 : 0 }}>
+        <div className="rounded-2xl border border-zinc-200 bg-surface-card p-4 shadow-sm dark:border-zinc-800 dark:bg-surface-card-dark">
+          <div className="mb-2 flex flex-col items-center gap-1.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-base dark:bg-indigo-950">
+              {tip.icon}
+            </span>
+            <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">{tip.title}</p>
+          </div>
+          <p className="whitespace-pre-line text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            {tip.desc}
+          </p>
+        </div>
+
+        <div className="mt-2.5 flex justify-center gap-1.5">
+          {LOADING_TIPS.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1 rounded-full transition-all duration-300 ${
+                i === index ? "w-5 bg-brand-primary" : "w-1 bg-zinc-300 dark:bg-zinc-700"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 중단 버튼 */}
+      <button
+        className="cursor-pointer rounded-xl border border-zinc-200 bg-transparent px-5 py-2 text-xs font-medium text-zinc-400 transition-colors hover:border-red-200 hover:text-red-500 dark:border-zinc-700 dark:text-zinc-500 dark:hover:border-red-800 dark:hover:text-red-400"
+        onClick={onAbort}
+      >
+        중단하기
+      </button>
+    </div>
+  );
+}
+
 function flattenBookmarks(nodes: RawNode[]): { url: string; title: string }[] {
   const items: { url: string; title: string }[] = [];
   const seen = new Set<string>();
 
   function traverse(nodes: RawNode[]) {
     for (const node of nodes) {
-      if (node.url && node.url.startsWith("http") && !seen.has(node.url)) {
+      if (
+        node.url &&
+        ALLOWED_PROTOCOLS.some((p) => node.url!.startsWith(p)) &&
+        !seen.has(node.url)
+      ) {
         seen.add(node.url);
         items.push({ url: node.url, title: node.title || node.url });
       }
@@ -559,22 +670,7 @@ export function BookmarkManager() {
   }
 
   if (organizeLoading) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3">
-        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          AI가 정리 중이에요...
-        </p>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500">
-          북마크 수에 따라 30초 정도 걸릴 수 있어요.
-        </p>
-        <button
-          className="mt-1 cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-4 py-2 text-xs text-zinc-500 transition-colors hover:border-red-300 hover:text-red-500 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-red-700 dark:hover:text-red-400"
-          onClick={handleOrganizeAbort}
-        >
-          중단하기
-        </button>
-      </div>
-    );
+    return <OrganizeLoadingScreen onAbort={handleOrganizeAbort} />;
   }
 
   if (organizeError) {
@@ -612,7 +708,7 @@ export function BookmarkManager() {
       onDragEnd={handleDragEnd}
     >
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-surface-base pb-2 dark:bg-surface-base-dark">
         <div className="flex items-center gap-2">
           {duplicateCount > 0 && (
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
