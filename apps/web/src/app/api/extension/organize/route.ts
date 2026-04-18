@@ -5,7 +5,7 @@ import { getUserFromBearer, CORS_HEADERS } from "../_lib/auth";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const FEATURE_KEY = "extension_organize";
-const MAX_ITEMS = 200;
+const MAX_ITEMS = 800;
 
 type Item = { url: string; title: string };
 type Category = { name: string; items: Item[] };

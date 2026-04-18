@@ -12,7 +12,7 @@ type Tab = "import" | "organize";
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("import");
+  const [tab, setTab] = useState<Tab>("organize");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -67,7 +67,7 @@ export default function App() {
 
         {/* 탭 */}
         <div className="flex gap-1">
-          {(["import", "organize"] as Tab[]).map((t) => (
+          {(["organize", "import"] as Tab[]).map((t) => (
             <button
               key={t}
               className={`cursor-pointer rounded-t-lg border-none px-4 py-2 text-xs font-semibold transition-colors ${
