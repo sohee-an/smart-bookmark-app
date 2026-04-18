@@ -6,9 +6,53 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const FEATURE_KEY = "extension_organize";
 const MAX_ITEMS = 800;
+const CHUNK_SIZE = 100;
 
 type Item = { url: string; title: string };
 type Category = { name: string; items: Item[] };
+
+async function classifyChunk(
+  model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]>,
+  chunk: Item[]
+): Promise<Category[]> {
+  const itemList = chunk
+    .map((item, i) => {
+      let domain = item.url;
+      try {
+        domain = new URL(item.url).hostname.replace(/^www\./, "");
+      } catch {}
+      const title = (item.title || "(없음)").slice(0, 40);
+      return `${i + 1}. ${title} | ${domain}`;
+    })
+    .join("\n");
+
+  const prompt = `다음 북마크를 의미적으로 카테고리로 분류해주세요.
+
+[북마크]
+${itemList}
+
+[요구사항]
+- 카테고리는 한국어, 3~8개
+- 분류하기 어려운 항목은 "기타"
+- 반드시 아래 JSON 형식으로만 응답
+
+[출력 형식]
+{ "categories": [{ "name": "카테고리명", "indices": [1, 2, 3] }] }`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("JSON 추출 실패");
+
+  const parsed = JSON.parse(jsonMatch[0]) as {
+    categories: { name: string; indices: number[] }[];
+  };
+
+  return parsed.categories.map((cat) => ({
+    name: cat.name,
+    items: (cat.indices ?? []).filter((i) => i >= 1 && i <= chunk.length).map((i) => chunk[i - 1]),
+  }));
+}
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -72,42 +116,29 @@ export async function POST(request: Request) {
     }
   }
 
-  // 4. Gemini로 카테고리 분류
+  // 4. Gemini로 카테고리 분류 (청크 병렬 처리)
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const itemList = items
-    .map((item, i) => `${i + 1}. 제목: ${item.title || "(없음)"} | URL: ${item.url}`)
-    .join("\n");
+  const chunks: Item[][] = [];
+  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+    chunks.push(items.slice(i, i + CHUNK_SIZE));
+  }
 
-  const prompt = `다음 북마크 목록을 의미적으로 관련된 카테고리로 분류해주세요.
-
-[북마크 목록]
-${itemList}
-
-[요구사항]
-- 카테고리는 한국어로, 3~8개가 적당합니다.
-- 중복 URL은 하나만 남겨주세요.
-- 분류하기 어려운 항목은 "기타" 카테고리로 묶어주세요.
-- 반드시 아래 JSON 형식으로만 응답하세요.
-
-[출력 형식]
-{ "categories": [{ "name": "카테고리명", "items": [{ "url": "URL", "title": "제목" }] }] }`;
-
-  let parsed: { categories: Category[] };
+  let categories: Category[];
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    const chunkResults = await Promise.all(chunks.map((chunk) => classifyChunk(model, chunk)));
 
-    if (!jsonMatch) {
-      console.error("[organize] Gemini 응답에서 JSON 추출 실패. 원문:", text);
-      return NextResponse.json(
-        { success: false, message: "AI가 올바른 형식으로 응답하지 않았어요. 다시 시도해주세요." },
-        { status: 500, headers: CORS_HEADERS }
-      );
+    const merged = new Map<string, Item[]>();
+    for (const result of chunkResults) {
+      for (const cat of result) {
+        const existing = merged.get(cat.name) ?? [];
+        merged.set(cat.name, [...existing, ...cat.items]);
+      }
     }
-
-    parsed = JSON.parse(jsonMatch[0]) as { categories: Category[] };
+    categories = Array.from(merged.entries()).map(([name, catItems]) => ({
+      name,
+      items: catItems,
+    }));
   } catch (err) {
     console.error("[organize] Gemini API 오류:", err);
     const message = err instanceof Error ? err.message : String(err);
@@ -120,8 +151,5 @@ ${itemList}
   // 5. 사용 기록 저장
   await supabase.from("feature_usage").insert({ user_id: user.id, feature: FEATURE_KEY });
 
-  return NextResponse.json(
-    { success: true, categories: parsed.categories },
-    { headers: CORS_HEADERS }
-  );
+  return NextResponse.json({ success: true, categories }, { headers: CORS_HEADERS });
 }

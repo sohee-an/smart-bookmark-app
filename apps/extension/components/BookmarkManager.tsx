@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import {
   DndContext,
@@ -383,6 +383,9 @@ export function BookmarkManager() {
   const [organizeCategories, setOrganizeCategories] = useState<Category[] | null>(null);
   const [organizeLoading, setOrganizeLoading] = useState(false);
   const [organizeError, setOrganizeError] = useState<string | null>(null);
+  const [originalCount, setOriginalCount] = useState(0);
+  const [urlToIds, setUrlToIds] = useState<Map<string, string[]>>(new Map());
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [activeNode, setActiveNode] = useState<RawNode | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -491,6 +494,12 @@ export function BookmarkManager() {
     const items = flattenBookmarks(tree);
     if (items.length === 0) return;
 
+    setOriginalCount(items.length);
+    setUrlToIds(buildUrlToIds(tree));
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setOrganizeLoading(true);
     setOrganizeError(null);
 
@@ -510,6 +519,7 @@ export function BookmarkManager() {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ items }),
+        signal: controller.signal,
       });
 
       const data = await res.json();
@@ -519,11 +529,18 @@ export function BookmarkManager() {
       }
 
       setOrganizeCategories(data.categories);
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       setOrganizeError("네트워크 오류가 발생했어요.");
     } finally {
+      abortControllerRef.current = null;
       setOrganizeLoading(false);
     }
+  };
+
+  const handleOrganizeAbort = () => {
+    abortControllerRef.current?.abort();
+    setOrganizeLoading(false);
   };
 
   const handleOrganizeConfirm = (_categories: Category[]) => {
@@ -545,11 +562,17 @@ export function BookmarkManager() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3">
         <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          AI가 분류 중이에요...
+          AI가 정리 중이에요...
         </p>
         <p className="text-xs text-zinc-400 dark:text-zinc-500">
           북마크 수에 따라 30초 정도 걸릴 수 있어요.
         </p>
+        <button
+          className="mt-1 cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-4 py-2 text-xs text-zinc-500 transition-colors hover:border-red-300 hover:text-red-500 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-red-700 dark:hover:text-red-400"
+          onClick={handleOrganizeAbort}
+        >
+          중단하기
+        </button>
       </div>
     );
   }
@@ -575,6 +598,8 @@ export function BookmarkManager() {
         onConfirm={handleOrganizeConfirm}
         onBack={() => setOrganizeCategories(null)}
         hideSmartmark
+        originalCount={originalCount}
+        urlToIds={urlToIds}
       />
     );
   }
@@ -660,7 +685,20 @@ export function BookmarkManager() {
   );
 }
 
-// 트리에서 특정 노드 title 업데이트
+function buildUrlToIds(nodes: RawNode[]): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  function traverse(ns: RawNode[]) {
+    for (const node of ns) {
+      if (node.url) {
+        map.set(node.url, [...(map.get(node.url) ?? []), node.id]);
+      }
+      if (node.children) traverse(node.children);
+    }
+  }
+  traverse(nodes);
+  return map;
+}
+
 function updateNodeTitle(nodes: RawNode[], id: string, title: string): RawNode[] {
   return nodes.map((node) => {
     if (node.id === id) return { ...node, title };

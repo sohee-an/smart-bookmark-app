@@ -27,11 +27,15 @@ export function OrganizePreview({
   onConfirm,
   onBack,
   hideSmartmark = false,
+  originalCount,
+  urlToIds,
 }: {
   categories: Category[];
   onConfirm: (categories: Category[]) => void;
   onBack: () => void;
   hideSmartmark?: boolean;
+  originalCount?: number;
+  urlToIds?: Map<string, string[]>;
 }) {
   const [categories, setCategories] = useState<InternalCategory[]>(toInternal(initial));
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -43,6 +47,8 @@ export function OrganizePreview({
     (sum, c) => sum + c.items.filter((i) => !i.excluded).length,
     0
   );
+  const missingCount = originalCount ? Math.max(0, originalCount - totalCount) : 0;
+  const allIncluded = originalCount ? totalCount >= originalCount : false;
 
   // 항목 제외/복원 토글
   const toggleExclude = (catIndex: number, itemIndex: number) => {
@@ -150,6 +156,23 @@ export function OrganizePreview({
         }
       }
 
+      // 정리된 URL에 해당하는 원본 북마크 삭제
+      if (urlToIds) {
+        const organizedUrls = new Set(activeCategories.flatMap((c) => c.items.map((i) => i.url)));
+        for (const [url, ids] of urlToIds) {
+          if (organizedUrls.has(url)) {
+            for (const id of ids) {
+              await new Promise<void>((resolve) => {
+                chrome.bookmarks.remove(id, () => {
+                  void chrome.runtime.lastError;
+                  resolve();
+                });
+              });
+            }
+          }
+        }
+      }
+
       setBrowserStatus("done");
     } catch {
       setBrowserStatus("error");
@@ -165,9 +188,23 @@ export function OrganizePreview({
 
   return (
     <>
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-        AI가 {totalCount}개를 {categories.length}개 카테고리로 분류했어요.
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          {originalCount
+            ? `${originalCount}개 중 ${totalCount}개 · ${categories.length}개 카테고리`
+            : `AI가 ${totalCount}개를 ${categories.length}개 카테고리로 분류했어요.`}
+        </p>
+        {missingCount > 0 && (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+            {missingCount}개 누락
+          </span>
+        )}
+        {allIncluded && (
+          <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950 dark:text-green-400">
+            전체 포함
+          </span>
+        )}
+      </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto">
         {categories.map((cat, catIndex) => (
@@ -305,8 +342,12 @@ export function OrganizePreview({
           {browserStatus === "saving"
             ? "저장 중..."
             : browserStatus === "done"
-              ? "✓ 브라우저 저장됨"
-              : "📁 브라우저 폴더로 정리"}
+              ? "✓ 완료"
+              : allIncluded
+                ? "📁 기존 북마크 대체"
+                : missingCount > 0
+                  ? `📁 정리 적용 (${missingCount}개 원위치 유지)`
+                  : "📁 브라우저 폴더로 정리"}
         </button>
         {!hideSmartmark && (
           <button
