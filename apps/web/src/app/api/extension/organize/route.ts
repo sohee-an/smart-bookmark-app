@@ -93,18 +93,29 @@ ${itemList}
 [출력 형식]
 { "categories": [{ "name": "카테고리명", "items": [{ "url": "URL", "title": "제목" }] }] }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  let parsed: { categories: Category[] };
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
 
-  if (!jsonMatch) {
+    if (!jsonMatch) {
+      console.error("[organize] Gemini 응답에서 JSON 추출 실패. 원문:", text);
+      return NextResponse.json(
+        { success: false, message: "AI가 올바른 형식으로 응답하지 않았어요. 다시 시도해주세요." },
+        { status: 500, headers: CORS_HEADERS }
+      );
+    }
+
+    parsed = JSON.parse(jsonMatch[0]) as { categories: Category[] };
+  } catch (err) {
+    console.error("[organize] Gemini API 오류:", err);
+    const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { success: false, message: "AI 분류 실패" },
+      { success: false, message: `AI 분류 중 오류가 발생했어요: ${message}` },
       { status: 500, headers: CORS_HEADERS }
     );
   }
-
-  const parsed = JSON.parse(jsonMatch[0]) as { categories: Category[] };
 
   // 5. 사용 기록 저장
   await supabase.from("feature_usage").insert({ user_id: user.id, feature: FEATURE_KEY });

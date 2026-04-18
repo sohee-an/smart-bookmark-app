@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 import {
   DndContext,
   DragOverlay,
@@ -379,8 +380,9 @@ export function BookmarkManager() {
   const [editingTitle, setEditingTitle] = useState("");
   const [movingId, setMovingId] = useState<string | null>(null);
   const [folderOptions, setFolderOptions] = useState<FolderOption[]>([]);
-  const [showOrganize, setShowOrganize] = useState(false);
-  const [organizeItems, setOrganizeItems] = useState<{ url: string; title: string }[]>([]);
+  const [organizeCategories, setOrganizeCategories] = useState<Category[] | null>(null);
+  const [organizeLoading, setOrganizeLoading] = useState(false);
+  const [organizeError, setOrganizeError] = useState<string | null>(null);
   const [activeNode, setActiveNode] = useState<RawNode | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -485,14 +487,47 @@ export function BookmarkManager() {
     });
   };
 
-  const handleOrganize = () => {
+  const handleOrganize = async () => {
     const items = flattenBookmarks(tree);
-    setOrganizeItems(items);
-    setShowOrganize(true);
+    if (items.length === 0) return;
+
+    setOrganizeLoading(true);
+    setOrganizeError(null);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setOrganizeError("로그인이 필요해요.");
+        return;
+      }
+      const baseUrl = import.meta.env.VITE_WEB_URL as string;
+      const res = await fetch(`${baseUrl}/api/extension/organize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ items }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setOrganizeError(data.message ?? "AI 분류에 실패했어요.");
+        return;
+      }
+
+      setOrganizeCategories(data.categories);
+    } catch {
+      setOrganizeError("네트워크 오류가 발생했어요.");
+    } finally {
+      setOrganizeLoading(false);
+    }
   };
 
   const handleOrganizeConfirm = (_categories: Category[]) => {
-    setShowOrganize(false);
+    setOrganizeCategories(null);
     loadTree();
   };
 
@@ -506,12 +541,39 @@ export function BookmarkManager() {
     );
   }
 
-  if (showOrganize) {
+  if (organizeLoading) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          AI가 분류 중이에요...
+        </p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          북마크 수에 따라 30초 정도 걸릴 수 있어요.
+        </p>
+      </div>
+    );
+  }
+
+  if (organizeError) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+        <p className="text-sm text-red-500">{organizeError}</p>
+        <button
+          className="cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-4 py-2 text-xs text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-400"
+          onClick={() => setOrganizeError(null)}
+        >
+          돌아가기
+        </button>
+      </div>
+    );
+  }
+
+  if (organizeCategories) {
     return (
       <OrganizePreview
-        categories={[{ name: "전체", items: organizeItems }]}
+        categories={organizeCategories}
         onConfirm={handleOrganizeConfirm}
-        onBack={() => setShowOrganize(false)}
+        onBack={() => setOrganizeCategories(null)}
         hideSmartmark
       />
     );
@@ -542,8 +604,9 @@ export function BookmarkManager() {
             📁+
           </button>
           <button
-            className="cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-brand-primary hover:text-brand-primary dark:border-zinc-700 dark:text-zinc-400"
+            className="cursor-pointer rounded-lg border border-zinc-200 bg-transparent px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-brand-primary hover:text-brand-primary disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-400"
             onClick={handleOrganize}
+            disabled={organizeLoading}
           >
             ✨ AI로 정리하기
           </button>
