@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
+import { getErrorMessage } from "@/shared/lib/error";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
       {
         success: false,
         message: "시맨틱 검색 중 오류가 발생했습니다.",
-        details: error.message,
+        details: getErrorMessage(error),
       },
       { status: 500 }
     );

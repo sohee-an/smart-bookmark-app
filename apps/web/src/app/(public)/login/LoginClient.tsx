@@ -67,7 +67,7 @@ export default function LoginClient() {
       }
       router.push("/");
     } catch (err: unknown) {
-      setServerError(err.message || "인증에 실패했습니다.");
+      setServerError(err instanceof Error ? err.message : "인증에 실패했습니다.");
     }
   };
 

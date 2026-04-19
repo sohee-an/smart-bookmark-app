@@ -80,6 +80,7 @@
 
 - `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`
+- 에러 메시지 추출 (`getErrorMessage`) → `apps/web/src/shared/lib/error.ts`
 - `useClientNow` (SSR hydration 방지용 클라이언트 현재 시간 훅) → `apps/web/src/shared/lib/useClientNow.ts`
 - API 응답 표준 규격 `ApiResponse`, `ApiError`, `ErrorCode` → `apps/web/src/shared/lib/api-response.ts`
 - 비회원 익명 ID → `apps/web/src/shared/lib/guest.ts`

@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { getErrorMessage } from "@/shared/lib/error";
 
 // 1. 클라이언트 초기화 (v1 api를 명시적으로 호출하여 404 방지)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error("AI 분석 실패:", error);
     return res.status(500).json({
       error: "AI 생성 실패",
-      details: error.message,
+      details: getErrorMessage(error),
     });
   }
 }
