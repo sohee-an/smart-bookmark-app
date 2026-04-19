@@ -24,9 +24,9 @@ export async function fetchBookmarksServer(): Promise<Bookmark[]> {
 
   if (error || !data) return [];
 
-  return data.map((row: any) => {
+  return data.map((row: unknown) => {
     const tags = row.bookmark_tags
-      ? (row.bookmark_tags as any[]).map((bt: any) => bt.tags?.name).filter(Boolean)
+      ? (row.bookmark_tags as any[]).map((bt: unknown) => bt.tags?.name).filter(Boolean)
       : [];
 
     return toBookmark({

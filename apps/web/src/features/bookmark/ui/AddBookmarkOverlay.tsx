@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link2, FileText, X, Plus, Lock } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 import { bookmarkService } from "../model/bookmark.service";
@@ -23,7 +23,12 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
   const [isLimitReached, setIsLimitReached] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { runPipeline, patchCache } = useBookmarkPipeline();
+  const { runPipeline } = useBookmarkPipeline();
+
+  const handleClose = useCallback(() => {
+    setUrlError(null);
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -36,12 +41,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
       document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
-
-  const handleClose = () => {
-    setUrlError(null);
-    onClose();
-  };
+  }, [isOpen, handleClose]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();

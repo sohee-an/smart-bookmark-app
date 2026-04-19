@@ -51,7 +51,9 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
 
     if (error) throw new Error(`목록 조회 실패: ${error.message}`);
 
-    const bookmarks = data.map((row: any) => toBookmark(this.toRow(row, this.extractTags(row))));
+    const bookmarks = data.map((row: unknown) =>
+      toBookmark(this.toRow(row, this.extractTags(row)))
+    );
 
     if (filter?.tag) {
       return bookmarks.filter((b) => b.tags.includes(filter.tag!));
@@ -92,7 +94,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
   }
 
   async update(id: string, data: UpdateBookmarkData): Promise<void> {
-    const updateFields: Record<string, any> = {
+    const updateFields: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };
     if (data.title !== undefined) updateFields.title = data.title;
@@ -155,15 +157,17 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
   /**
    * @description JOIN 결과에서 태그 이름 배열을 추출합니다
    */
-  private extractTags(dbData: any): string[] {
+  private extractTags(dbData: unknown): string[] {
     if (!dbData.bookmark_tags) return [];
-    return (dbData.bookmark_tags as any[]).map((bt) => bt.tags?.name).filter(Boolean);
+    return (dbData.bookmark_tags as unknown[])
+      .map((bt) => (bt as { tags?: { name: string } }).tags?.name)
+      .filter(Boolean);
   }
 
   /**
    * @description Supabase DB 스네이크케이스 → BookmarkRow 변환
    */
-  private toRow(dbData: any, tags: string[]): BookmarkRow {
+  private toRow(dbData: unknown, tags: string[]): BookmarkRow {
     return {
       id: dbData.id,
       url: dbData.url,

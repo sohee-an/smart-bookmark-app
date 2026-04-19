@@ -33,7 +33,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
 
     if (error) throw new Error(`컬렉션 목록 조회 실패: ${error.message}`);
 
-    return (data ?? []).map((row: any) => ({
+    return (data ?? []).map((row: unknown) => ({
       id: row.collections.id,
       name: row.collections.name,
       description: row.collections.description,
@@ -67,7 +67,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
       .eq("user_id", this.userId)
       .single();
 
-    const members: CollectionMember[] = (memberData ?? []).map((m: any) => ({
+    const members: CollectionMember[] = (memberData ?? []).map((m: unknown) => ({
       id: m.id,
       userId: m.user_id,
       email: m.users?.email ?? "",
@@ -87,7 +87,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
       ownerId: colData.owner_id,
       role: (myMember?.role ?? "viewer") as CollectionRole,
       memberCount: members.length,
-      bookmarkCount: (bookmarkCountData as any)?.length ?? 0,
+      bookmarkCount: (bookmarkCountData as unknown[])?.length ?? 0,
       createdAt: colData.created_at,
       updatedAt: colData.updated_at,
       members,
@@ -155,10 +155,10 @@ export class SupabaseCollectionRepository implements CollectionRepository {
     if (error) throw new Error(`북마크 조회 실패: ${error.message}`);
 
     return (data ?? [])
-      .filter((row: any) => row.bookmarks)
-      .map((row: any) => {
+      .filter((row: unknown) => row.bookmarks)
+      .map((row: unknown) => {
         const b = row.bookmarks;
-        const tags = (b.bookmark_tags ?? []).map((bt: any) => bt.tags?.name).filter(Boolean);
+        const tags = (b.bookmark_tags ?? []).map((bt: unknown) => bt.tags?.name).filter(Boolean);
         return toBookmark({
           id: b.id,
           url: b.url,
@@ -204,7 +204,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
 
     if (error) throw new Error(`멤버 조회 실패: ${error.message}`);
 
-    return (data ?? []).map((m: any) => ({
+    return (data ?? []).map((m: unknown) => ({
       id: m.id,
       userId: m.user_id,
       email: m.users?.email ?? "",

@@ -27,7 +27,7 @@ export function useBookmarkRealtime(userId: string | undefined) {
         },
         (payload) => {
           // 변경된 row로 캐시 즉시 업데이트
-          queryClient.setQueriesData<any[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
+          queryClient.setQueriesData<unknown[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
             old.map((b) =>
               b.id === payload.new.id
                 ? {

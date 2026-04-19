@@ -12,7 +12,7 @@ type OverlayEventKey = keyof OverlayEventMap;
 type EmitterListener<T> = (payload: T) => void;
 
 class OverlayEventEmitter {
-  private listeners = new Map<OverlayEventKey, EmitterListener<any>>();
+  private listeners = new Map<OverlayEventKey, EmitterListener<unknown>>();
 
   on<K extends OverlayEventKey>(event: K, callback: EmitterListener<OverlayEventMap[K]>) {
     this.listeners.set(event, callback);

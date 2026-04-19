@@ -50,7 +50,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       bookmarkCount: bookmarkCount ?? 0,
       createdAt: col.created_at,
       updatedAt: col.updated_at,
-      members: (members ?? []).map((m: any) => ({
+      members: (members ?? []).map((m: unknown) => ({
         id: m.id,
         userId: m.user_id,
         email: m.users?.email ?? "",

@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     // 3. 태그 조회 (별도)
-    const ids = (data ?? []).map((r: any) => r.id);
+    const ids = (data ?? []).map((r: unknown) => r.id);
     let tagsMap: Record<string, string[]> = {};
 
     if (ids.length > 0) {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         .in("bookmark_id", ids);
 
       if (btData) {
-        tagsMap = btData.reduce((acc: Record<string, string[]>, bt: any) => {
+        tagsMap = btData.reduce((acc: Record<string, string[]>, bt: unknown) => {
           if (!acc[bt.bookmark_id]) acc[bt.bookmark_id] = [];
           if (bt.tags?.name) acc[bt.bookmark_id].push(bt.tags.name);
           return acc;
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
     const EXACT_THRESHOLD = 0.8;
 
-    const results = (data ?? []).map((r: any) => ({
+    const results = (data ?? []).map((r: unknown) => ({
       id: r.id,
       url: r.url,
       title: r.title ?? "",
@@ -83,11 +83,11 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        exact: results.filter((r: any) => r.similarity >= EXACT_THRESHOLD),
-        related: results.filter((r: any) => r.similarity < EXACT_THRESHOLD),
+        exact: results.filter((r: unknown) => r.similarity >= EXACT_THRESHOLD),
+        related: results.filter((r: unknown) => r.similarity < EXACT_THRESHOLD),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[API SemanticSearch] 오류:", error);
     return NextResponse.json(
       {

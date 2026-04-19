@@ -192,8 +192,10 @@ export function MobileSearchOverlay({
 
             {quickResults.length === 0 && (
               <p className="mb-3 text-sm text-zinc-400">
-                <span className="font-medium text-zinc-600 dark:text-zinc-300">"{query}"</span> 검색
-                결과가 없어요.
+                <span className="font-medium text-zinc-600 dark:text-zinc-300">
+                  &quot;{query}&quot;
+                </span>{" "}
+                검색 결과가 없어요.
               </p>
             )}
 
@@ -205,7 +207,7 @@ export function MobileSearchOverlay({
               }}
               className="flex w-full items-center justify-between rounded-2xl border border-zinc-200 px-4 py-3.5 text-sm font-bold text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900"
             >
-              <span>"{query}" 전체 결과 보기</span>
+              <span>&quot;{query}&quot; 전체 결과 보기</span>
               <ArrowRight size={16} />
             </button>
           </div>

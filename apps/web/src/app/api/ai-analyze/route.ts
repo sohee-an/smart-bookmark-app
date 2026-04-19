@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         tags: data.tags ?? [],
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[API AI Analyze] 오류:", error);
     return NextResponse.json(
       {

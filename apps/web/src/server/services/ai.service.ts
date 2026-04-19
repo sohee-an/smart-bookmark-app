@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "JSON 파싱 실패" };
 
     return res.status(200).json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("AI 분석 실패:", error);
     return res.status(500).json({
       error: "AI 생성 실패",

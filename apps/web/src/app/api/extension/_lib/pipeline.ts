@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 // Vercel Hobby: 10s, Pro: 60s — 안전하게 8초 여유
 export const PIPELINE_TIMEOUT_MS = 25_000;
 
-export async function runPipeline(supabase: any, bookmarkId: string, url: string) {
+export async function runPipeline(supabase: unknown, bookmarkId: string, url: string) {
   console.log("[Pipeline] 시작:", url);
 
   // 크롤링

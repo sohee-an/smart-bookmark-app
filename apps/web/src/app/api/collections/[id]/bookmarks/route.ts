@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
 
-async function assertEditorOrAbove(supabase: any, collectionId: string, userId: string) {
+async function assertEditorOrAbove(supabase: unknown, collectionId: string, userId: string) {
   const { data } = await supabase
     .from("collection_members")
     .select("role")
@@ -50,10 +50,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
   const bookmarks = (data ?? [])
-    .filter((row: any) => row.bookmarks)
-    .map((row: any) => {
+    .filter((row: unknown) => row.bookmarks)
+    .map((row: unknown) => {
       const b = row.bookmarks;
-      const tags = (b.bookmark_tags ?? []).map((bt: any) => bt.tags?.name).filter(Boolean);
+      const tags = (b.bookmark_tags ?? []).map((bt: unknown) => bt.tags?.name).filter(Boolean);
       return toBookmark({
         id: b.id,
         url: b.url,

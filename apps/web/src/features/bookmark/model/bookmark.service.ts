@@ -71,7 +71,7 @@ export class BookmarkService {
   /**
    * @description 북마크 정보를 업데이트합니다.
    */
-  async updateBookmark(id: string, data: any): Promise<void> {
+  async updateBookmark(id: string, data: unknown): Promise<void> {
     const repo = await this.getRepository();
     return repo.update(id, data);
   }

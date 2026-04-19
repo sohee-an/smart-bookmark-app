@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       success: true,
       data: { embedding: result.embedding.values },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[API Embed] 오류:", error);
     return NextResponse.json(
       {

@@ -25,7 +25,7 @@ export async function GET() {
 
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
-  const collections = (data ?? []).map((row: any) => ({
+  const collections = (data ?? []).map((row: unknown) => ({
     id: row.collections.id,
     name: row.collections.name,
     description: row.collections.description,
