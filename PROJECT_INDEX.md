@@ -28,11 +28,20 @@
 - `SupabaseBookmarkRepository` (회원) → `apps/web/src/entities/bookmark/api/supabase.repository.ts`
 - `BookmarkMapper` (DB ↔ 앱 타입 변환) → `apps/web/src/entities/bookmark/lib/bookmark.mapper.ts`
 
+**테스트**:
+- `bookmark.mapper.test.ts` ✅ → `apps/web/src/entities/bookmark/lib/bookmark.mapper.test.ts`
+- `local.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
+- `supabase.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/supabase.repository.test.ts`
+
 ## 북마크 상태 관리
 
 - `useBookmarkStore` (Zustand, UI 상태만: selectedBookmarkId) → `apps/web/src/entities/bookmark/model/useBookmarkStore.ts`
 - `useBookmarks`, `useUpdateBookmark` (TanStack Query) → `apps/web/src/features/bookmark/model/queries.ts`
 - `bookmarkKeys` (query key factory) → `apps/web/src/features/bookmark/model/queries.ts`
+
+**테스트**:
+- `useBookmarkStore.test.ts` ✅ → `apps/web/src/entities/bookmark/model/useBookmarkStore.test.ts`
+- `queries.test.ts` (작성 예정) → `apps/web/src/features/bookmark/model/queries.test.ts`
 
 ## 북마크 UI
 
@@ -80,6 +89,7 @@
 
 - `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`
+  - **테스트**: `validateUrl.test.ts` ✅ → `apps/web/src/shared/lib/validateUrl.test.ts`
 - 에러 메시지 추출 (`getErrorMessage`) → `apps/web/src/shared/lib/error.ts`
 - `useClientNow` (SSR hydration 방지용 클라이언트 현재 시간 훅) → `apps/web/src/shared/lib/useClientNow.ts`
 - API 응답 표준 규격 `ApiResponse`, `ApiError`, `ErrorCode` → `apps/web/src/shared/lib/api-response.ts`
@@ -133,6 +143,7 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 
 | 문서                                              | 내용                                                         |
 | ------------------------------------------------- | ------------------------------------------------------------ |
+| `docs/spec/testing-strategy.md`                   | 테스트 전략 (단위/통합/E2E 체크리스트, 로드맵)              |
 | `docs/spec/web/api.md`                            | 웹 API 스펙                                                  |
 | `docs/spec/web/features.md`                       | 웹 기능 목록                                                 |
 | `docs/spec/web/deployment.md`                     | 배포 설정                                                    |

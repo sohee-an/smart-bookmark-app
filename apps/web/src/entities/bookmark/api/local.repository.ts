@@ -7,12 +7,25 @@ import getGuestId from "@/shared/lib/guest";
 
 const GUEST_KEY = "GUEST_BOOKMARK";
 
+export interface StorageProvider {
+  get<T>(key: string): T | null;
+  set<T>(key: string, value: T): void;
+}
+
+export type DateProvider = () => Date;
+export type UUIDProvider = () => string;
+
 export class LocalRepository implements BookmarkRepository {
+  constructor(
+    private storageProvider: StorageProvider = storage,
+    private dateProvider: DateProvider = () => new Date(),
+    private uuidProvider: UUIDProvider = () => crypto.randomUUID(),
+  ) {}
   /**
    * 로컬스토리지에서 BookmarkRow 목록을 가져오는 내부 메서드
    */
   private getRows(): BookmarkRow[] {
-    return storage.get<BookmarkRow[]>(GUEST_KEY) ?? [];
+    return this.storageProvider.get<BookmarkRow[]>(GUEST_KEY) ?? [];
   }
 
   /**
@@ -27,21 +40,23 @@ export class LocalRepository implements BookmarkRepository {
       throw new Error("무료 체험 한도(5개)를 초과했습니다. 로그인이 필요합니다.");
     }
 
+    const now = this.dateProvider().toISOString();
+
     const newRow: BookmarkRow = {
-      id: crypto.randomUUID(),
+      id: this.uuidProvider(),
       url: request.url,
       userMemo: request.userMemo,
       aiStatus: "crawling",
       guestId: guestId,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       status: "unread",
       title: "",
       summary: "",
       tags: [],
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     };
 
-    storage.set(GUEST_KEY, [newRow, ...currentRows]);
+    this.storageProvider.set(GUEST_KEY, [newRow, ...currentRows]);
 
     // BookmarkRow → Bookmark 변환 후 반환
     return toBookmark(newRow);
@@ -71,7 +86,7 @@ export class LocalRepository implements BookmarkRepository {
    */
   async delete(id: string): Promise<void> {
     const rows = this.getRows();
-    storage.set(
+    this.storageProvider.set(
       GUEST_KEY,
       rows.filter((item) => item.id !== id)
     );
@@ -81,7 +96,7 @@ export class LocalRepository implements BookmarkRepository {
    * @description 북마크 전체를 삭제합니다.
    */
   async removeAll(): Promise<void> {
-    storage.set(GUEST_KEY, []);
+    this.storageProvider.set(GUEST_KEY, []);
   }
 
   /**
@@ -103,9 +118,11 @@ export class LocalRepository implements BookmarkRepository {
     }
 
     const updatedRows = rows.map((row) =>
-      row.id === id ? { ...row, ...data, updatedAt: new Date().toISOString() } : row
+      row.id === id
+        ? { ...row, ...data, updatedAt: this.dateProvider().toISOString() }
+        : row
     );
 
-    storage.set(GUEST_KEY, updatedRows);
+    this.storageProvider.set(GUEST_KEY, updatedRows);
   }
 }

@@ -221,6 +221,11 @@ apps/web/e2e/                     ← e2e 테스트
 - 통합 테스트: `apps/web/src/__tests__/`
 - e2e 테스트: `apps/web/e2e/`
 
+**테스트 전략 상세 가이드**: [docs/spec/testing-strategy.md](docs/spec/testing-strategy.md)
+- 파일별 테스트 체크리스트
+- 단위/통합/E2E 테스트 로드맵
+- 커버리지 목표 및 모킹 패턴
+
 ## 절대 규칙
 
 - 구현 전 반드시 시나리오 작성 → 사람 검수 → 테스트 코드 작성 순서 준수
