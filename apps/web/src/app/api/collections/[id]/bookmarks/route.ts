@@ -72,18 +72,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .filter((row) => row.bookmarks)
     .map((row) => {
       const b = row.bookmarks!;
-      const tags = (b.bookmark_tags ?? []).map((bt) => bt.tags?.name).filter(Boolean);
+      const tags = (b.bookmark_tags ?? [])
+        .map((bt) => bt.tags?.name)
+        .filter((t): t is string => Boolean(t));
       return toBookmark({
         id: b.id,
         url: b.url,
         title: b.title ?? "",
         summary: b.summary ?? "",
         content: undefined,
-        userMemo: b.user_memo,
-        thumbnailUrl: b.thumbnail_url,
-        aiStatus: b.ai_status ?? "processing",
+        userMemo: b.user_memo ?? undefined,
+        thumbnailUrl: b.thumbnail_url ?? undefined,
+        aiStatus: (b.ai_status ?? "processing") as
+          | "crawling"
+          | "processing"
+          | "completed"
+          | "failed",
         tags,
-        status: b.status,
+        status: b.status as "unread" | "read",
         createdAt: b.created_at,
         updatedAt: b.updated_at ?? b.created_at,
         userId: b.user_id,

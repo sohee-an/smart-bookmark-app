@@ -4,6 +4,23 @@ import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
 import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 
+type SupabaseDbRow = {
+  id: string;
+  url: string;
+  title: string | null;
+  summary: string | null;
+  content: string | null;
+  user_memo: string | null;
+  thumbnail_url: string | null;
+  ai_status: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+  user_id: string;
+  temp_user_id: string | null;
+  bookmark_tags?: Array<{ tags: { name: string } | null }>;
+};
+
 /**
  * @description Supabase를 사용하는 BookmarkRepository 구현체
  * tags는 tags / bookmark_tags 분리 테이블로 관리됩니다 (docs/015 참조)
@@ -51,7 +68,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
 
     if (error) throw new Error(`목록 조회 실패: ${error.message}`);
 
-    const bookmarks = data.map((row: unknown) =>
+    const bookmarks = (data as unknown as SupabaseDbRow[]).map((row) =>
       toBookmark(this.toRow(row, this.extractTags(row)))
     );
 
@@ -157,31 +174,33 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
   /**
    * @description JOIN 결과에서 태그 이름 배열을 추출합니다
    */
-  private extractTags(dbData: unknown): string[] {
+  private extractTags(dbData: SupabaseDbRow): string[] {
     if (!dbData.bookmark_tags) return [];
-    return (dbData.bookmark_tags as unknown[])
-      .map((bt) => (bt as { tags?: { name: string } }).tags?.name)
-      .filter(Boolean);
+    return dbData.bookmark_tags.map((bt) => bt.tags?.name).filter((t): t is string => Boolean(t));
   }
 
   /**
    * @description Supabase DB 스네이크케이스 → BookmarkRow 변환
    */
-  private toRow(dbData: unknown, tags: string[]): BookmarkRow {
+  private toRow(dbData: SupabaseDbRow, tags: string[]): BookmarkRow {
     return {
       id: dbData.id,
       url: dbData.url,
       title: dbData.title ?? "",
       summary: dbData.summary ?? "",
-      content: dbData.content,
-      userMemo: dbData.user_memo,
-      thumbnailUrl: dbData.thumbnail_url,
-      aiStatus: dbData.ai_status ?? "processing",
+      content: dbData.content ?? undefined,
+      userMemo: dbData.user_memo ?? undefined,
+      thumbnailUrl: dbData.thumbnail_url ?? undefined,
+      aiStatus: (dbData.ai_status ?? "processing") as
+        | "crawling"
+        | "processing"
+        | "completed"
+        | "failed",
       tags,
-      status: dbData.status,
+      status: dbData.status as "unread" | "read",
       createdAt: dbData.created_at,
       userId: dbData.user_id,
-      guestId: dbData.temp_user_id,
+      guestId: dbData.temp_user_id ?? undefined,
       updatedAt: dbData.updated_at ?? dbData.created_at,
     };
   }

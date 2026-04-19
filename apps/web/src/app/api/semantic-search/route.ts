@@ -3,6 +3,24 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { getErrorMessage } from "@/shared/lib/error";
 
+type SearchResultRow = {
+  id: string;
+  url: string;
+  title: string | null;
+  summary: string | null;
+  thumbnail_url: string | null;
+  ai_status: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  similarity: number;
+};
+
+type BookmarkTagRow = {
+  bookmark_id: string;
+  tags: { name: string } | null;
+};
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(request: Request) {
@@ -46,7 +64,7 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     // 3. 태그 조회 (별도)
-    const ids = (data ?? []).map((r: unknown) => r.id);
+    const ids = ((data ?? []) as unknown as SearchResultRow[]).map((r) => r.id);
     let tagsMap: Record<string, string[]> = {};
 
     if (ids.length > 0) {
@@ -56,17 +74,20 @@ export async function POST(request: Request) {
         .in("bookmark_id", ids);
 
       if (btData) {
-        tagsMap = btData.reduce((acc: Record<string, string[]>, bt: unknown) => {
-          if (!acc[bt.bookmark_id]) acc[bt.bookmark_id] = [];
-          if (bt.tags?.name) acc[bt.bookmark_id].push(bt.tags.name);
-          return acc;
-        }, {});
+        tagsMap = (btData as unknown as BookmarkTagRow[]).reduce(
+          (acc: Record<string, string[]>, bt) => {
+            if (!acc[bt.bookmark_id]) acc[bt.bookmark_id] = [];
+            if (bt.tags?.name) acc[bt.bookmark_id].push(bt.tags.name);
+            return acc;
+          },
+          {}
+        );
       }
     }
 
     const EXACT_THRESHOLD = 0.8;
 
-    const results = (data ?? []).map((r: unknown) => ({
+    const results = ((data ?? []) as unknown as SearchResultRow[]).map((r) => ({
       id: r.id,
       url: r.url,
       title: r.title ?? "",
@@ -84,8 +105,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        exact: results.filter((r: unknown) => r.similarity >= EXACT_THRESHOLD),
-        related: results.filter((r: unknown) => r.similarity < EXACT_THRESHOLD),
+        exact: results.filter((r) => r.similarity >= EXACT_THRESHOLD),
+        related: results.filter((r) => r.similarity < EXACT_THRESHOLD),
       },
     });
   } catch (error: unknown) {

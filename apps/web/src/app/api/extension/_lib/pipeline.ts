@@ -1,12 +1,13 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import { crawlerService } from "@/server/services/crawler.service";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // Vercel Hobby: 10s, Pro: 60s — 안전하게 8초 여유
 export const PIPELINE_TIMEOUT_MS = 25_000;
 
-export async function runPipeline(supabase: unknown, bookmarkId: string, url: string) {
+export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, url: string) {
   console.log("[Pipeline] 시작:", url);
 
   // 크롤링

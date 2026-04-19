@@ -6,6 +6,23 @@ import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { toBookmark } from "../lib/bookmark.mapper";
 import type { Bookmark } from "../model/types";
 
+type BookmarkDbRow = {
+  id: string;
+  url: string;
+  title: string | null;
+  summary: string | null;
+  content: string | null;
+  user_memo: string | null;
+  thumbnail_url: string | null;
+  ai_status: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+  user_id: string;
+  temp_user_id: string | null;
+  bookmark_tags: Array<{ tags: { name: string } | null }> | null;
+};
+
 export async function fetchBookmarksServer(): Promise<Bookmark[]> {
   const supabase = await createSupabaseServerClient();
   const {
@@ -24,25 +41,29 @@ export async function fetchBookmarksServer(): Promise<Bookmark[]> {
 
   if (error || !data) return [];
 
-  return data.map((row: unknown) => {
-    const tags = row.bookmark_tags
-      ? (row.bookmark_tags as any[]).map((bt: unknown) => bt.tags?.name).filter(Boolean)
-      : [];
+  return (data as unknown as BookmarkDbRow[]).map((row) => {
+    const tags = (row.bookmark_tags ?? [])
+      .map((bt) => bt.tags?.name)
+      .filter((t): t is string => Boolean(t));
 
     return toBookmark({
       id: row.id,
       url: row.url,
       title: row.title ?? "",
       summary: row.summary ?? "",
-      content: row.content,
-      userMemo: row.user_memo,
-      thumbnailUrl: row.thumbnail_url,
-      aiStatus: row.ai_status ?? "processing",
+      content: row.content ?? undefined,
+      userMemo: row.user_memo ?? undefined,
+      thumbnailUrl: row.thumbnail_url ?? undefined,
+      aiStatus: (row.ai_status ?? "processing") as
+        | "crawling"
+        | "processing"
+        | "completed"
+        | "failed",
       tags,
-      status: row.status,
+      status: row.status as "unread" | "read",
       createdAt: row.created_at,
       userId: row.user_id,
-      guestId: row.temp_user_id,
+      guestId: row.temp_user_id ?? undefined,
       updatedAt: row.updated_at ?? row.created_at,
     });
   });

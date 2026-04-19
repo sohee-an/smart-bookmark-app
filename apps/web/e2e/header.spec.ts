@@ -4,7 +4,8 @@ test.describe("Header 깜빡임 테스트", () => {
   test("비회원: 느린 네트워크에서도 로그인 버튼이 즉시 보여야 함", async ({ page, context }) => {
     // Slow 3G 시뮬레이션
     await context.route("**/*", (route) => route.continue());
-    await page.emulateNetworkConditions?.({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (page as any).emulateNetworkConditions?.({
       offline: false,
       downloadThroughput: (500 * 1024) / 8,
       uploadThroughput: (500 * 1024) / 8,
