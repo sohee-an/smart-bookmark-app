@@ -15,7 +15,7 @@ class OverlayEventEmitter {
   private listeners = new Map<OverlayEventKey, EmitterListener<unknown>>();
 
   on<K extends OverlayEventKey>(event: K, callback: EmitterListener<OverlayEventMap[K]>) {
-    this.listeners.set(event, callback);
+    this.listeners.set(event, callback as EmitterListener<unknown>);
   }
 
   emit<K extends OverlayEventKey>(event: K, payload: OverlayEventMap[K]) {

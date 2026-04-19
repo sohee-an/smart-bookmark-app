@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-async function assertEditorOrAbove(supabase: unknown, collectionId: string, userId: string) {
+type CollectionBookmarkRow = {
+  bookmarks: {
+    id: string;
+    url: string;
+    title: string | null;
+    summary: string | null;
+    thumbnail_url: string | null;
+    ai_status: string | null;
+    status: string;
+    user_id: string;
+    user_memo: string | null;
+    created_at: string;
+    updated_at: string | null;
+    bookmark_tags: Array<{ tags: { id: string; name: string } | null }>;
+  } | null;
+};
+
+async function assertEditorOrAbove(supabase: SupabaseClient, collectionId: string, userId: string) {
   const { data } = await supabase
     .from("collection_members")
     .select("role")
@@ -49,11 +67,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
-  const bookmarks = (data ?? [])
-    .filter((row: unknown) => row.bookmarks)
-    .map((row: unknown) => {
-      const b = row.bookmarks;
-      const tags = (b.bookmark_tags ?? []).map((bt: unknown) => bt.tags?.name).filter(Boolean);
+  const bookmarks = (data ?? ([] as CollectionBookmarkRow[]))
+    .filter((row: CollectionBookmarkRow) => row.bookmarks)
+    .map((row: CollectionBookmarkRow) => {
+      const b = row.bookmarks!;
+      const tags = (b.bookmark_tags ?? []).map((bt) => bt.tags?.name).filter(Boolean);
       return toBookmark({
         id: b.id,
         url: b.url,

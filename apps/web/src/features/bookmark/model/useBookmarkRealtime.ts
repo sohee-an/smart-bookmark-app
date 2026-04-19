@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase/client";
 import { bookmarkKeys } from "./queries";
+import type { Bookmark } from "@/entities/bookmark/model/types";
 
 /**
  * Supabase Realtime으로 bookmarks 테이블 변경을 구독.
@@ -27,7 +28,7 @@ export function useBookmarkRealtime(userId: string | undefined) {
         },
         (payload) => {
           // 변경된 row로 캐시 즉시 업데이트
-          queryClient.setQueriesData<unknown[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
+          queryClient.setQueriesData<Bookmark[]>({ queryKey: bookmarkKeys.all }, (old = []) =>
             old.map((b) =>
               b.id === payload.new.id
                 ? {
