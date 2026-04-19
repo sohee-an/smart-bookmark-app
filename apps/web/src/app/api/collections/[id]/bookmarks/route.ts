@@ -67,9 +67,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
-  const bookmarks = (data ?? ([] as CollectionBookmarkRow[]))
-    .filter((row: CollectionBookmarkRow) => row.bookmarks)
-    .map((row: CollectionBookmarkRow) => {
+  // TODO: 컬렉션 북마크 기능 구현 시 Supabase 조인 반환 타입과 CollectionBookmarkRow 타입 재검토 필요
+  const bookmarks = ((data ?? []) as unknown as CollectionBookmarkRow[])
+    .filter((row) => row.bookmarks)
+    .map((row) => {
       const b = row.bookmarks!;
       const tags = (b.bookmark_tags ?? []).map((bt) => bt.tags?.name).filter(Boolean);
       return toBookmark({
