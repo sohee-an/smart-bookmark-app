@@ -13,7 +13,11 @@ allowed-tools: Bash(git diff:*, git log:*, git status:*, git branch:*, git push:
 - `git branch --show-current` — 현재 브랜치 이름
 - `git log main..HEAD --oneline` — main 대비 커밋 목록
 - `git diff main...HEAD --stat` — 변경된 파일 목록
-- `cat .github/PULL_REQUEST_TEMPLATE.md` — PR 템플릿 읽기
+
+그 다음 base 브랜치를 판단해서 템플릿 읽기:
+
+- base가 `main`이면 → `cat .github/PULL_REQUEST_TEMPLATE/main.md`
+- base가 `dev`이면 → `cat .github/PULL_REQUEST_TEMPLATE/dev.md`
 
 ## 2단계 — PR 제목 작성
 
