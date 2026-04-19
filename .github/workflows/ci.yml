@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Lint & Build
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
 
     steps:
@@ -31,3 +31,6 @@ jobs:
 
       - name: Lint 검사
         run: pnpm lint
+
+      - name: 타입 검사
+        run: pnpm typecheck
