@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
+type MemberRow = {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  users: { email: string } | null;
+};
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
@@ -50,7 +58,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       bookmarkCount: bookmarkCount ?? 0,
       createdAt: col.created_at,
       updatedAt: col.updated_at,
-      members: (members ?? []).map((m: any) => ({
+      members: ((members ?? []) as unknown as MemberRow[]).map((m) => ({
         id: m.id,
         userId: m.user_id,
         email: m.users?.email ?? "",

@@ -11,14 +11,15 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
+    "*.{json,css,md}": [
       "prettier --write"
     ],
-    "*.{json,css,md}": [
+    "*.{js,jsx,ts,tsx}": [
       "prettier --write"
     ]
   },

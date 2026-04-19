@@ -1,6 +1,7 @@
 {
   "extends": "@smart-bookmark/typescript-config/nextjs.json",
   "compilerOptions": {
+    "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["./src/shared/*"],

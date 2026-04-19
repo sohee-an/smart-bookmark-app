@@ -4,7 +4,6 @@ import { Fragment, useReducer, useEffect } from "react";
 import { overlayEmitter } from "./overlay.emitter";
 import { overlayReducer, initialState } from "./overlay.reducer";
 import { overlay } from "./overlay";
-import type { OverlayAction } from "./overlay.types";
 
 export function OverlayProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(overlayReducer, initialState);

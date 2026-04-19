@@ -1,7 +1,7 @@
 ---
 description: 현재 브랜치 기준으로 PR을 자동 생성합니다
-allowed-tools: Bash(git diff:*, git log:*, git status:*, git branch:*, cat:*), mcp__github__create_pull_request, mcp__github__list_pull_requests
-disable-model-invocation: true
+model: claude-haiku-4-5-20251001
+allowed-tools: Bash(git diff:*, git log:*, git status:*, git branch:*, git push:*), mcp__github__create_pull_request, mcp__github__list_pull_requests
 ---
 
 아래 단계를 순서대로 실행해서 PR을 생성해주세요.

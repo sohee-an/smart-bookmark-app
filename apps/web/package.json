@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --max-warnings 5",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -72,5 +73,11 @@
     "typescript": "^5",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --max-warnings 5"
+    ]
   }
 }

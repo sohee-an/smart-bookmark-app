@@ -10,7 +10,6 @@ import {
   useCollectionBookmarks,
   useUpdateCollection,
   useDeleteCollection,
-  useRemoveBookmarkFromCollection,
 } from "@/features/collection/model/queries";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
@@ -29,7 +28,6 @@ export function CollectionDetailContent({ id }: Props) {
   const { data: bookmarks = [], isLoading: bkLoading } = useCollectionBookmarks(id);
   const { mutateAsync: updateCollection } = useUpdateCollection();
   const { mutateAsync: deleteCollection } = useDeleteCollection();
-  const { mutate: removeBookmark } = useRemoveBookmarkFromCollection();
   const { mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
 
