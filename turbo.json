@@ -5,7 +5,8 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", ".output/**", ".wxt/**"]
+      "outputs": [".next/**", "!.next/cache/**", ".output/**", ".wxt/**"],
+      "env": ["GEMINI_API_KEY", "GEMINI_MODEL", "RESEND_API_KEY", "DEV_USER_EMAILS"]
     },
     "lint": {
       "dependsOn": ["^lint"]
