@@ -4,6 +4,7 @@ import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
 import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import getGuestId from "@/shared/lib/guest";
+import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 
 const GUEST_KEY = "GUEST_BOOKMARK";
 
@@ -24,7 +25,10 @@ export class LocalRepository implements BookmarkRepository {
     const currentRows = this.getRows();
 
     if (currentRows.length >= 5) {
-      throw new Error("무료 체험 한도(5개)를 초과했습니다. 로그인이 필요합니다.");
+      throw new BookmarkError(
+        BookmarkErrorCode.GUEST_LIMIT_EXCEEDED,
+        "무료 체험 한도(5개)를 초과했습니다. 로그인이 필요합니다."
+      );
     }
 
     const newRow: BookmarkRow = {
@@ -99,7 +103,10 @@ export class LocalRepository implements BookmarkRepository {
     const index = rows.findIndex((item) => item.id === id);
 
     if (index === -1) {
-      throw new Error(`ID가 ${id}인 북마크를 찾을 수 없습니다.`);
+      throw new BookmarkError(
+        BookmarkErrorCode.BOOKMARK_NOT_FOUND,
+        `ID가 ${id}인 북마크를 찾을 수 없습니다.`
+      );
     }
 
     const updatedRows = rows.map((row) =>

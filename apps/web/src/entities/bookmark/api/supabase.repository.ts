@@ -3,6 +3,7 @@ import type { BookmarkRow, BookmarkFilter, CreateBookmarkRequest } from "./bookm
 import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
 import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
+import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 
 type SupabaseDbRow = {
   id: string;
@@ -45,7 +46,13 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       .select()
       .single();
 
-    if (error) throw new Error(`북마크 저장 실패: ${error.message}`);
+    if (error) {
+      throw new BookmarkError(
+        BookmarkErrorCode.DB_INSERT_FAILED,
+        `북마크 저장 실패: ${error.message}`,
+        error
+      );
+    }
 
     return toBookmark(this.toRow(data, []));
   }
@@ -66,7 +73,13 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
 
     const { data, error } = await query.order("created_at", { ascending: false });
 
-    if (error) throw new Error(`목록 조회 실패: ${error.message}`);
+    if (error) {
+      throw new BookmarkError(
+        BookmarkErrorCode.DB_QUERY_FAILED,
+        `목록 조회 실패: ${error.message}`,
+        error
+      );
+    }
 
     const bookmarks = (data as unknown as SupabaseDbRow[]).map((row) =>
       toBookmark(this.toRow(row, this.extractTags(row)))
@@ -92,12 +105,24 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
 
   async delete(id: string): Promise<void> {
     const { error } = await supabase.from("bookmarks").delete().eq("id", id);
-    if (error) throw new Error(`삭제 실패: ${error.message}`);
+    if (error) {
+      throw new BookmarkError(
+        BookmarkErrorCode.DB_DELETE_FAILED,
+        `삭제 실패: ${error.message}`,
+        error
+      );
+    }
   }
 
   async removeAll(): Promise<void> {
     const { error } = await supabase.from("bookmarks").delete().eq("user_id", this.userId);
-    if (error) throw new Error(`전체 삭제 실패: ${error.message}`);
+    if (error) {
+      throw new BookmarkError(
+        BookmarkErrorCode.DB_DELETE_FAILED,
+        `전체 삭제 실패: ${error.message}`,
+        error
+      );
+    }
   }
 
   async count(): Promise<number> {
@@ -120,7 +145,13 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
     if (data.status !== undefined) updateFields.status = data.status;
 
     const { error } = await supabase.from("bookmarks").update(updateFields).eq("id", id);
-    if (error) throw new Error(`업데이트 실패: ${error.message}`);
+    if (error) {
+      throw new BookmarkError(
+        BookmarkErrorCode.DB_UPDATE_FAILED,
+        `업데이트 실패: ${error.message}`,
+        error
+      );
+    }
 
     if (data.tags !== undefined) {
       await this.replaceTags(id, data.tags);
@@ -136,7 +167,13 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       .delete()
       .eq("bookmark_id", bookmarkId);
 
-    if (deleteError) throw new Error(`태그 삭제 실패: ${deleteError.message}`);
+    if (deleteError) {
+      throw new BookmarkError(
+        BookmarkErrorCode.TAG_DELETE_FAILED,
+        `태그 삭제 실패: ${deleteError.message}`,
+        deleteError
+      );
+    }
 
     if (tagNames.length > 0) {
       await this.insertTags(bookmarkId, tagNames);
@@ -151,7 +188,13 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       .from("embeddings")
       .upsert({ bookmark_id: bookmarkId, embedding });
 
-    if (error) throw new Error(`임베딩 저장 실패: ${error.message}`);
+    if (error) {
+      throw new BookmarkError(
+        BookmarkErrorCode.EMBEDDING_SAVE_FAILED,
+        `임베딩 저장 실패: ${error.message}`,
+        error
+      );
+    }
   }
 
   /**
