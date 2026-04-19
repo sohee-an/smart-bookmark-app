@@ -13,6 +13,45 @@ import type {
 import type { Bookmark } from "@/entities/bookmark/model/types";
 import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
 
+type CollectionMemberRow = {
+  role: string;
+  collections: {
+    id: string;
+    name: string;
+    description: string | null;
+    owner_id: string;
+    created_at: string;
+    updated_at: string;
+    collection_members: Array<{ count: number }>;
+    collection_bookmarks: Array<{ count: number }>;
+  } | null;
+};
+
+type MemberRow = {
+  id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  users: { email: string } | null;
+};
+
+type CollectionBookmarkRow = {
+  bookmarks: {
+    id: string;
+    url: string;
+    title: string | null;
+    summary: string | null;
+    thumbnail_url: string | null;
+    ai_status: string | null;
+    status: string;
+    user_id: string;
+    user_memo: string | null;
+    created_at: string;
+    updated_at: string | null;
+    bookmark_tags: Array<{ tags: { id: string; name: string } | null }>;
+  } | null;
+};
+
 export class SupabaseCollectionRepository implements CollectionRepository {
   constructor(private userId: string) {}
 
@@ -33,17 +72,19 @@ export class SupabaseCollectionRepository implements CollectionRepository {
 
     if (error) throw new Error(`컬렉션 목록 조회 실패: ${error.message}`);
 
-    return (data ?? []).map((row: any) => ({
-      id: row.collections.id,
-      name: row.collections.name,
-      description: row.collections.description,
-      ownerId: row.collections.owner_id,
-      role: row.role as CollectionRole,
-      memberCount: row.collections.collection_members[0]?.count ?? 0,
-      bookmarkCount: row.collections.collection_bookmarks[0]?.count ?? 0,
-      createdAt: row.collections.created_at,
-      updatedAt: row.collections.updated_at,
-    }));
+    return ((data ?? []) as unknown as CollectionMemberRow[])
+      .filter((row) => row.collections)
+      .map((row) => ({
+        id: row.collections!.id,
+        name: row.collections!.name,
+        description: row.collections!.description,
+        ownerId: row.collections!.owner_id,
+        role: row.role as CollectionRole,
+        memberCount: row.collections!.collection_members[0]?.count ?? 0,
+        bookmarkCount: row.collections!.collection_bookmarks[0]?.count ?? 0,
+        createdAt: row.collections!.created_at,
+        updatedAt: row.collections!.updated_at,
+      }));
   }
 
   async findById(id: string): Promise<CollectionDetail | null> {
@@ -67,7 +108,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
       .eq("user_id", this.userId)
       .single();
 
-    const members: CollectionMember[] = (memberData ?? []).map((m: any) => ({
+    const members: CollectionMember[] = ((memberData ?? []) as unknown as MemberRow[]).map((m) => ({
       id: m.id,
       userId: m.user_id,
       email: m.users?.email ?? "",
@@ -87,7 +128,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
       ownerId: colData.owner_id,
       role: (myMember?.role ?? "viewer") as CollectionRole,
       memberCount: members.length,
-      bookmarkCount: (bookmarkCountData as any)?.length ?? 0,
+      bookmarkCount: (bookmarkCountData as unknown[])?.length ?? 0,
       createdAt: colData.created_at,
       updatedAt: colData.updated_at,
       members,
@@ -154,22 +195,28 @@ export class SupabaseCollectionRepository implements CollectionRepository {
 
     if (error) throw new Error(`북마크 조회 실패: ${error.message}`);
 
-    return (data ?? [])
-      .filter((row: any) => row.bookmarks)
-      .map((row: any) => {
-        const b = row.bookmarks;
-        const tags = (b.bookmark_tags ?? []).map((bt: any) => bt.tags?.name).filter(Boolean);
+    return ((data ?? []) as unknown as CollectionBookmarkRow[])
+      .filter((row) => row.bookmarks)
+      .map((row) => {
+        const b = row.bookmarks!;
+        const tags = (b.bookmark_tags ?? [])
+          .map((bt) => bt.tags?.name)
+          .filter((t): t is string => Boolean(t));
         return toBookmark({
           id: b.id,
           url: b.url,
           title: b.title ?? "",
           summary: b.summary ?? "",
           content: undefined,
-          userMemo: b.user_memo,
-          thumbnailUrl: b.thumbnail_url,
-          aiStatus: b.ai_status ?? "processing",
+          userMemo: b.user_memo ?? undefined,
+          thumbnailUrl: b.thumbnail_url ?? undefined,
+          aiStatus: (b.ai_status ?? "processing") as
+            | "crawling"
+            | "processing"
+            | "completed"
+            | "failed",
           tags,
-          status: b.status,
+          status: b.status as "unread" | "read",
           createdAt: b.created_at,
           updatedAt: b.updated_at ?? b.created_at,
           userId: b.user_id,
@@ -204,7 +251,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
 
     if (error) throw new Error(`멤버 조회 실패: ${error.message}`);
 
-    return (data ?? []).map((m: any) => ({
+    return ((data ?? []) as unknown as MemberRow[]).map((m) => ({
       id: m.id,
       userId: m.user_id,
       email: m.users?.email ?? "",

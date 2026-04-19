@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ExternalLink, Loader2, AlertCircle, Bookmark as BookmarkIcon } from "lucide-react";
+import { ExternalLink, Loader2, AlertCircle } from "lucide-react";
 import { TagGroup } from "@/shared/ui/tag/Tag";
 import { useClientNow } from "@/shared/lib/useClientNow";
 import type { Bookmark } from "../model/types";

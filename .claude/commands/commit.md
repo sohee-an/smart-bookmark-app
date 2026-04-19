@@ -1,5 +1,6 @@
 ---
 description: 변경사항 보고 커밋 메시지 자동 작성 후 커밋
+model: claude-haiku-4-5-20251001
 allowed-tools: Bash(git diff:*, git add:*, git commit:*, git status:*, git log:*, git branch:*, git checkout:*)
 ---
 

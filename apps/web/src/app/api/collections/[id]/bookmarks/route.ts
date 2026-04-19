@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-async function assertEditorOrAbove(supabase: any, collectionId: string, userId: string) {
+type CollectionBookmarkRow = {
+  bookmarks: {
+    id: string;
+    url: string;
+    title: string | null;
+    summary: string | null;
+    thumbnail_url: string | null;
+    ai_status: string | null;
+    status: string;
+    user_id: string;
+    user_memo: string | null;
+    created_at: string;
+    updated_at: string | null;
+    bookmark_tags: Array<{ tags: { id: string; name: string } | null }>;
+  } | null;
+};
+
+async function assertEditorOrAbove(supabase: SupabaseClient, collectionId: string, userId: string) {
   const { data } = await supabase
     .from("collection_members")
     .select("role")
@@ -49,22 +67,29 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   if (error) return NextResponse.json({ success: false, message: error.message }, { status: 500 });
 
-  const bookmarks = (data ?? [])
-    .filter((row: any) => row.bookmarks)
-    .map((row: any) => {
-      const b = row.bookmarks;
-      const tags = (b.bookmark_tags ?? []).map((bt: any) => bt.tags?.name).filter(Boolean);
+  // TODO: 컬렉션 북마크 기능 구현 시 Supabase 조인 반환 타입과 CollectionBookmarkRow 타입 재검토 필요
+  const bookmarks = ((data ?? []) as unknown as CollectionBookmarkRow[])
+    .filter((row) => row.bookmarks)
+    .map((row) => {
+      const b = row.bookmarks!;
+      const tags = (b.bookmark_tags ?? [])
+        .map((bt) => bt.tags?.name)
+        .filter((t): t is string => Boolean(t));
       return toBookmark({
         id: b.id,
         url: b.url,
         title: b.title ?? "",
         summary: b.summary ?? "",
         content: undefined,
-        userMemo: b.user_memo,
-        thumbnailUrl: b.thumbnail_url,
-        aiStatus: b.ai_status ?? "processing",
+        userMemo: b.user_memo ?? undefined,
+        thumbnailUrl: b.thumbnail_url ?? undefined,
+        aiStatus: (b.ai_status ?? "processing") as
+          | "crawling"
+          | "processing"
+          | "completed"
+          | "failed",
         tags,
-        status: b.status,
+        status: b.status as "unread" | "read",
         createdAt: b.created_at,
         updatedAt: b.updated_at ?? b.created_at,
         userId: b.user_id,

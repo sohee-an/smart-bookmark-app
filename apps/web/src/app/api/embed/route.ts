@@ -2,6 +2,7 @@ import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { cookies } from "next/headers";
+import { getErrorMessage } from "@/shared/lib/error";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -41,13 +42,13 @@ export async function POST(request: Request) {
       success: true,
       data: { embedding: result.embedding.values },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[API Embed] 오류:", error);
     return NextResponse.json(
       {
         success: false,
         message: "임베딩 생성 중 오류가 발생했습니다.",
-        details: error.message,
+        details: getErrorMessage(error),
       },
       { status: 500 }
     );

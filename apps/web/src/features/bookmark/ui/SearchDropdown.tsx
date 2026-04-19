@@ -126,8 +126,10 @@ export function SearchDropdown({
 
           {showEmpty && (
             <p className="px-2 py-2 text-sm text-zinc-400">
-              <span className="font-medium text-zinc-600 dark:text-zinc-300">"{query}"</span> 검색
-              결과가 없어요.
+              <span className="font-medium text-zinc-600 dark:text-zinc-300">
+                &quot;{query}&quot;
+              </span>{" "}
+              검색 결과가 없어요.
             </p>
           )}
 
@@ -140,7 +142,7 @@ export function SearchDropdown({
                 : ""
             }`}
           >
-            <span>"{query}" 전체 결과 보기</span>
+            <span>&quot;{query}&quot; 전체 결과 보기</span>
             <ArrowRight size={14} />
           </button>
         </div>

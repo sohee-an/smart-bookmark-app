@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { cookies } from "next/headers";
+import { getErrorMessage } from "@/shared/lib/error";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -51,13 +52,13 @@ export async function POST(request: Request) {
         tags: data.tags ?? [],
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[API AI Analyze] 오류:", error);
     return NextResponse.json(
       {
         success: false,
         message: "AI 분석 중 예기치 않은 오류가 발생했습니다.",
-        details: error.message,
+        details: getErrorMessage(error),
       },
       { status: 500 }
     );

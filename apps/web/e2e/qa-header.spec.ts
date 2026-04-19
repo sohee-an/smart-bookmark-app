@@ -7,7 +7,8 @@ test.describe("Header QA — 깜빡임(FOUC) 테스트", () => {
   }) => {
     await context.addCookies([{ name: "is_guest", value: "true", domain: "localhost", path: "/" }]);
 
-    await page.emulateNetworkConditions?.({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (page as any).emulateNetworkConditions?.({
       offline: false,
       downloadThroughput: (500 * 1024) / 8,
       uploadThroughput: (500 * 1024) / 8,
