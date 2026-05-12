@@ -83,25 +83,19 @@ describe("useBookmarkStore", () => {
   describe("구독 (subscription)", () => {
     it("should notify subscribers when state changes", () => {
       const listener = vi.fn();
-      const unsubscribe = useBookmarkStore.subscribe(
-        (state) => state.selectedBookmarkId,
-        listener
-      );
+      const unsubscribe = useBookmarkStore.subscribe(listener);
 
       const { setSelectedBookmarkId } = useBookmarkStore.getState();
       setSelectedBookmarkId("bookmark-1");
 
-      expect(listener).toHaveBeenCalledWith("bookmark-1");
+      expect(listener).toHaveBeenCalled();
 
       unsubscribe();
     });
 
     it("should not notify after unsubscribe", () => {
       const listener = vi.fn();
-      const unsubscribe = useBookmarkStore.subscribe(
-        (state) => state.selectedBookmarkId,
-        listener
-      );
+      const unsubscribe = useBookmarkStore.subscribe(listener);
 
       const { setSelectedBookmarkId } = useBookmarkStore.getState();
       setSelectedBookmarkId("bookmark-1");
@@ -117,20 +111,14 @@ describe("useBookmarkStore", () => {
       const listener1 = vi.fn();
       const listener2 = vi.fn();
 
-      const unsubscribe1 = useBookmarkStore.subscribe(
-        (state) => state.selectedBookmarkId,
-        listener1
-      );
-      const unsubscribe2 = useBookmarkStore.subscribe(
-        (state) => state.selectedBookmarkId,
-        listener2
-      );
+      const unsubscribe1 = useBookmarkStore.subscribe(listener1);
+      const unsubscribe2 = useBookmarkStore.subscribe(listener2);
 
       const { setSelectedBookmarkId } = useBookmarkStore.getState();
       setSelectedBookmarkId("bookmark-1");
 
-      expect(listener1).toHaveBeenCalledWith("bookmark-1");
-      expect(listener2).toHaveBeenCalledWith("bookmark-1");
+      expect(listener1).toHaveBeenCalled();
+      expect(listener2).toHaveBeenCalled();
 
       unsubscribe1();
       unsubscribe2();

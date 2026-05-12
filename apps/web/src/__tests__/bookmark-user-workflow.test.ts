@@ -56,7 +56,8 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockChain);
 
       const saved = await repo.save({
         url: "https://example1.com",
@@ -74,9 +75,12 @@ describe("회원 저장→조회 워크플로우", () => {
           data: mockBookmarks[0],
           error: null,
         }),
+        insert: vi.fn(),
+        update: vi.fn(),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockQueryChain);
 
       const found = await repo.findById("bookmark-1");
 
@@ -96,7 +100,8 @@ describe("회원 저장→조회 워크플로우", () => {
         single: vi.fn(),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockUpdateChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockUpdateChain);
 
       // 업데이트 실행
       await repo.update("bookmark-1", {
@@ -121,7 +126,8 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockQueryChain);
 
       const updated = await repo.findById("bookmark-1");
 
@@ -141,7 +147,8 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockQueryChain);
 
       const results = await repo.findAll();
 
@@ -159,7 +166,8 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockQueryChain);
 
       const results = await repo.findAll({ status: "unread" });
 
@@ -182,9 +190,8 @@ describe("회원 저장→조회 워크플로우", () => {
         single: vi.fn(),
       };
 
-      (
-        supabase.from as (table: string) => MockChain & { delete: ReturnType<typeof vi.fn> }
-      ).mockReturnValue(mockDeleteChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockDeleteChain);
 
       await repo.delete("bookmark-1");
 
@@ -200,7 +207,8 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
+      // @ts-expect-error mock type mismatch
+      supabase.from.mockReturnValue(mockQueryChain);
 
       const found = await repo.findById("bookmark-1");
 

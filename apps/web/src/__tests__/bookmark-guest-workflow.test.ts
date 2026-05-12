@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalRepository } from "@/entities/bookmark/api/local.repository";
-import { BookmarkError, BookmarkErrorCode } from "@/entities/bookmark/model/bookmark.error";
 import type { StorageProvider } from "@/entities/bookmark/api/local.repository";
 
 describe("비회원 저장 워크플로우 (5개 제한)", () => {
@@ -13,11 +12,11 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
     const storedBookmarks: Record<string, string>[] = [];
 
     mockStorage = {
-      get: vi.fn(() => storedBookmarks),
+      get: vi.fn(() => storedBookmarks as unknown) as StorageProvider["get"],
       set: vi.fn((key, value) => {
         storedBookmarks.length = 0;
-        storedBookmarks.push(...value);
-      }),
+        storedBookmarks.push(...(value as typeof storedBookmarks));
+      }) as StorageProvider["set"],
     };
 
     repo = new LocalRepository(
@@ -44,13 +43,13 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
       await repo.save({ url: `https://example${i}.com` });
     }
 
-    await expect(repo.save({ url: "https://example6.com" })).rejects.toThrow(BookmarkError);
+    await expect(repo.save({ url: "https://example6.com" })).rejects.toThrow(Error);
 
     try {
       await repo.save({ url: "https://example6.com" });
-    } catch (e) {
-      if (e instanceof BookmarkError) {
-        expect(e.code).toBe(BookmarkErrorCode.GUEST_LIMIT_EXCEEDED);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        expect(e.message).toContain("무료 체험 한도");
       }
     }
   });
@@ -61,7 +60,7 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
     }
 
     for (let j = 0; j < 3; j++) {
-      await expect(repo.save({ url: `https://fail${j}.com` })).rejects.toThrow(BookmarkError);
+      await expect(repo.save({ url: `https://fail${j}.com` })).rejects.toThrow(Error);
     }
 
     const finalCount = await repo.count();

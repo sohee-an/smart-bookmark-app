@@ -13,11 +13,11 @@ describe("URL → AI 파이프라인 상태 변화", () => {
       storedBookmarks = [];
 
       mockStorage = {
-        get: vi.fn(() => storedBookmarks),
+        get: vi.fn(() => storedBookmarks as unknown) as StorageProvider["get"],
         set: vi.fn((key, value) => {
           storedBookmarks.length = 0;
-          storedBookmarks.push(...value);
-        }),
+          storedBookmarks.push(...(value as BookmarkRow[]));
+        }) as StorageProvider["set"],
       };
 
       repo = new LocalRepository(
@@ -283,11 +283,11 @@ describe("URL → AI 파이프라인 상태 변화", () => {
     beforeEach(() => {
       storedBookmarks = [];
       mockStorage = {
-        get: vi.fn(() => storedBookmarks),
+        get: vi.fn(() => storedBookmarks as unknown) as StorageProvider["get"],
         set: vi.fn((key, value) => {
           storedBookmarks.length = 0;
-          storedBookmarks.push(...value);
-        }),
+          storedBookmarks.push(...(value as BookmarkRow[]));
+        }) as StorageProvider["set"],
       };
       repo = new LocalRepository(mockStorage);
     });
