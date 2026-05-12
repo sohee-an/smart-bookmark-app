@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       content: { parts: [{ text: query }], role: "user" },
       taskType: TaskType.RETRIEVAL_QUERY,
       outputDimensionality: 3072,
-    } as any);
+    } as Parameters<typeof model.embedContent>[0]);
     const embedding = result.embedding.values;
 
     // 2. Supabase RPC로 유사도 검색 (세션에서 추출한 user.id 사용)
