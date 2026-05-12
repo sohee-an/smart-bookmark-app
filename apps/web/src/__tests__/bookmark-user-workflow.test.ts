@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { SupabaseBookmarkRepository } from "@/entities/bookmark/api/supabase.repository";
-import { BookmarkError, BookmarkErrorCode } from "@/entities/bookmark/model/bookmark.error";
-import { vi as vitestVi } from "vitest";
 
 vi.mock("@/shared/api/supabase/client", () => ({
   supabase: {
@@ -10,6 +8,14 @@ vi.mock("@/shared/api/supabase/client", () => ({
 }));
 
 import { supabase } from "@/shared/api/supabase/client";
+
+type MockChain = {
+  insert: ReturnType<typeof vi.fn>;
+  select: ReturnType<typeof vi.fn>;
+  single: ReturnType<typeof vi.fn>;
+  update?: ReturnType<typeof vi.fn>;
+  eq?: ReturnType<typeof vi.fn>;
+};
 
 describe("회원 저장→조회 워크플로우", () => {
   let repo: SupabaseBookmarkRepository;
@@ -41,7 +47,7 @@ describe("회원 저장→조회 워크플로우", () => {
   describe("저장 및 조회", () => {
     it("북마크를 저장하고 조회", async () => {
       // Mock insert 요청
-      const mockChain = {
+      const mockChain: MockChain = {
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
@@ -50,7 +56,7 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as any).mockReturnValue(mockChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockChain);
 
       const saved = await repo.save({
         url: "https://example1.com",
@@ -61,7 +67,7 @@ describe("회원 저장→조회 워크플로우", () => {
       expect(saved.id).toBe("bookmark-1");
 
       // Mock select 요청 (조회)
-      const mockQueryChain = {
+      const mockQueryChain: MockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
@@ -70,7 +76,7 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as any).mockReturnValue(mockQueryChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
 
       const found = await repo.findById("bookmark-1");
 
@@ -79,15 +85,18 @@ describe("회원 저장→조회 워크플로우", () => {
     });
 
     it("북마크를 업데이트하고 변경 사항 반영", async () => {
-      const mockUpdateChain = {
+      const mockUpdateChain: MockChain = {
         update: vi.fn().mockReturnThis(),
         eq: vi.fn().mockResolvedValue({
           data: null,
           error: null,
         }),
+        insert: vi.fn(),
+        select: vi.fn(),
+        single: vi.fn(),
       };
 
-      (supabase.from as any).mockReturnValue(mockUpdateChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockUpdateChain);
 
       // 업데이트 실행
       await repo.update("bookmark-1", {
@@ -112,7 +121,7 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as any).mockReturnValue(mockQueryChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
 
       const updated = await repo.findById("bookmark-1");
 
@@ -132,7 +141,7 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as any).mockReturnValue(mockQueryChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
 
       const results = await repo.findAll();
 
@@ -150,7 +159,7 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as any).mockReturnValue(mockQueryChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
 
       const results = await repo.findAll({ status: "unread" });
 
@@ -162,15 +171,20 @@ describe("회원 저장→조회 워크플로우", () => {
   describe("삭제 워크플로우", () => {
     it("북마크를 삭제하고 삭제 확인", async () => {
       // Mock delete
-      const mockDeleteChain = {
+      const mockDeleteChain: MockChain & { delete: ReturnType<typeof vi.fn> } = {
         delete: vi.fn().mockReturnThis(),
         eq: vi.fn().mockResolvedValue({
           data: null,
           error: null,
         }),
+        insert: vi.fn(),
+        select: vi.fn(),
+        single: vi.fn(),
       };
 
-      (supabase.from as any).mockReturnValue(mockDeleteChain);
+      (
+        supabase.from as (table: string) => MockChain & { delete: ReturnType<typeof vi.fn> }
+      ).mockReturnValue(mockDeleteChain);
 
       await repo.delete("bookmark-1");
 
@@ -186,7 +200,7 @@ describe("회원 저장→조회 워크플로우", () => {
         }),
       };
 
-      (supabase.from as any).mockReturnValue(mockQueryChain);
+      (supabase.from as (table: string) => MockChain).mockReturnValue(mockQueryChain);
 
       const found = await repo.findById("bookmark-1");
 

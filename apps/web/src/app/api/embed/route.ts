@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       content: { parts: [{ text }], role: "user" },
       taskType: TaskType.RETRIEVAL_DOCUMENT,
       outputDimensionality: 3072,
-    } as any);
+    } as Parameters<typeof model.embedContent>[0]);
 
     return NextResponse.json({
       success: true,

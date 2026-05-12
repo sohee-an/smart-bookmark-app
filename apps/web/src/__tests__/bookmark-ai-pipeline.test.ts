@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalRepository } from "@/entities/bookmark/api/local.repository";
 import type { StorageProvider } from "@/entities/bookmark/api/local.repository";
 import type { BookmarkRow } from "@/entities/bookmark/api/bookmark.types.db";
-import type { Bookmark } from "@/entities/bookmark/model/types";
-import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
 
 describe("URL → AI 파이프라인 상태 변화", () => {
   describe("북마크 저장 후 aiStatus 진행", () => {
@@ -146,9 +144,21 @@ describe("URL → AI 파이프라인 상태 변화", () => {
 
     it("여러 북마크가 동시에 다른 파이프라인 상태에 있음", async () => {
       // Use different UUID providers for each save
-      const repo1 = new LocalRepository(mockStorage, () => new Date("2024-03-08T12:00:00Z"), () => "uuid-1");
-      const repo2 = new LocalRepository(mockStorage, () => new Date("2024-03-08T12:00:00Z"), () => "uuid-2");
-      const repo3 = new LocalRepository(mockStorage, () => new Date("2024-03-08T12:00:00Z"), () => "uuid-3");
+      const repo1 = new LocalRepository(
+        mockStorage,
+        () => new Date("2024-03-08T12:00:00Z"),
+        () => "uuid-1"
+      );
+      const repo2 = new LocalRepository(
+        mockStorage,
+        () => new Date("2024-03-08T12:00:00Z"),
+        () => "uuid-2"
+      );
+      const repo3 = new LocalRepository(
+        mockStorage,
+        () => new Date("2024-03-08T12:00:00Z"),
+        () => "uuid-3"
+      );
 
       // Create 3 bookmarks at different stages
       const bm1 = await repo1.save({
@@ -216,7 +226,6 @@ describe("URL → AI 파이프라인 상태 변화", () => {
     it("aiStatus 변경 시 updatedAt 타임스탬프 추적", async () => {
       const initialDate = new Date("2024-03-08T12:00:00Z");
       const processingDate = new Date("2024-03-08T12:05:00Z");
-      const completedDate = new Date("2024-03-08T12:10:00Z");
 
       const repo1 = new LocalRepository(
         mockStorage,
@@ -244,9 +253,9 @@ describe("URL → AI 파이프라인 상태 변화", () => {
 
       const processingBookmark = await repo2.findById(bookmark.id);
       expect(processingBookmark?.updatedAt).not.toBe(initialUpdatedAt);
-      expect(
-        new Date(processingBookmark?.updatedAt || "").getTime()
-      ).toBeGreaterThan(new Date(initialUpdatedAt).getTime());
+      expect(new Date(processingBookmark?.updatedAt || "").getTime()).toBeGreaterThan(
+        new Date(initialUpdatedAt).getTime()
+      );
     });
 
     it("빠른 파이프라인 상태 전환 처리", async () => {

@@ -1,5 +1,5 @@
 import storage from "@/shared/lib/storage";
-import type { BookmarkRow, BookmarkFilter, CreateBookmarkRequest } from "./bookmark.types.db";
+import type { BookmarkRow, CreateBookmarkRequest } from "./bookmark.types.db";
 import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
 import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
@@ -19,7 +19,7 @@ export class LocalRepository implements BookmarkRepository {
   constructor(
     private storageProvider: StorageProvider = storage,
     private dateProvider: DateProvider = () => new Date(),
-    private uuidProvider: UUIDProvider = () => crypto.randomUUID(),
+    private uuidProvider: UUIDProvider = () => crypto.randomUUID()
   ) {}
   /**
    * 로컬스토리지에서 BookmarkRow 목록을 가져오는 내부 메서드
@@ -65,7 +65,7 @@ export class LocalRepository implements BookmarkRepository {
   /**
    * @description 필터 조건에 맞는 북마크 목록을 조회합니다.
    */
-  async findAll(filter?: BookmarkFilter): Promise<Bookmark[]> {
+  async findAll(): Promise<Bookmark[]> {
     const rows = this.getRows();
 
     // BookmarkRow[] → Bookmark[] 변환
@@ -118,9 +118,7 @@ export class LocalRepository implements BookmarkRepository {
     }
 
     const updatedRows = rows.map((row) =>
-      row.id === id
-        ? { ...row, ...data, updatedAt: this.dateProvider().toISOString() }
-        : row
+      row.id === id ? { ...row, ...data, updatedAt: this.dateProvider().toISOString() } : row
     );
 
     this.storageProvider.set(GUEST_KEY, updatedRows);

@@ -83,8 +83,7 @@ describe("북마크 저장 API (POST 유사 흐름)", () => {
     it("저장 전에 URL 형식 검증", async () => {
       // Simulate API validation
       const invalidUrl = "not-a-url";
-      const urlPattern =
-        /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})(\/[\w .-]*)*\/?$/;
+      const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})(\/[\w .-]*)*\/?$/;
       const isValidUrl = urlPattern.test(invalidUrl);
 
       expect(isValidUrl).toBe(false);
@@ -94,16 +93,6 @@ describe("북마크 저장 API (POST 유사 흐름)", () => {
   describe("회원(Authenticated User) 북마크 저장", () => {
     it("SupabaseBookmarkRepository를 통해 회원 북마크 저장", async () => {
       const supabaseRepo = new SupabaseBookmarkRepository("user-123");
-
-      // Mock the supabase client's insert method
-      const mockSupabaseInsert = vi.fn().mockResolvedValue({
-        id: "bm-uuid-1",
-        url: "https://example.com",
-        user_id: userId,
-        ai_status: "crawling",
-        status: "unread",
-        created_at: "2024-03-08T12:00:00Z",
-      });
 
       // Since we can't easily mock supabase internals here,
       // we verify the interface expects the right parameters
@@ -120,8 +109,6 @@ describe("북마크 저장 API (POST 유사 흐름)", () => {
     });
 
     it("같은 사용자의 동시 북마크 저장 처리", async () => {
-      const userId = "user-123";
-
       // Both requests should receive different IDs
       const uuid1 = "bm-uuid-1";
       const uuid2 = "bm-uuid-2";

@@ -10,7 +10,7 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
 
   beforeEach(() => {
     uuidCounter = 0;
-    const storedBookmarks: any[] = [];
+    const storedBookmarks: Record<string, string>[] = [];
 
     mockStorage = {
       get: vi.fn(() => storedBookmarks),
@@ -44,9 +44,7 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
       await repo.save({ url: `https://example${i}.com` });
     }
 
-    await expect(repo.save({ url: "https://example6.com" })).rejects.toThrow(
-      BookmarkError
-    );
+    await expect(repo.save({ url: "https://example6.com" })).rejects.toThrow(BookmarkError);
 
     try {
       await repo.save({ url: "https://example6.com" });
@@ -63,9 +61,7 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
     }
 
     for (let j = 0; j < 3; j++) {
-      await expect(
-        repo.save({ url: `https://fail${j}.com` })
-      ).rejects.toThrow(BookmarkError);
+      await expect(repo.save({ url: `https://fail${j}.com` })).rejects.toThrow(BookmarkError);
     }
 
     const finalCount = await repo.count();

@@ -75,7 +75,7 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
         content: { parts: [{ text: embeddingText }], role: "user" },
         taskType: TaskType.RETRIEVAL_DOCUMENT,
         outputDimensionality: 3072,
-      } as any);
+      } as Parameters<typeof embeddingModel.embedContent>[0]);
       await supabase
         .from("embeddings")
         .upsert({ bookmark_id: bookmarkId, embedding: embeddingResult.embedding.values });
