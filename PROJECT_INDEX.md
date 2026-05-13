@@ -8,12 +8,14 @@
 ## 크롤링
 
 - `CrawlResult`, `CrawlerErrorCode`, `CrawlerService` → `apps/web/src/server/services/crawler.service.ts`
-- 크롤링 전용 API Route → `apps/web/src/pages/api/crawl.ts`
+- 크롤링 전용 API Route → `apps/web/src/app/api/crawl/route.ts`
 
 ## AI 분석
 
 - `AIAnalysisResult`, `AIService` → `apps/web/src/server/services/ai.service.ts`
-- AI 분석 전용 API Route → `apps/web/src/pages/api/ai-analyze.ts`
+- AI 분석 전용 API Route → `apps/web/src/app/api/ai-analyze/route.ts`
+- 시맨틱 서치 임베딩 API Route → `apps/web/src/app/api/embed/route.ts`
+- 시맨틱 서치 검색 API Route → `apps/web/src/app/api/semantic-search/route.ts`
 
 ## 북마크 타입
 
@@ -29,6 +31,7 @@
 - `BookmarkMapper` (DB ↔ 앱 타입 변환) → `apps/web/src/entities/bookmark/lib/bookmark.mapper.ts`
 
 **테스트**:
+
 - `bookmark.mapper.test.ts` ✅ → `apps/web/src/entities/bookmark/lib/bookmark.mapper.test.ts`
 - `local.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
 - `supabase.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/supabase.repository.test.ts`
@@ -40,6 +43,7 @@
 - `bookmarkKeys` (query key factory) → `apps/web/src/features/bookmark/model/queries.ts`
 
 **테스트**:
+
 - `useBookmarkStore.test.ts` ✅ → `apps/web/src/entities/bookmark/model/useBookmarkStore.test.ts`
 - `queries.test.ts` (작성 예정) → `apps/web/src/features/bookmark/model/queries.test.ts`
 
@@ -61,8 +65,8 @@
 - `CreateCollectionModal` → `apps/web/src/features/collection/ui/CreateCollectionModal.tsx`
 - `InviteMemberModal` (이메일 초대, 멤버 역할 관리) → `apps/web/src/features/collection/ui/InviteMemberModal.tsx`
 - `AddToCollectionButton` (북마크 상세 패널에서 컬렉션 추가/제거) → `apps/web/src/features/collection/ui/AddToCollectionButton.tsx`
-- 컬렉션 목록 페이지 → `apps/web/src/app/collections/page.tsx` + `CollectionsContent.tsx`
-- 컬렉션 상세 페이지 → `apps/web/src/app/collections/[id]/page.tsx` + `CollectionDetailContent.tsx`
+- 컬렉션 목록 페이지 → `apps/web/src/app/(main)/collections/page.tsx` + `CollectionsContent.tsx`
+- 컬렉션 상세 페이지 → `apps/web/src/app/(main)/collections/[id]/page.tsx` + `CollectionDetailContent.tsx`
 - API: 목록/생성 → `apps/web/src/app/api/collections/route.ts`
 - API: 상세/수정/삭제 → `apps/web/src/app/api/collections/[id]/route.ts`
 - API: 북마크 추가/제거 → `apps/web/src/app/api/collections/[id]/bookmarks/route.ts`
@@ -75,15 +79,31 @@
 - 인증 미들웨어 (비회원→랜딩, 회원→메인) → `apps/web/src/middleware.ts`
 - Supabase 브라우저 클라이언트 (`supabase`) → `apps/web/src/shared/api/supabase/client.ts`
 - Supabase 서버 클라이언트 (`createSupabaseServerClient`) → `apps/web/src/shared/api/supabase/server.ts`
-- OAuth 콜백 처리 → `apps/web/src/pages/api/auth/callback.ts`
+- OAuth 콜백 처리 → `apps/web/src/app/api/auth/callback/route.ts` + `apps/web/src/app/auth/callback/page.tsx`
+- 익스텐션 토큰 발급 페이지 → `apps/web/src/app/auth/extension-token/page.tsx`
+- 익스텐션 인증 후 리디렉트 → `apps/web/src/app/auth/web-redirect/page.tsx`
 - 로그인/회원가입 Zod 스키마 → `apps/web/src/features/auth/model/auth-schema.ts`
 
 ## 페이지 라우팅
 
-- 메인 대시보드 → `apps/web/src/pages/index.tsx`
-- 랜딩 (비회원) → `apps/web/src/pages/landing.tsx`
-- 로그인 → `apps/web/src/pages/login.tsx`
-- 앱 진입점 → `apps/web/src/pages/_app.tsx`
+> App Router 기반. 라우트 그룹 `(main)` = 로그인 필요, `(public)` = 비로그인 접근 가능.
+
+- 루트 레이아웃 → `apps/web/src/app/layout.tsx`
+- 메인 대시보드 → `apps/web/src/app/(main)/page.tsx`
+- 북마크 목록 → `apps/web/src/app/(main)/bookmarks/page.tsx` + `BookmarksContent.tsx`
+- 메인 레이아웃 (로그인 필요) → `apps/web/src/app/(main)/layout.tsx`
+- 랜딩 (비회원) → `apps/web/src/app/(public)/landing/page.tsx` + `LandingActions.tsx`
+- 로그인 → `apps/web/src/app/(public)/login/page.tsx` + `LoginClient.tsx`
+- 공개 레이아웃 → `apps/web/src/app/(public)/layout.tsx`
+- 개인정보처리방침 → `apps/web/src/app/privacy/page.tsx`
+- OG 이미지 API → `apps/web/src/app/api/og/route.tsx`
+
+## 익스텐션 API
+
+- 익스텐션 북마크 저장 → `apps/web/src/app/api/extension/save-bookmark/route.ts`
+- 익스텐션 bulk import → `apps/web/src/app/api/extension/bulk-import/route.ts`
+- 익스텐션 AI 정리 → `apps/web/src/app/api/extension/organize/route.ts`
+- 익스텐션 API 공용 유틸 → `apps/web/src/app/api/extension/_lib/auth.ts`, `pipeline.ts`
 
 ## 공용 유틸
 
@@ -117,7 +137,7 @@
 ## 아키텍처 레이어
 
 ```
-pages/       → 라우팅 전용
+app/         → Next.js App Router (라우팅, API Route, 레이아웃)
 widgets/     → 복합 UI 조합
 features/    → 비즈니스 로직
 entities/    → 도메인 모델, Repository
@@ -143,7 +163,7 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 
 | 문서                                              | 내용                                                         |
 | ------------------------------------------------- | ------------------------------------------------------------ |
-| `docs/spec/testing-strategy.md`                   | 테스트 전략 (단위/통합/E2E 체크리스트, 로드맵)              |
+| `docs/spec/testing-strategy.md`                   | 테스트 전략 (단위/통합/E2E 체크리스트, 로드맵)               |
 | `docs/spec/web/api.md`                            | 웹 API 스펙                                                  |
 | `docs/spec/web/features.md`                       | 웹 기능 목록                                                 |
 | `docs/spec/web/deployment.md`                     | 배포 설정                                                    |
