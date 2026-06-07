@@ -53,7 +53,7 @@ export const CreateCollectionModal = ({ onClose }: Props) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="예: React 아티클 모음"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-base text-zinc-900 outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
             />
           </div>
 
@@ -66,7 +66,7 @@ export const CreateCollectionModal = ({ onClose }: Props) => {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="이 컬렉션에 대한 설명..."
               rows={3}
-              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-base text-zinc-900 outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
             />
           </div>
 
