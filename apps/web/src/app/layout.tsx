@@ -2,15 +2,14 @@ import { OverlayProvider } from "@/shared/lib/overlay/OverlayProvider";
 import { QueryProvider } from "@/shared/lib/QueryProvider";
 import { AuthProvider } from "@/shared/lib/AuthProvider";
 import { Toaster } from "@/shared/ui/Toaster";
+// Pretendard 동적 서브셋: unicode-range로 쪼개진 @font-face 수백 개 —
+// 페이지에 실제 등장한 글자가 속한 조각(woff2)만 다운로드됨
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "@/styles/globals.css";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://smart-bookmark-app-hdz6.vercel.app";
 
@@ -40,7 +39,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ko" style={{ colorScheme: "dark light" }}>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="antialiased">
         <QueryProvider>
           <AuthProvider>
             <OverlayProvider>
