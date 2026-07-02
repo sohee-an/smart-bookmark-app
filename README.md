@@ -4,7 +4,7 @@
 
 URL을 저장하면 AI가 자동으로 요약·태깅하고, 의미 기반(시맨틱) 검색으로 키워드가 달라도 원하는 콘텐츠를 바로 찾을 수 있는 북마크 앱.
 
-**[배포 링크](https://smart-bookmart2.vercel.app)** · **[기술 결정 문서](./docs/decisions/)**
+**[배포 링크](https://smartmark.wooyou.co.kr)** · **[기술 결정 문서](./docs/decisions/)**
 
 ---
 
@@ -65,7 +65,7 @@ graph TD
   WEB -->|import| TYPES
 ```
 
-### Feature-Sliced Design (FSD) 레이어
+### 레이어 구조
 
 ```mermaid
 graph TD
@@ -248,12 +248,12 @@ LIMIT match_count;
 
 ### 6. SSRF 방어
 
-크롤러 API에서 사용자 입력 URL을 그대로 요청하면 내부 네트워크 접근이 가능하다. 화이트리스트 기반 `validateSsrf` 유틸을 구현해 API Route 진입 시점에 차단한다.
+크롤러 API에서 사용자 입력 URL을 그대로 요청하면 내부 네트워크 접근이 가능하다. `validateSsrf` 유틸을 구현해 API Route 진입 시점에 차단한다.
 
-- `localhost`, `127.0.0.1`, `0.0.0.0`, IPv6 루프백 차단
-- Private IP 대역 (`10.x`, `172.16-31.x`, `192.168.x`) 차단
-- `file://`, `ftp://` 등 비 HTTP 스킴 차단
-- DNS Rebinding 방지: URL 파싱 후 실제 IP 재검증
+- `file://`, `ftp://` 등 비 HTTP 스킴 차단 (`http`/`https`만 허용)
+- 호스트네임을 DNS 조회한 뒤, 확인된 IP가 사설 대역이면 차단
+  - `127.x` 루프백 · `10.x` / `172.16-31.x` / `192.168.x` 사설망 · `169.254.x` 링크 로컬(클라우드 메타데이터 엔드포인트)
+- 한계: DNS 조회 시점과 실제 요청 시점이 분리되어 있어 DNS Rebinding까지는 방어하지 못함 — 검증된 IP로 직접 요청하는 방식을 개선 과제로 인지
 
 ### 7. Headless UI + 모노레포
 
@@ -269,7 +269,7 @@ overlay.open(({ isOpen, close }) => (
 ))
 ```
 
-Redux나 Context 없이 어느 레이어에서든 모달을 열고 닫을 수 있어 FSD 레이어 간 결합도를 낮춘다.
+Redux나 Context 없이 어느 레이어에서든 모달을 열고 닫을 수 있어 레이어 간 결합도를 낮춘다.
 
 ---
 
@@ -361,10 +361,10 @@ gitGraph
 
 `main`, `dev` PR 시 GitHub Actions CI가 자동 실행된다.
 
-- **Lint** (`pnpm lint`) — ESLint 규칙 + FSD 레이어 위반 감지
+- **Lint** (`pnpm lint`) — ESLint 규칙 검사
 - **Typecheck** (`pnpm typecheck`) — TypeScript strict 모드 검사
 
-`dev` PR 체크리스트: FSD 레이어 준수 · 타입 에러 · 린트 · console.log 제거
+`dev` PR 체크리스트: 레이어 의존성 준수 · 타입 에러 · 린트 · console.log 제거
 `main` PR 체크리스트: dev 충분 테스트 · CI 전부 통과 · 환경변수 · DB 마이그레이션 확인
 
 ---
