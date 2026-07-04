@@ -1,3 +1,5 @@
+import type { AIStatus } from "../model/types";
+
 /**
  * @description db 에서 사용하는 스마트 북마크 앱 전역에서 사용하는 표준 북마크 모델
  */
@@ -9,7 +11,7 @@ export interface BookmarkRow {
   content?: string; // 본문 텍스트 (검색용)
   userMemo?: string; // 사용자 메모
   thumbnailUrl?: string;
-  aiStatus: "crawling" | "processing" | "completed" | "failed";
+  aiStatus: AIStatus;
   tags: string[];
   status: "unread" | "read";
   createdAt: string;

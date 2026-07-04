@@ -10,7 +10,7 @@ import type {
   CollectionMember,
   CollectionRole,
 } from "../model/types";
-import type { Bookmark } from "@/entities/bookmark/model/types";
+import type { AIStatus, Bookmark } from "@/entities/bookmark/model/types";
 import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
 
 type CollectionMemberRow = {
@@ -210,11 +210,7 @@ export class SupabaseCollectionRepository implements CollectionRepository {
           content: undefined,
           userMemo: b.user_memo ?? undefined,
           thumbnailUrl: b.thumbnail_url ?? undefined,
-          aiStatus: (b.ai_status ?? "processing") as
-            | "crawling"
-            | "processing"
-            | "completed"
-            | "failed",
+          aiStatus: (b.ai_status ?? "processing") as AIStatus,
           tags,
           status: b.status as "unread" | "read",
           createdAt: b.created_at,
