@@ -102,12 +102,12 @@ export const InviteMemberModal = ({ collection, currentUserId, onClose }: Props)
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="example@email.com"
-                  className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-base outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                 />
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as CollectionRole)}
-                  className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-base outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                 >
                   {ROLE_OPTIONS.map((r) => (
                     <option key={r.value} value={r.value}>

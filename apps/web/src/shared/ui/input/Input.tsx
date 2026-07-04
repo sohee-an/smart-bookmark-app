@@ -11,9 +11,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   showPasswordToggle?: boolean;
 }
 
+// 모바일은 16px 고정 — iOS Safari가 16px 미만 input 포커스 시 강제 줌인하는 것 방지
 const sizeClasses = {
-  sm: "py-1.5 text-xs",
-  md: "py-2.5 text-sm",
+  sm: "py-1.5 text-base md:text-xs",
+  md: "py-2.5 text-base md:text-sm",
   lg: "py-3.5 text-base",
 };
 

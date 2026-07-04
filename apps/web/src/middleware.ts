@@ -98,5 +98,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.svg).*)"],
+  // 정적 자산(폰트/이미지)은 인증 체크 제외 — 미들웨어에 걸리면 리다이렉트돼 로드 실패함
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|woff2?|ttf|otf|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };

@@ -96,6 +96,9 @@ portfolio.md
 ai-dev-pipeline.md
 ai-pipeline 정리와 개선.md
 
+# 면접 준비 문서 — 별도 private 레포(interview-prep)로 관리, 공개 레포에 올리지 않음
+docs/personal/
+
 # 올려도 되는 것들 (아래는 gitignore 제외)
 # .claude/commands/   ← 커밋, 테스트 등 커맨드
 # .claude/agents/     ← ui-agent 등 서브에이전트

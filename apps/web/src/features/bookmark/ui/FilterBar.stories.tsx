@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import { fn } from "@storybook/test";
+import { fn } from "storybook/test";
 import { FilterBar } from "./FilterBar";
 
 const meta: Meta<typeof FilterBar> = {

@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
+/* 웹폰트: Pretendard Variable 동적 서브셋 — @font-face는 layout.tsx에서 import하는
+   pretendardvariable-dynamic-subset.css 가 제공 (unicode-range 조각 방식) */
+
 @theme {
+  /* 폰트 스택: ①웹폰트 ②시스템(macOS/Windows 통합) ④한글 폴백 명시 ⑤generic */
+  --font-sans:
+    "Pretendard Variable", ui-sans-serif, system-ui, "Apple SD Gothic Neo", "Malgun Gothic",
+    sans-serif;
+
   /* -------------------------------------------------------------------------- */
   /*  디자인 토큰 (Design Tokens) - 명시적 색상값 적용                                */
   /* -------------------------------------------------------------------------- */

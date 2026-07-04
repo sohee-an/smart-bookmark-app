@@ -181,7 +181,7 @@ export const BookmarkDetailPanel = ({
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm font-semibold text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-base font-semibold text-zinc-900 outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                     />
                   ) : (
                     <p className="text-lg leading-snug font-black text-zinc-900 dark:text-zinc-100">

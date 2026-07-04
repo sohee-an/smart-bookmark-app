@@ -97,9 +97,9 @@ describe("validateUrl", () => {
       expect(result).toBe("올바른 URL 형식이 아닙니다");
     });
 
-    it("커스텀 프로토콜도 URL 형식이면 null 반환", () => {
+    it("미등록 프로토콜이어도 URL 형식이면 통과 (htp:// 오타 등)", () => {
       const result = validateUrl("htp://example.com");
-      expect(result).toBeNull();
+      expect(result).toBe(null);
     });
 
     it("프로토콜만 있으면 에러 메시지 반환", () => {
@@ -188,6 +188,7 @@ describe("validateUrl", () => {
       const result = validateUrl("https://example.com");
       expect(result).toBe(null);
       expect(result).not.toBeUndefined();
+      expect(result).not.toBe(false);
     });
 
     it("잘못된 URL이면 문자열 반환", () => {

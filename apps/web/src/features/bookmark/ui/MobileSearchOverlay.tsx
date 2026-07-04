@@ -90,7 +90,7 @@ export function MobileSearchOverlay({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="북마크 검색..."
-              className="flex-1 bg-transparent text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:text-zinc-100"
+              className="flex-1 bg-transparent text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none dark:text-zinc-100"
             />
           </div>
         </form>
