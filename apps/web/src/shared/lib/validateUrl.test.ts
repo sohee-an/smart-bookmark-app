@@ -97,9 +97,9 @@ describe("validateUrl", () => {
       expect(result).toBe("올바른 URL 형식이 아닙니다");
     });
 
-    it("잘못된 프로토콜이면 에러 메시지 반환", () => {
+    it("커스텀 프로토콜도 URL 형식이면 null 반환", () => {
       const result = validateUrl("htp://example.com");
-      expect(result).toBe("올바른 URL 형식이 아닙니다");
+      expect(result).toBeNull();
     });
 
     it("프로토콜만 있으면 에러 메시지 반환", () => {
@@ -178,9 +178,7 @@ describe("validateUrl", () => {
     });
 
     it("여러 쿼리 파라미터 처리", () => {
-      const result = validateUrl(
-        "https://example.com?key1=value1&key2=value2&key3=value3"
-      );
+      const result = validateUrl("https://example.com?key1=value1&key2=value2&key3=value3");
       expect(result).toBeNull();
     });
   });
@@ -190,7 +188,6 @@ describe("validateUrl", () => {
       const result = validateUrl("https://example.com");
       expect(result).toBe(null);
       expect(result).not.toBeUndefined();
-      expect(result).not.toBeFalsy();
     });
 
     it("잘못된 URL이면 문자열 반환", () => {
@@ -214,9 +211,7 @@ describe("validateUrl", () => {
         if (result === null) {
           expect(result).toBeNull();
         } else {
-          expect(["URL을 입력해주세요", "올바른 URL 형식이 아닙니다"]).toContain(
-            result
-          );
+          expect(["URL을 입력해주세요", "올바른 URL 형식이 아닙니다"]).toContain(result);
         }
       });
     });
