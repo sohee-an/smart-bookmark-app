@@ -33,7 +33,7 @@ describe("BookmarkCard", () => {
 
   it("aiStatus='failed' → 에러 메시지", () => {
     render(<BookmarkCard bookmark={makeBookmark({ aiStatus: "failed" })} />);
-    expect(screen.getByText("AI 요약에 실패했습니다.")).toBeInTheDocument();
+    expect(screen.getByText("AI 요약에 실패했어요.")).toBeInTheDocument();
   });
 
   it("aiStatus='completed' → 제목, 요약, 태그 렌더링", () => {
