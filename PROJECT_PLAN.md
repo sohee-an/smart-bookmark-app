@@ -206,19 +206,19 @@ AI 자동 카테고리 분류 + 중복 제거
 
 ## 9. 기술 스택
 
-| 영역          | 기술                            |
-| ------------- | ------------------------------- |
-| 웹 프레임워크 | Next.js (App Router)            |
-| 언어          | TypeScript (strict)             |
-| 스타일        | Tailwind CSS                    |
-| 상태관리      | Zustand + TanStack Query        |
-| 아키텍처      | FSD (Feature-Sliced Design)     |
-| DB / 인증     | Supabase                        |
-| AI 요약/태깅  | Gemini API                      |
-| 시맨틱 서치   | OpenAI Embeddings + 벡터 유사도 |
-| 모노레포      | pnpm + Turborepo                |
-| 배포          | AWS EC2 + Nginx                 |
-| 익스텐션      | Chrome Extension (Manifest V3)  |
+| 영역          | 기술                                                            |
+| ------------- | --------------------------------------------------------------- |
+| 웹 프레임워크 | Next.js (App Router)                                            |
+| 언어          | TypeScript (strict)                                             |
+| 스타일        | Tailwind CSS                                                    |
+| 상태관리      | Zustand + TanStack Query                                        |
+| 아키텍처      | FSD (Feature-Sliced Design)                                     |
+| DB / 인증     | Supabase                                                        |
+| AI 요약/태깅  | Gemini API                                                      |
+| 시맨틱 서치   | Gemini Embeddings (gemini-embedding-001) + pgvector 벡터 유사도 |
+| 모노레포      | pnpm + Turborepo                                                |
+| 배포          | Vercel                                                          |
+| 익스텐션      | Chrome Extension (Manifest V3)                                  |
 
 ---
 
@@ -239,7 +239,7 @@ AI 자동 카테고리 분류 + 중복 제거
 
 - [ ] 죽은 링크 자동 감지 및 알림
 - [ ] 대화형 북마크 ("저번에 저장한 React 글에서 뭐라고 했지?" AI 답변)
-- [ ] Spring Boot 백엔드 전환
+- [ ] 백엔드 분리 및 API 서버 전환
 - [ ] React Native 앱
 - [ ] 브라우저 ↔ 웹 양방향 동기화 (복잡도 높음, 장기 과제)
 - [ ] PWA 지원

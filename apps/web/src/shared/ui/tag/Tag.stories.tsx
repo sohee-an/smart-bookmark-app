@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import { fn } from "@storybook/test";
+import { fn } from "storybook/test";
 import { TagGroup } from "./Tag";
 
 const meta: Meta<typeof TagGroup> = {
