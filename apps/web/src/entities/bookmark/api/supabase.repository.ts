@@ -1,6 +1,6 @@
 import { supabase } from "@/shared/api/supabase/client";
 import type { BookmarkRow, BookmarkFilter, CreateBookmarkRequest } from "./bookmark.types.db";
-import type { Bookmark } from "../model/types";
+import type { AIStatus, Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
 import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
@@ -240,11 +240,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       content: dbData.content ?? undefined,
       userMemo: dbData.user_memo ?? undefined,
       thumbnailUrl: dbData.thumbnail_url ?? undefined,
-      aiStatus: (dbData.ai_status ?? "processing") as
-        | "crawling"
-        | "processing"
-        | "completed"
-        | "failed",
+      aiStatus: (dbData.ai_status ?? "processing") as AIStatus,
       tags,
       status: dbData.status as "unread" | "read",
       createdAt: dbData.created_at,

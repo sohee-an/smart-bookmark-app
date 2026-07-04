@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { toBookmark } from "@/entities/bookmark/lib/bookmark.mapper";
+import type { AIStatus } from "@/entities/bookmark/model/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CollectionBookmarkRow = {
@@ -83,11 +84,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         content: undefined,
         userMemo: b.user_memo ?? undefined,
         thumbnailUrl: b.thumbnail_url ?? undefined,
-        aiStatus: (b.ai_status ?? "processing") as
-          | "crawling"
-          | "processing"
-          | "completed"
-          | "failed",
+        aiStatus: (b.ai_status ?? "processing") as AIStatus,
         tags,
         status: b.status as "unread" | "read",
         createdAt: b.created_at,

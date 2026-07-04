@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { toBookmark } from "./bookmark.mapper";
 import type { BookmarkRow } from "../api/bookmark.types.db";
+import type { AIStatus } from "../model/types";
 
 describe("BookmarkMapper", () => {
   describe("toBookmark", () => {
@@ -81,11 +82,12 @@ describe("BookmarkMapper", () => {
     });
 
     it("should handle all aiStatus types", () => {
-      const statuses: Array<"crawling" | "processing" | "completed" | "failed"> = [
+      const statuses: AIStatus[] = [
         "crawling",
         "processing",
         "completed",
         "failed",
+        "crawl_failed",
       ];
 
       statuses.forEach((status) => {
