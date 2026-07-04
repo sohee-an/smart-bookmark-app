@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const aiAnalysisSchema = z.object({
   title: z.string().trim().min(1).nullable().optional(),
-  summary: z.string().trim().min(1).catch(""),
+  summary: z.string().trim().min(1, "AI 요약 결과가 비어 있습니다."),
   tags: z.array(z.string().trim().min(1)).catch([]),
 });
 

@@ -47,6 +47,27 @@ describe("parseAiAnalysisResponse", () => {
     expect(result.tags).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
   });
 
+  it("summary가 없거나 비어 있으면 에러를 던진다", () => {
+    expect(() =>
+      parseAiAnalysisResponse(
+        JSON.stringify({
+          title: null,
+          tags: ["React"],
+        })
+      )
+    ).toThrow();
+
+    expect(() =>
+      parseAiAnalysisResponse(
+        JSON.stringify({
+          title: null,
+          summary: "   ",
+          tags: ["React"],
+        })
+      )
+    ).toThrow("AI 요약 결과가 비어 있습니다.");
+  });
+
   it("JSON 객체가 없으면 에러를 던진다", () => {
     expect(() => parseAiAnalysisResponse("요약: JSON 아님")).toThrow(
       "AI 응답에서 JSON 객체를 찾을 수 없습니다."
