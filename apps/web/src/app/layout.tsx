@@ -6,7 +6,7 @@ import { Toaster } from "@/shared/ui/Toaster";
 // 페이지에 실제 등장한 글자가 속한 조각(woff2)만 다운로드됨
 import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "@/styles/globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -39,6 +39,14 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
     other: { rel: "alternate icon", url: "/favicon.ico" },
   },
+};
+
+// iOS Safari 상태바 tint를 앱 배경과 맞춰 세이프에어리어 흰 띠를 없앤다 (라이트/다크)
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
