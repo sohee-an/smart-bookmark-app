@@ -129,7 +129,6 @@ export async function POST(request: Request) {
     }));
   }
 
-  // 2. grounded 프롬프트 → Gemini 스트리밍 → 진짜 SSE(text/event-stream)
   const genModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const encoder = new TextEncoder();
 

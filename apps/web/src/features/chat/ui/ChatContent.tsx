@@ -27,7 +27,6 @@ export function ChatContent() {
   const { messages, isStreaming, send, stop } = useBookmarkChat();
   const [input, setInput] = useState("");
 
-  // 게스트 판별 + 하루 남은 횟수 (게스트는 localStorage 북마크를 context로 전송)
   const { data: bookmarks = [] } = useBookmarks();
   const [isGuest, setIsGuest] = useState(false);
   const [remaining, setRemaining] = useState(GUEST_CHAT_DAILY_LIMIT);
