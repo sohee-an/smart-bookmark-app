@@ -1,55 +1,10 @@
-# TypeScript Utility Types
+# TypeScript 타입 설계 결정
 
-> 프로젝트에서 직접 마주친 문제를 해결하면서 정리한 Utility Types 가이드
-
----
-
-## Utility Types가 뭔가
-
-TypeScript가 기본으로 제공하는 **타입 변환 도구**예요.
-기존 타입을 변형해서 새 타입을 만들어요.
+> Repository 패턴에서 마주친 두 가지 타입 설계 결정 — update 타입으로 "변경 가능 범위"를 제한하고, save 요청 타입을 공통화한 이유.
 
 ---
 
-## 자주 쓰는 것들
-
-### Partial — 모든 필드를 옵셔널로
-
-```ts
-interface Bookmark {
-  id: string;
-  title: string;
-  summary: string;
-}
-
-type PartialBookmark = Partial<Bookmark>;
-// 결과: { id?: string, title?: string, summary?: string }
-```
-
-### Omit — 특정 필드 제거
-
-```ts
-type LocalBookmark = Omit<Bookmark, "userId" | "tempUserId">;
-// userId, tempUserId가 빠진 Bookmark
-```
-
-### Pick — 특정 필드만 선택
-
-```ts
-type BookmarkId = Pick<Bookmark, "id">;
-// 결과: { id: string }
-```
-
-### Required — 모든 필드를 필수로
-
-```ts
-type RequiredBookmark = Required<Bookmark>;
-// 모든 옵셔널이 필수로 바뀜
-```
-
----
-
-## 실제 문제 상황 — update 타입 설계
+## 결정 1 — update 타입: 변경 가능 범위를 타입으로 제한
 
 ### 문제
 
@@ -126,13 +81,9 @@ AI 처리 결과 타입     → Pick<Bookmark, 'title' | 'summary' | 'tags'>
 전부 입력 강제할 때   → Required<T>
 ```
 
-# 타입 설계 결정 기록
+## 결정 2 — save 요청 타입: 공통 타입 vs 분리
 
-> Repository 패턴 적용 시 요청 타입을 어떻게 설계할 것인가
-
----
-
-## 문제 상황
+> Repository 인터페이스의 `save` 메서드 파라미터를 어떻게 설계할 것인가
 
 `BookmarkRepository` 인터페이스의 `save` 메서드 파라미터 타입을 결정해야 했어요.
 
@@ -262,16 +213,4 @@ async save(request: CreateBookmarkRequest): Promise<Bookmark> {
   if (!request.guestId) throw new Error('guestId가 필요합니다')
   // ...
 }
-```
-
----
-
-## 관련 개념
-
-```
-Union Type    → A | B 둘 중 하나
-Intersection  → A & B 둘 다
-Partial       → 모든 필드 옵셔널
-Pick          → 특정 필드만 선택
-Omit          → 특정 필드 제거
 ```
