@@ -5,10 +5,11 @@ import { ArrowUp, Square, ExternalLink, Sparkles } from "lucide-react";
 import { useBookmarkChat, type ChatSource } from "../model/useBookmarkChat";
 import { Markdown } from "./Markdown";
 
+// 검색(찾기)과 겹치지 않게, "종합·정리" 성격의 예시로 유도
 const EXAMPLES = [
-  "React 상태관리 관련해서 저장한 거 있어?",
-  "성능 최적화에 대해 뭘 모아놨지?",
-  "최근에 저장한 것 중 TypeScript 관련은?",
+  "저장한 React 글들 핵심만 요약해줘",
+  "내 북마크 주제별로 정리해줘",
+  "안 읽은 것 중에 뭐부터 볼까?",
 ];
 
 export function ChatContent() {
@@ -54,10 +55,10 @@ export function ChatContent() {
             </div>
             <div>
               <h2 className="text-2xl font-black text-zinc-900 dark:text-white">
-                저장한 북마크에게 물어보세요
+                내 북마크, 정리해드릴게요
               </h2>
               <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                내가 모아둔 북마크를 근거로 답해드려요.
+                저장한 걸 근거로 요약·정리·추천해드려요.
               </p>
             </div>
             <div className="flex flex-col gap-2">
