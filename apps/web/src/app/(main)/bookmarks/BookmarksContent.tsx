@@ -17,6 +17,7 @@ import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
 import storage from "@/shared/lib/storage";
 import { ErrorState } from "@/shared/ui/ErrorState";
+import { toast } from "@/shared/lib/toast";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 import { X } from "lucide-react";
 
@@ -90,9 +91,12 @@ export function BookmarksContent() {
         if (json.success) {
           setSemanticExact(json.data.exact);
           setSemanticRelated(json.data.related);
+        } else {
+          toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
         }
       } catch (e) {
         console.error("[SemanticSearch] 오류:", e);
+        toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
       } finally {
         setSemanticLoading(false);
       }

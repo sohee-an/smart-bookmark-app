@@ -5,7 +5,7 @@ import { bookmarkService } from "../model/bookmark.service";
 import { bookmarkKeys } from "../model/queries";
 import { useBookmarkPipeline } from "../model/useBookmarkPipeline";
 import { validateUrl } from "@/shared/lib/validateUrl";
-import { getErrorMessage } from "@/shared/lib/error";
+import { BookmarkError, BookmarkErrorCode } from "@/entities/bookmark/model/bookmark.error";
 import { useRouter } from "next/navigation";
 import { toast } from "@/shared/lib/toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -96,8 +96,8 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         }
       }
     } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      if (msg.includes("무료 체험 한도")) {
+      // 문자열 매칭 대신 에러 코드로 판별 (메시지 문구가 바뀌어도 안전)
+      if (error instanceof BookmarkError && error.code === BookmarkErrorCode.GUEST_LIMIT_EXCEEDED) {
         setIsLimitReached(true);
       } else {
         console.error(error);
