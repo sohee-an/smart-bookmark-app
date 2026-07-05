@@ -89,14 +89,15 @@ describe("회원 저장→조회 워크플로우", () => {
     });
 
     it("북마크를 업데이트하고 변경 사항 반영", async () => {
+      // 소유 행(user_id 일치)을 배열로 반환해야 update가 통과한다
       const mockUpdateChain: MockChain = {
         update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: null,
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockResolvedValue({
+          data: [{ id: "bookmark-1" }],
           error: null,
         }),
         insert: vi.fn(),
-        select: vi.fn(),
         single: vi.fn(),
       };
 
@@ -178,13 +179,14 @@ describe("회원 저장→조회 워크플로우", () => {
 
   describe("삭제 워크플로우", () => {
     it("북마크를 삭제하고 삭제 확인", async () => {
-      // Mock delete
-      const mockDeleteChain: MockChain & { delete: ReturnType<typeof vi.fn> } = {
+      // 체인 끝을 await하므로 thenable로 결과를 반환
+      const mockDeleteChain: MockChain & {
+        delete: ReturnType<typeof vi.fn>;
+        then: (resolve: (v: { error: null }) => void) => void;
+      } = {
         delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
+        eq: vi.fn().mockReturnThis(),
+        then: (resolve) => resolve({ error: null }),
         insert: vi.fn(),
         select: vi.fn(),
         single: vi.fn(),

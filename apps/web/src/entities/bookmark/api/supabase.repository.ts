@@ -97,6 +97,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
       .from("bookmarks")
       .select("*, bookmark_tags(tags(id, name))")
       .eq("id", id)
+      .eq("user_id", this.userId)
       .single();
 
     if (error) return null;
@@ -104,7 +105,12 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase.from("bookmarks").delete().eq("id", id);
+    // user_id 필터로 타인 소유 북마크 삭제(IDOR) 차단
+    const { error } = await supabase
+      .from("bookmarks")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", this.userId);
     if (error) {
       throw new BookmarkError(
         BookmarkErrorCode.DB_DELETE_FAILED,
@@ -144,12 +150,26 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
     if (data.aiStatus !== undefined) updateFields.ai_status = data.aiStatus;
     if (data.status !== undefined) updateFields.status = data.status;
 
-    const { error } = await supabase.from("bookmarks").update(updateFields).eq("id", id);
+    // user_id 필터로 타인 소유 북마크 수정(IDOR) 차단.
+    // .select()로 실제 갱신된 행을 받아, 소유하지 않으면(0행) 태그 교체까지 막는다.
+    const { data: updated, error } = await supabase
+      .from("bookmarks")
+      .update(updateFields)
+      .eq("id", id)
+      .eq("user_id", this.userId)
+      .select("id");
     if (error) {
       throw new BookmarkError(
         BookmarkErrorCode.DB_UPDATE_FAILED,
         `업데이트 실패: ${error.message}`,
         error
+      );
+    }
+
+    if (!updated || updated.length === 0) {
+      throw new BookmarkError(
+        BookmarkErrorCode.DB_UPDATE_FAILED,
+        "수정할 북마크를 찾을 수 없거나 권한이 없습니다."
       );
     }
 
