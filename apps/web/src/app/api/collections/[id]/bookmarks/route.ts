@@ -117,6 +117,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       { status: 400 }
     );
 
+  // 요청자 소유 북마크만 컬렉션에 추가 가능 (IDOR 차단).
+  // 검증 없으면 임의 bookmarkId를 넣어 GET 조인으로 타인의 user_memo까지 노출됨.
+  const { data: ownedBookmark } = await supabase
+    .from("bookmarks")
+    .select("id")
+    .eq("id", bookmarkId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!ownedBookmark)
+    return NextResponse.json(
+      { success: false, message: "본인 소유의 북마크만 추가할 수 있습니다." },
+      { status: 403 }
+    );
+
   const { error } = await supabase
     .from("collection_bookmarks")
     .insert({ collection_id: id, bookmark_id: bookmarkId, added_by: user.id });

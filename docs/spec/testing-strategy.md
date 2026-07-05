@@ -1,295 +1,65 @@
-# 📋 테스트 전략 (Testing Strategy)
+# 테스트 전략 (Testing Strategy)
 
-북마크 앱의 테스트 계획 및 체크리스트.
-
----
-
-## 1️⃣ 단위 테스트 (Unit Tests)
-
-### 순수 함수 (Pure Functions)
-
-| 파일 | 테스트 수 | 상태 | 가치 | 예상 시간 |
-|------|----------|------|------|---------|
-| `validateUrl.ts` | 32 | ✅ 완료 | 높음 | 30분 |
-| `bookmark.mapper.ts` | 6 | ✅ 완료 | 높음 | 20분 |
-| `error.ts` | ~10 | ⏳ 미작성 | 중간 | 20분 |
-| `guest.ts` | ~8 | ⏳ 미작성 | 중간 | 20분 |
-| `storage.ts` | ~12 | ⏳ 미작성 | 중간 | 30분 |
-
-### 상태 관리 (State Management)
-
-| 파일 | 타입 | 테스트 수 | 상태 | 가치 | 예상 시간 |
-|------|------|----------|------|------|---------|
-| `useBookmarkStore.ts` | Zustand | 20 | ✅ 완료 | 높음 | 45분 |
-| `queries.ts` (useBookmarks) | TanStack Query | ~15 | ⏳ 미작성 | 높음 | 1시간 |
-| `queries.ts` (useUpdateBookmark) | TanStack Query | ~12 | ⏳ 미작성 | 높음 | 1시간 |
-| `queries.ts` (useDeleteBookmark) | TanStack Query | ~10 | ⏳ 미작성 | 높음 | 45분 |
-| `queries.ts` (useBookmarkCount) | TanStack Query | ~8 | ⏳ 미작성 | 중간 | 30분 |
-
-### 저장소 계층 (Repository Layer)
-
-| 파일 | 저장소 | 테스트 수 | 상태 | 가치 | 예상 시간 | 주의사항 |
-|------|--------|----------|------|------|---------|---------|
-| `local.repository.ts` | LocalStorage | ~35 | ⏳ 미작성 | 매우높음 | 1.5시간 | Side effect 격리됨 |
-| `supabase.repository.ts` | Supabase | ~30 | ⏳ 미작성 | 매우높음 | 1.5시간 | API 모킹 필요 |
-
-**작성 가이드**:
-```typescript
-// LocalRepository: 주입된 providers 사용
-const repo = new LocalRepository(
-  mockStorage,
-  () => fixedDate,
-  () => fixedUUID
-);
-
-// SupabaseBookmarkRepository: MSW로 API 모킹
-server.use(
-  http.get("/rest/v1/bookmarks", () => HttpResponse.json(...))
-);
-```
-
-### 서비스 계층 (Service Layer)
-
-| 파일 | 패턴 | 테스트 수 | 상태 | 가치 | 예상 시간 |
-|------|------|----------|------|------|---------|
-| `bookmark.service.ts` | Factory | ~20 | ⏳ 미작성 | 매우높음 | 1시간 |
-| `crawler.service.ts` | 크롤링 | ~15 | ⏳ 미작성 | 높음 | 1시간 |
-| `ai.service.ts` | API | ~15 | ⏳ 미작성 | 높음 | 1시간 |
+SmartMark는 핵심 도메인 로직과 AI 파이프라인의 실패 흐름을 빠르게 회귀 검증하는 것을 우선한다.
 
 ---
 
-## 2️⃣ 통합 테스트 (Integration Tests)
+## 현재 테스트 현황
 
-### API 라우트
+| 구분          | 범위                                                          | 상태 |
+| ------------- | ------------------------------------------------------------- | ---- |
+| URL 검증      | URL 형식, 허용 스킴, 예외 케이스                              | 완료 |
+| SSRF 방어     | 사설망, 루프백, 링크 로컬, 비 HTTP 스킴 차단                  | 완료 |
+| 북마크 도메인 | mapper, store, 필터링, 회원/비회원 저장 흐름                  | 완료 |
+| AI 파이프라인 | 상태 전환, 실패 처리, 재시도 전환                             | 완료 |
+| AI 응답 파싱  | JSON 추출, summary 필수 검증, tags 복구, Gemini retry/backoff | 완료 |
+| UI 컴포넌트   | BookmarkCard, BookmarkList, FilterBar, TagFilter              | 완료 |
 
-| 엔드포인트 | 메서드 | 시나리오 | 상태 | 가치 | 예상 시간 |
-|-----------|--------|--------|------|------|---------|
-| `/api/bookmarks` | POST | 비회원 5개 제한 | ⏳ 미작성 | 매우높음 | 1시간 |
-| `/api/bookmarks` | POST | 회원 저장 | ⏳ 미작성 | 매우높음 | 1시간 |
-| `/api/bookmarks` | GET | 필터링 (태그, 상태) | ⏳ 미작성 | 높음 | 1시간 |
-| `/api/bookmarks` | GET | 검색 (키워드, 시맨틱) | ⏳ 미작성 | 높음 | 1시간 |
-| `/api/bookmarks/:id` | PATCH | 수정 검증 | ⏳ 미작성 | 높음 | 45분 |
-| `/api/bookmarks/:id` | DELETE | 삭제 검증 | ⏳ 미작성 | 높음 | 45분 |
-
-### 서비스 조합
-
-| 조합 | 시나리오 | 상태 | 가치 | 예상 시간 |
-|------|--------|------|------|---------|
-| BookmarkService + LocalRepository | 비회원 CRUD | ⏳ 미작성 | 매우높음 | 1시간 |
-| BookmarkService + SupabaseBookmarkRepository | 회원 CRUD | ⏳ 미작성 | 매우높음 | 1.5시간 |
-| CrawlerService + AIService + BookmarkService | URL→저장 전체 워크플로우 | ⏳ 미작성 | 높음 | 1.5시간 |
-
-### 데이터 흐름 시나리오
-
-| 시나리오 | 테스트 내용 | 상태 | 가치 |
-|--------|-----------|------|------|
-| 북마크 저장 | 저장 → 조회 → 검증 | ⏳ 미작성 | 매우높음 |
-| 북마크 업데이트 | 수정 → 조회 → 변경 검증 | ⏳ 미작성 | 높음 |
-| 필터링 조합 | 다중 북마크 → 필터 → 검증 | ⏳ 미작성 | 높음 |
-| 검색 정확도 | 저장 → 검색 → 결과 검증 | ⏳ 미작성 | 중간 |
-| 5개 제한 | 5개 저장 → 6번째 시도 → 에러 | ⏳ 미작성 | 높음 |
+현재 단위 테스트는 140개 이상이며, `vitest run --project unit`으로 전체 검증한다.
 
 ---
 
-## 3️⃣ E2E 테스트 (End-to-End Tests)
+## 핵심 검증 원칙
 
-> Playwright를 사용한 실제 브라우저 테스트
-
-| 기능 | 상태 | 우선순위 |
-|------|------|---------|
-| 북마크 저장 → 카드 표시 | ⏳ 미작성 | 🔴 높음 |
-| URL 입력 → AI 처리 완료 | ⏳ 미작성 | 🔴 높음 |
-| 태그 필터링 동작 | ⏳ 미작성 | 🟡 중간 |
-| 검색 기능 동작 | ⏳ 미작성 | 🟡 중간 |
-| 북마크 삭제 | ⏳ 미작성 | 🟡 중간 |
-| 북마크 상세 패널 | ⏳ 미작성 | 🟢 낮음 |
+- 사용자 입력 URL은 저장 전에 형식 검증과 SSRF 방어를 통과해야 한다.
+- LLM 응답은 신뢰하지 않고 Zod 스키마로 검증한다.
+- `summary`는 핵심 산출물이므로 누락되거나 비어 있으면 실패 처리한다.
+- `tags`는 보조 데이터이므로 잘못된 응답은 빈 배열로 복구한다.
+- 크롤링 실패(`crawl_failed`)와 AI 분석 실패(`failed`)는 다른 상태로 다룬다.
+- 실패 카드는 개별 북마크 단위 재시도를 지원하고, 무한 재시도를 막는다.
 
 ---
 
-## 📊 커버리지 목표
-
-| 레이어 | 목표 | 우선순위 | 이유 |
-|--------|------|---------|------|
-| `entities/` | 90%+ | 🔴 높음 | 도메인 로직, 재사용성 높음 |
-| `features/` | 80%+ | 🔴 높음 | 비즈니스 로직 중요 |
-| `shared/` | 85%+ | 🟡 중간 | 재사용 유틸 |
-| `pages/` | 60%+ | 🟢 낮음 | E2E로 주로 테스트 |
-
-**전체 목표**: 80% 이상
-
----
-
-## 🚀 실행 명령어
+## 실행 명령어
 
 ```bash
-# 모든 테스트 실행
-pnpm test
+# 웹 앱 타입 검사
+pnpm --filter @smart-bookmark/web typecheck
 
-# 단위 테스트만
-pnpm test:unit
+# 웹 앱 단위 테스트
+pnpm --filter @smart-bookmark/web test
 
-# 통합 테스트만
-pnpm test:integration
-
-# E2E 테스트만
-pnpm test:e2e
-
-# 특정 파일만
-pnpm test validateUrl.test.ts
-
-# 커버리지 리포트
-pnpm test --coverage
-
-# Watch 모드
-pnpm test --watch
+# 현재 브랜치에서 사용한 직접 검증 명령
+cd apps/web
+./node_modules/.bin/tsc.CMD --noEmit
+./node_modules/.bin/vitest.CMD run --project unit
 ```
 
 ---
 
-## 🛠️ 파일별 작성 가이드
+## 보강 후보
 
-### LocalRepository 테스트
-
-**특징**:
-- Side effect 격리됨 (DateProvider, UUIDProvider, StorageProvider 주입)
-- 5개 제한 로직 검증 필수
-- 모든 CRUD 메서드 테스트
-
-**예시**:
-```typescript
-const repo = new LocalRepository(
-  mockStorage,
-  () => new Date("2024-03-08"),
-  () => "fixed-uuid"
-);
-
-const result = await repo.save({url: "..."});
-expect(result.id).toBe("fixed-uuid");
-expect(result.createdAt).toBe("2024-03-08T00:00:00.000Z");
-```
-
-### useBookmarks 테스트
-
-**특징**:
-- MSW로 API 모킹
-- TanStack Query 캐싱 고려
-- 로딩/에러 상태 검증
-
-**예시**:
-```typescript
-server.use(
-  http.get("/api/bookmarks", () =>
-    HttpResponse.json([{id: "1", ...}])
-  )
-);
-
-const { result } = renderHook(() => useBookmarks());
-await waitFor(() => {
-  expect(result.current.data).toEqual([...]);
-});
-```
-
-### API 라우트 테스트
-
-**특징**:
-- node-mocks-http 사용
-- 전체 요청/응답 검증
-- 에러 케이스 포함
-
-**예시**:
-```typescript
-const { req, res } = createMocks({
-  method: "POST",
-  body: {url: "https://example.com"}
-});
-
-await POST(req, res);
-
-expect(res._getStatusCode()).toBe(200);
-expect(JSON.parse(res._getData())).toHaveProperty("id");
-```
+| 후보                        | 이유                                           | 우선순위 |
+| --------------------------- | ---------------------------------------------- | -------- |
+| Repository 단위 테스트 확대 | Supabase 변환/태그 교체 로직의 회귀 방지       | 중간     |
+| API Route 통합 테스트       | 인증, 저장, 수정, 삭제 응답 계약 검증          | 중간     |
+| Playwright E2E              | 실제 브라우저에서 저장 → 분석 → 검색 흐름 검증 | 중간     |
+| 익스텐션 bulk import E2E    | 대량 저장과 개별 실패 격리 검증                | 낮음     |
 
 ---
 
-## 📅 작성 로드맵
+## 참고
 
-### Phase 1: 기초 (3일)
-- ✅ validateUrl.test.ts (32개)
-- ✅ bookmark.mapper.test.ts (6개)
-- ✅ useBookmarkStore.test.ts (20개)
-
-### Phase 2: 저장소 (2주)
-- ⏳ LocalRepository (~35개)
-- ⏳ SupabaseBookmarkRepository (~30개)
-- ⏳ BookmarkService (~20개)
-
-### Phase 3: 상태관리 (1.5주)
-- ⏳ useBookmarks
-- ⏳ useUpdateBookmark
-- ⏳ useDeleteBookmark
-
-### Phase 4: 통합 (우선순위 완료) ✅
-- ✅ 비회원 저장 → 5개 제한 → 에러 (bookmark-guest-workflow.test.ts)
-- ✅ 회원 저장 → 조회 → 반영 (bookmark-user-workflow.test.ts)
-- ✅ POST /api/bookmarks (guest/user) (bookmark-api-save.test.ts)
-- ✅ URL → AI 파이프라인 상태 변화 (bookmark-ai-pipeline.test.ts)
-
-**추가 통합 테스트 (선택사항)**
-- ⏳ GET /api/bookmarks (필터)
-- ⏳ GET /api/bookmarks (검색)
-- ⏳ PATCH /api/bookmarks/:id
-- ⏳ DELETE /api/bookmarks/:id
-
-### Phase 5: E2E (1주)
-- ⏳ 주요 사용자 시나리오
-
-**총 예상**: 약 7-8주
-
----
-
-## ✅ 체크리스트
-
-```
-기초 (완료)
-- [x] validateUrl.test.ts (32개)
-- [x] bookmark.mapper.test.ts (6개)
-- [x] useBookmarkStore.test.ts (20개)
-
-저장소
-- [ ] LocalRepository (~35개)
-- [ ] SupabaseBookmarkRepository (~30개)
-- [ ] BookmarkService (~20개)
-
-상태관리
-- [ ] useBookmarks (~15개)
-- [ ] useUpdateBookmark (~12개)
-- [ ] useDeleteBookmark (~10개)
-
-통합 (우선순위 완료)
-- [x] 비회원 저장 → 5개 제한 → 에러
-- [x] 회원 저장 → 조회 → 반영
-- [x] POST /api/bookmarks (비회원/회원)
-- [x] URL → AI 파이프라인 상태 변화
-
-통합 (추가)
-- [ ] GET /api/bookmarks (필터)
-- [ ] GET /api/bookmarks (검색)
-- [ ] PATCH /api/bookmarks/:id
-- [ ] DELETE /api/bookmarks/:id
-
-E2E
-- [ ] 북마크 저장
-- [ ] AI 처리 완료
-- [ ] 필터링
-- [ ] 검색
-```
-
----
-
-## 📚 참고
-
-- **테스트 파일 위치**: `파일.test.ts` (co-location)
-- **테스트 도구**: vitest, @testing-library/react, MSW
-- **에러 검증**: `BookmarkError` 클래스 사용
-- **모킹 패턴**: Side effect 격리, providers 주입
-
+- 테스트 파일 위치: 구현 파일 근처의 `*.test.ts` / `*.test.tsx`
+- 테스트 도구: Vitest, Testing Library, Supabase/API mock
+- 주요 회귀 방지 대상: URL 검증, SSRF, AI 응답 파싱, 북마크 상태 전환
