@@ -8,10 +8,10 @@
 
 ### 문제
 
-북마크 update 메서드를 만들 때 data 타입을 뭘로 해야 하는지 고민이 생겼어요.
+북마크 update 메서드를 만들 때 data 타입을 뭘로 해야 하는지 고민이 생겼다.
 
 AI 처리 결과로 `title`, `summary`, `tags`, `aiStatus` 만 업데이트하면 되는데,
-**어떤 필드를 받을지**, **전부 다 보내야 하는지 일부만 보내도 되는지** 결정해야 했어요.
+**어떤 필드를 받을지**, **전부 다 보내야 하는지 일부만 보내도 되는지** 결정해야 했다.
 
 ---
 
@@ -85,9 +85,9 @@ AI 처리 결과 타입     → Pick<Bookmark, 'title' | 'summary' | 'tags'>
 
 > Repository 인터페이스의 `save` 메서드 파라미터를 어떻게 설계할 것인가
 
-`BookmarkRepository` 인터페이스의 `save` 메서드 파라미터 타입을 결정해야 했어요.
+`BookmarkRepository` 인터페이스의 `save` 메서드 파라미터 타입을 결정해야 했다.
 
-비회원(Local)과 회원(Supabase)이 필요한 정보가 달랐어요.
+비회원(Local)과 회원(Supabase)이 필요한 정보가 달랐다.
 
 ```ts
 // 비회원은 guestId가 필요

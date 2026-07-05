@@ -187,7 +187,7 @@ export const config = {
 변경 후: Cookie      → document.cookie = 'is_guest=true; path=/'
 ```
 
-미들웨어에서 쿠키는 읽을 수 있어요.
+미들웨어에서 쿠키는 읽을 수 있다.
 
 ```ts
 const isGuest = request.cookies.get("is_guest")?.value === "true";
