@@ -40,15 +40,20 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
   const tags: string[] = aiData.tags ?? [];
   console.log("[Pipeline] AI 분석 완료 - title:", finalTitle, "tags:", tags);
 
-  // 태그 저장
-  for (const name of tags) {
-    const { data: tag } = await supabase
+  // 태그 저장 — 태그별 순차 왕복(2N) 대신 배치 upsert 2회로 처리
+  if (tags.length > 0) {
+    const { data: tagRows } = await supabase
       .from("tags")
-      .upsert({ name }, { onConflict: "name" })
-      .select("id")
-      .single();
-    if (tag) {
-      await supabase.from("bookmark_tags").upsert({ bookmark_id: bookmarkId, tag_id: tag.id });
+      .upsert(
+        tags.map((name) => ({ name })),
+        { onConflict: "name" }
+      )
+      .select("id");
+
+    if (tagRows && tagRows.length > 0) {
+      await supabase
+        .from("bookmark_tags")
+        .upsert(tagRows.map((t) => ({ bookmark_id: bookmarkId, tag_id: t.id })));
     }
   }
 
