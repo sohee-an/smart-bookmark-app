@@ -63,6 +63,7 @@ export const BookmarkDetailPanel = ({
       setIsEditing(false);
     } catch (err) {
       console.error("[BookmarkDetailPanel] 저장 실패:", err);
+      toast.show({ message: "저장하지 못했어요. 다시 시도해주세요." });
     } finally {
       setIsSaving(false);
     }
@@ -104,14 +105,21 @@ export const BookmarkDetailPanel = ({
   const isOpen = !!bookmark;
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
+    if (!isOpen) {
       document.body.style.overflow = "";
+      return;
     }
+    document.body.style.overflow = "hidden";
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = "";
+      document.removeEventListener("keydown", handleKey);
     };
+    // handleClose는 안정적인 setter만 호출하므로 deps 생략
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   return (
@@ -121,6 +129,9 @@ export const BookmarkDetailPanel = ({
       )}
 
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="북마크 상세"
         className={`fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:bg-zinc-900 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
@@ -132,6 +143,7 @@ export const BookmarkDetailPanel = ({
             {!isEditing ? (
               <button
                 onClick={handleEditStart}
+                aria-label="편집"
                 className="rounded-xl p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
               >
                 <Pencil size={18} />
@@ -139,6 +151,7 @@ export const BookmarkDetailPanel = ({
             ) : (
               <button
                 onClick={handleEditCancel}
+                aria-label="편집 취소"
                 className="rounded-xl p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-red-500 dark:hover:bg-zinc-800"
               >
                 <XCircle size={18} />
@@ -146,6 +159,7 @@ export const BookmarkDetailPanel = ({
             )}
             <button
               onClick={handleClose}
+              aria-label="닫기"
               className="rounded-xl p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             >
               <X size={18} />
@@ -203,6 +217,7 @@ export const BookmarkDetailPanel = ({
                       onClick={handleCopyUrl}
                       className="shrink-0 rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                       title="URL 복사"
+                      aria-label="URL 복사"
                     >
                       {isCopied ? (
                         <CopyCheck size={14} className="text-green-500" />

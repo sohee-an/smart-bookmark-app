@@ -8,6 +8,7 @@ import type {
   CollectionRole,
 } from "@/entities/collection/model/types";
 import { useInviteMember, useUpdateMemberRole, useRemoveMember } from "../model/queries";
+import { toast } from "@/shared/lib/toast";
 
 interface Props {
   collection: CollectionDetail;
@@ -63,11 +64,19 @@ export const InviteMemberModal = ({ collection, currentUserId, onClose }: Props)
   };
 
   const handleRoleChange = async (member: CollectionMember, newRole: CollectionRole) => {
-    await updateRole({ collectionId: collection.id, userId: member.userId, role: newRole });
+    try {
+      await updateRole({ collectionId: collection.id, userId: member.userId, role: newRole });
+    } catch {
+      toast.show({ message: "역할을 변경하지 못했어요. 다시 시도해주세요." });
+    }
   };
 
   const handleRemove = async (member: CollectionMember) => {
-    await removeMember({ collectionId: collection.id, userId: member.userId });
+    try {
+      await removeMember({ collectionId: collection.id, userId: member.userId });
+    } catch {
+      toast.show({ message: "멤버를 제거하지 못했어요. 다시 시도해주세요." });
+    }
   };
 
   return (
