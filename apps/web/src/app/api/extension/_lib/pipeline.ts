@@ -16,7 +16,7 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
   console.log("[Pipeline] 크롤링 결과:", crawlResult.success, crawlResult.errorCode ?? "");
 
   if (!crawlResult.success) {
-    await supabase.from("bookmarks").update({ ai_status: "failed" }).eq("id", bookmarkId);
+    await supabase.from("bookmarks").update({ ai_status: "crawl_failed" }).eq("id", bookmarkId);
     return;
   }
 

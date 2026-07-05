@@ -14,7 +14,7 @@ POST /api/extension/bulk-import
     ↓
 서버: 기존 URL 조회 (SELECT 1번) → 중복 제거 → bulk INSERT (1번 쿼리)
     ↓
-DB: 전체 저장 완료 (ai_status: "pending")
+DB: 전체 저장 완료 (ai_status: "crawling")
     ↓
 크롤링 + AI: 큐에서 순차 처리 (rate limit 안전)
     ↓
@@ -76,8 +76,8 @@ DB: 전체 저장 완료 (ai_status: "pending")
 2. SSRF 방어 (URL 목록 전체 검증)
 3. `SELECT url FROM bookmarks WHERE user_id = ? AND url = ANY(?)` — 1번 쿼리로 기존 URL 조회
 4. 중복 제거 후 신규 URL만 bulk INSERT
-5. ai_status: `"pending"` 으로 저장 (AI는 즉시 실행 안 함)
-6. 저장된 bookmark id 목록을 AI 처리 큐에 등록
+5. ai_status: `"crawling"` 으로 저장
+6. 저장된 bookmark id 목록을 백그라운드 파이프라인에 등록
 7. 결과 반환
 
 **ImportView 변경**
@@ -96,7 +96,8 @@ DB: 전체 저장 완료 (ai_status: "pending")
 - 각 항목: 크롤링 → AI 분석 → 임베딩 → DB UPDATE
 - 항목 간 딜레이 추가 (Gemini rate limit 대응, 예: 500ms)
 - 실패해도 다음 항목으로 계속 진행 (개별 실패가 전체 중단 안 함)
-- 처리 완료 시 ai_status: `"completed"`, 실패 시 `"failed"`
+- 처리 완료 시 ai_status: `"completed"`
+- 크롤링 실패 시 `"crawl_failed"`, AI 분석 실패 시 `"failed"`
 
 ---
 

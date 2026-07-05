@@ -57,7 +57,7 @@ URL 입력
 
 - 비회원: localStorage 저장 (5개 초과 시 차단)
 - 회원: Supabase 저장
-- 각 단계 실패 시 `aiStatus: "failed"` 처리
+- 크롤링 실패는 `aiStatus: "crawl_failed"`, AI 분석 실패는 `aiStatus: "failed"`로 분리
 
 ---
 
@@ -97,7 +97,9 @@ URL 입력
 - aiStatus별 상태 표시:
   - `crawling`: 로더
   - `processing`: 반투명 오버레이 + 로더
-  - `failed`: 에러 메시지
+  - `completed`: 썸네일·요약·태그 표시
+  - `crawl_failed`: URL 로드 실패 메시지 + 재시도
+  - `failed`: AI 요약 실패 메시지 + 재시도
 - unread 배지, 읽음 점 표시
 - 태그 (최대 2개 표시, 초과 시 +N 뱃지)
 - 클릭 시 상세 패널 오픈
