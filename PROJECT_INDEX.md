@@ -157,6 +157,8 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 
 ## 문서 (docs/)
 
+- 개발 워크플로우 (브랜치 · CI · 테스트 · 배포) → `docs/development-workflow.md`
+
 에이전트가 참조할 스펙 문서는 `docs/spec/` 아래에만 있다.
 
 ### 기획/스펙 (docs/spec/)
