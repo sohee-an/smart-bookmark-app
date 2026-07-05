@@ -1,10 +1,9 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { cookies } from "next/headers";
 import { getErrorMessage } from "@/shared/lib/error";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+import { analyzeBookmark } from "@/server/services/ai-analysis.service";
+import { rateLimit, getClientIp } from "@/shared/lib/rateLimit";
 
 export async function POST(request: Request) {
   try {
@@ -20,37 +19,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "인증이 필요합니다." }, { status: 401 });
     }
 
-    const { title, description, bodyChunks } = await request.json();
-    const bodyText = bodyChunks ? bodyChunks.join(" ") : "";
+    // IP 단위 rate limit — 비인증 남용을 통한 Gemini 과금 DoS 방어
+    const rl = rateLimit(`ai-analyze:${getClientIp(request)}`, 20, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { success: false, message: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      );
+    }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    const prompt = `
-당신은 전문적인 지식 큐레이터입니다. 다음 정보를 분석해 한국어 JSON 형식으로 응답하세요.
-
-제목: ${title || "(없음)"}
-설명: ${description || "(없음)"}
-본문: ${bodyText.slice(0, 2000)}
-
-[요구사항]
-- 반드시 JSON 형식으로만 응답하세요.
-- title이 "(없음)"이면 본문을 보고 적절한 제목을 생성하고, 있으면 null을 반환하세요.
-- 형식: { "title": "생성된제목 또는 null", "summary": "3줄요약", "tags": ["태그1", "태그2"] }
-    `;
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    const data = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    const data = await analyzeBookmark(await request.json());
 
     return NextResponse.json({
       success: true,
-      data: {
-        title: data.title ?? null,
-        summary: data.summary ?? "",
-        tags: data.tags ?? [],
-      },
+      data,
     });
   } catch (error: unknown) {
     console.error("[API AI Analyze] 오류:", error);

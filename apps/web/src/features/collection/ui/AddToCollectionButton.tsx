@@ -8,6 +8,7 @@ import {
   useRemoveBookmarkFromCollection,
   useCollectionBookmarks,
 } from "../model/queries";
+import { toast } from "@/shared/lib/toast";
 
 interface Props {
   bookmarkId: string;
@@ -48,11 +49,17 @@ export const AddToCollectionButton = ({ bookmarkId }: Props) => {
                   name={col.name}
                   bookmarkId={bookmarkId}
                   onAdd={() => {
-                    addBookmark({ collectionId: col.id, bookmarkId });
+                    addBookmark(
+                      { collectionId: col.id, bookmarkId },
+                      { onError: () => toast.show({ message: "컬렉션에 추가하지 못했어요." }) }
+                    );
                     setOpen(false);
                   }}
                   onRemove={() => {
-                    removeBookmark({ collectionId: col.id, bookmarkId });
+                    removeBookmark(
+                      { collectionId: col.id, bookmarkId },
+                      { onError: () => toast.show({ message: "컬렉션에서 제거하지 못했어요." }) }
+                    );
                   }}
                 />
               ))}

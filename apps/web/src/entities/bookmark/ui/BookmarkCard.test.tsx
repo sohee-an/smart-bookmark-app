@@ -36,6 +36,17 @@ describe("BookmarkCard", () => {
     expect(screen.getByText("AI 요약에 실패했어요.")).toBeInTheDocument();
   });
 
+  it("aiStatus='crawl_failed' → URL 로드 실패 메시지와 재시도 버튼", () => {
+    const onRetry = vi.fn();
+    const bookmark = makeBookmark({ aiStatus: "crawl_failed" });
+
+    render(<BookmarkCard bookmark={bookmark} onRetry={onRetry} />);
+
+    expect(screen.getByText("URL을 불러오는데 실패했어요.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
+    expect(onRetry).toHaveBeenCalledWith(bookmark);
+  });
+
   it("aiStatus='completed' → 제목, 요약, 태그 렌더링", () => {
     render(<BookmarkCard bookmark={makeBookmark({ aiStatus: "completed" })} />);
     expect(screen.getByText("Test Article")).toBeInTheDocument();

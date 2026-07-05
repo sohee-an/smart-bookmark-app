@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { cookies } from "next/headers";
 import { getErrorMessage } from "@/shared/lib/error";
+import { rateLimit, getClientIp } from "@/shared/lib/rateLimit";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -18,6 +19,15 @@ export async function POST(request: Request) {
 
     if (!user && !isGuest) {
       return NextResponse.json({ success: false, message: "인증이 필요합니다." }, { status: 401 });
+    }
+
+    // IP 단위 rate limit — 비인증 남용을 통한 Gemini 과금 DoS 방어
+    const rl = rateLimit(`embed:${getClientIp(request)}`, 30, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { success: false, message: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      );
     }
 
     const { title, summary } = await request.json();

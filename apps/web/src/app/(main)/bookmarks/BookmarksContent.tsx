@@ -16,6 +16,8 @@ import {
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
 import storage from "@/shared/lib/storage";
+import { ErrorState } from "@/shared/ui/ErrorState";
+import { toast } from "@/shared/lib/toast";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 import { X } from "lucide-react";
 
@@ -35,7 +37,7 @@ export function BookmarksContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
-  const { data: bookmarks = [] } = useBookmarks();
+  const { data: bookmarks = [], isError, refetch } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
   const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
 
@@ -89,9 +91,12 @@ export function BookmarksContent() {
         if (json.success) {
           setSemanticExact(json.data.exact);
           setSemanticRelated(json.data.related);
+        } else {
+          toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
         }
       } catch (e) {
         console.error("[SemanticSearch] 오류:", e);
+        toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
       } finally {
         setSemanticLoading(false);
       }
@@ -163,7 +168,7 @@ export function BookmarksContent() {
         <div className="bg-brand-primary/10 border-brand-primary/20 dark:bg-brand-primary/5 border-b">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              지금은 최대 <span className="text-brand-primary font-bold">5개</span>까지 저장할 수
+              지금은 최대 <span className="text-brand-primary font-bold">10개</span>까지 저장할 수
               있어요. 로그인하면 북마크를 무제한으로 저장하고 AI 검색도 사용할 수 있어요.
             </p>
             <div className="flex flex-none items-center gap-3">
@@ -214,25 +219,36 @@ export function BookmarksContent() {
           </div>
         )}
 
-        <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
-          {keywordFiltered.length}개의 북마크
-        </p>
-
-        <BookmarkList
-          bookmarks={keywordFiltered}
-          onBookmarkClick={handleBookmarkClick}
-          onTagClick={handleTagClick}
-        />
-
-        {showSemanticSection && (
-          <SemanticResultSection
-            exact={deduplicatedExact}
-            related={deduplicatedRelated}
-            isLoading={semanticLoading}
-            isGuest={isGuest}
-            onBookmarkClick={handleBookmarkClick}
-            onTagClick={handleTagClick}
+        {isError ? (
+          <ErrorState
+            title="북마크를 불러오지 못했어요"
+            description="네트워크 문제일 수 있어요. 다시 시도해 주세요."
+            onRetry={() => refetch()}
+            className="py-20"
           />
+        ) : (
+          <>
+            <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
+              {keywordFiltered.length}개의 북마크
+            </p>
+
+            <BookmarkList
+              bookmarks={keywordFiltered}
+              onBookmarkClick={handleBookmarkClick}
+              onTagClick={handleTagClick}
+            />
+
+            {showSemanticSection && (
+              <SemanticResultSection
+                exact={deduplicatedExact}
+                related={deduplicatedRelated}
+                isLoading={semanticLoading}
+                isGuest={isGuest}
+                onBookmarkClick={handleBookmarkClick}
+                onTagClick={handleTagClick}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

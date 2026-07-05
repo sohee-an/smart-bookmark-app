@@ -4,7 +4,7 @@
  */
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { toBookmark } from "../lib/bookmark.mapper";
-import type { Bookmark } from "../model/types";
+import type { AIStatus, Bookmark } from "../model/types";
 
 type BookmarkDbRow = {
   id: string;
@@ -54,11 +54,7 @@ export async function fetchBookmarksServer(): Promise<Bookmark[]> {
       content: row.content ?? undefined,
       userMemo: row.user_memo ?? undefined,
       thumbnailUrl: row.thumbnail_url ?? undefined,
-      aiStatus: (row.ai_status ?? "processing") as
-        | "crawling"
-        | "processing"
-        | "completed"
-        | "failed",
+      aiStatus: (row.ai_status ?? "processing") as AIStatus,
       tags,
       status: row.status as "unread" | "read",
       createdAt: row.created_at,

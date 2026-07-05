@@ -7,7 +7,7 @@ import { Avatar } from "@/shared/ui/Avatar";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
-import { Folder } from "lucide-react";
+import { Folder, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
@@ -31,6 +31,8 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const {
@@ -142,6 +144,23 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // 유저 메뉴: 외부 클릭 / ESC로 닫기 (hover 전용이던 것을 클릭 토글로 전환)
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [menuOpen]);
+
   const handleLogin = () => router.push("/login");
 
   const handleGuestLogin = () => {
@@ -244,6 +263,21 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
             </Link>
           )}
 
+          {currentUser && (
+            <Link
+              href="/chat"
+              aria-label="대화"
+              className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-sm font-semibold transition-all sm:px-3 ${
+                pathname.startsWith("/chat")
+                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Sparkles size={15} />
+              <span className="hidden sm:inline">대화</span>
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={() =>
@@ -270,29 +304,51 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
                   {nickname}님
                 </span>
               </div>
-              <div className="group relative cursor-pointer">
-                <Avatar username={nickname} src={currentUser?.user_metadata?.avatar_url} />
-                <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 hidden pt-2 duration-200 group-hover:block">
-                  <div className="bg-surface-card dark:bg-surface-card-dark flex min-w-[140px] flex-col gap-1 rounded-2xl border border-zinc-200 p-1.5 shadow-xl dark:border-zinc-800">
-                    {isGuest && (
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  aria-label="사용자 메뉴"
+                  className="flex cursor-pointer items-center rounded-full"
+                >
+                  <Avatar username={nickname} src={currentUser?.user_metadata?.avatar_url} />
+                </button>
+                {menuOpen && (
+                  <div
+                    role="menu"
+                    className="animate-in fade-in zoom-in-95 absolute top-full right-0 pt-2 duration-200"
+                  >
+                    <div className="bg-surface-card dark:bg-surface-card-dark flex min-w-[140px] flex-col gap-1 rounded-2xl border border-zinc-200 p-1.5 shadow-xl dark:border-zinc-800">
+                      {isGuest && (
+                        <button
+                          role="menuitem"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            handleGuestLogin();
+                          }}
+                          className="text-brand-primary hover:bg-brand-primary/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                        >
+                          <PlusIcon />
+                          <span>로그인/회원가입</span>
+                        </button>
+                      )}
                       <button
-                        onClick={handleGuestLogin}
-                        className="text-brand-primary hover:bg-brand-primary/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          handleLogout();
+                        }}
+                        disabled={isLoggingOut}
+                        className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <PlusIcon />
-                        <span>로그인/회원가입</span>
+                        <LogOutIcon />
+                        <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
                       </button>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      disabled={isLoggingOut}
-                      className="text-status-error hover:bg-status-error/5 flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <LogOutIcon />
-                      <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
-                    </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           ) : (

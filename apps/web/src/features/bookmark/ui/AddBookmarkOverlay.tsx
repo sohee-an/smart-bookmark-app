@@ -5,7 +5,8 @@ import { bookmarkService } from "../model/bookmark.service";
 import { bookmarkKeys } from "../model/queries";
 import { useBookmarkPipeline } from "../model/useBookmarkPipeline";
 import { validateUrl } from "@/shared/lib/validateUrl";
-import { getErrorMessage } from "@/shared/lib/error";
+import { BookmarkError, BookmarkErrorCode } from "@/entities/bookmark/model/bookmark.error";
+import { GUEST_BOOKMARK_LIMIT } from "@/entities/bookmark/api/local.repository";
 import { useRouter } from "next/navigation";
 import { toast } from "@/shared/lib/toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,7 +56,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
     setIsLoading(true);
 
     const cachedBookmarks = queryClient.getQueryData<Bookmark[]>(bookmarkKeys.list()) ?? [];
-    const isFifth = cachedBookmarks.length === 4;
+    const isLastSlot = cachedBookmarks.length === GUEST_BOOKMARK_LIMIT - 1;
 
     let newBookmark: Bookmark;
     try {
@@ -66,9 +67,9 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         ...old,
       ]);
       handleClose();
-      if (isFifth) {
+      if (isLastSlot) {
         toast.show({
-          message: "북마크 5개를 모두 채웠어요! 로그인하면 무제한으로 저장할 수 있어요.",
+          message: `북마크 ${GUEST_BOOKMARK_LIMIT}개를 모두 채웠어요! 로그인하면 무제한으로 저장할 수 있어요.`,
           action: { label: "로그인", onClick: () => router.push("/login") },
           duration: 6000,
         });
@@ -96,8 +97,8 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         }
       }
     } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      if (msg.includes("무료 체험 한도")) {
+      // 문자열 매칭 대신 에러 코드로 판별 (메시지 문구가 바뀌어도 안전)
+      if (error instanceof BookmarkError && error.code === BookmarkErrorCode.GUEST_LIMIT_EXCEEDED) {
         setIsLimitReached(true);
       } else {
         console.error(error);
@@ -161,7 +162,8 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
         {isLimitReached ? (
           <div className="space-y-4">
             <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-              비회원은 북마크를 최대 <span className="font-bold">5개</span>까지 저장할 수 있어요.
+              비회원은 북마크를 최대 <span className="font-bold">{GUEST_BOOKMARK_LIMIT}개</span>까지
+              저장할 수 있어요.
             </div>
             <div className="flex gap-3">
               <button

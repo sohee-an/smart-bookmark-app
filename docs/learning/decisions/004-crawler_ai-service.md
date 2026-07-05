@@ -190,11 +190,11 @@ interface AIAnalysisResult {
 ## aiStatus 흐름
 
 ```
-처음 저장   → 'pending'
+처음 저장   → 'crawling'
 AI 분석중   → 'processing'
 성공        → 'completed'
-실패        → 'failed'
-수동 입력   → 'manual'
+크롤링 실패 → 'crawl_failed'
+AI 실패     → 'failed'
 ```
 
 ---

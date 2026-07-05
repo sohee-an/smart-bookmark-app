@@ -14,6 +14,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://smart-bookmark-app-hdz6.vercel.app";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "SmartMark — AI 북마크 관리",
+    template: "%s | SmartMark",
+  },
   description: "저장은 했는데, 어디 있는지 모르겠다고요? AI가 내용을 읽고 의미로 찾아드려요.",
   openGraph: {
     type: "website",

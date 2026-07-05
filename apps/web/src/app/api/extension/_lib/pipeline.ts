@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import { crawlerService } from "@/server/services/crawler.service";
+import { analyzeBookmark } from "@/server/services/ai-analysis.service";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -15,7 +16,7 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
   console.log("[Pipeline] 크롤링 결과:", crawlResult.success, crawlResult.errorCode ?? "");
 
   if (!crawlResult.success) {
-    await supabase.from("bookmarks").update({ ai_status: "failed" }).eq("id", bookmarkId);
+    await supabase.from("bookmarks").update({ ai_status: "crawl_failed" }).eq("id", bookmarkId);
     return;
   }
 
@@ -32,36 +33,27 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
 
   // AI 분석
   console.log("[Pipeline] AI 분석 시작");
-  const bodyText = bodyChunks ? bodyChunks.join(" ") : "";
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-  const prompt = `당신은 전문적인 지식 큐레이터입니다. 다음 정보를 분석해 한국어 JSON 형식으로 응답하세요.
-제목: ${title || "(없음)"}
-설명: ${description || "(없음)"}
-본문: ${bodyText.slice(0, 2000)}
-[요구사항]
-- 반드시 JSON 형식으로만 응답하세요.
-- title이 "(없음)"이면 본문을 보고 적절한 제목을 생성하고, 있으면 null을 반환하세요.
-- 형식: { "title": "생성된제목 또는 null", "summary": "3줄요약", "tags": ["태그1", "태그2"] }`;
-
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  const aiData = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+  const aiData = await analyzeBookmark({ title, description, bodyChunks });
 
   const finalTitle = aiData.title || title || "";
   const summary = aiData.summary ?? "";
   const tags: string[] = aiData.tags ?? [];
   console.log("[Pipeline] AI 분석 완료 - title:", finalTitle, "tags:", tags);
 
-  // 태그 저장
-  for (const name of tags) {
-    const { data: tag } = await supabase
+  // 태그 저장 — 태그별 순차 왕복(2N) 대신 배치 upsert 2회로 처리
+  if (tags.length > 0) {
+    const { data: tagRows } = await supabase
       .from("tags")
-      .upsert({ name }, { onConflict: "name" })
-      .select("id")
-      .single();
-    if (tag) {
-      await supabase.from("bookmark_tags").upsert({ bookmark_id: bookmarkId, tag_id: tag.id });
+      .upsert(
+        tags.map((name) => ({ name })),
+        { onConflict: "name" }
+      )
+      .select("id");
+
+    if (tagRows && tagRows.length > 0) {
+      await supabase
+        .from("bookmark_tags")
+        .upsert(tagRows.map((t) => ({ bookmark_id: bookmarkId, tag_id: t.id })));
     }
   }
 
