@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Folder } from "lucide-react";
 import { useCreateCollection } from "../model/queries";
+import { toast } from "@/shared/lib/toast";
 
 interface Props {
   onClose: () => void;
@@ -16,8 +17,12 @@ export const CreateCollectionModal = ({ onClose }: Props) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    await mutateAsync({ name: name.trim(), description: description.trim() || undefined });
-    onClose();
+    try {
+      await mutateAsync({ name: name.trim(), description: description.trim() || undefined });
+      onClose();
+    } catch {
+      toast.show({ message: "컬렉션을 만들지 못했어요. 다시 시도해주세요." });
+    }
   };
 
   return (

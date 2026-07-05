@@ -16,6 +16,7 @@ import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel"
 import { useUpdateBookmark } from "@/features/bookmark/model/queries";
 import { supabase } from "@/shared/api/supabase/client";
 import { ErrorState } from "@/shared/ui/ErrorState";
+import { toast } from "@/shared/lib/toast";
 import { useEffect } from "react";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
@@ -67,14 +68,22 @@ export function CollectionDetailContent({ id }: Props) {
 
   const handleSaveName = async () => {
     if (!editName.trim() || !collection) return;
-    await updateCollection({ id, name: editName.trim() });
-    setIsEditingName(false);
+    try {
+      await updateCollection({ id, name: editName.trim() });
+      setIsEditingName(false);
+    } catch {
+      toast.show({ message: "이름을 변경하지 못했어요. 다시 시도해주세요." });
+    }
   };
 
   const handleDelete = async () => {
     if (!confirm("컬렉션을 삭제할까요? 북마크는 삭제되지 않습니다.")) return;
-    await deleteCollection(id);
-    router.push("/collections");
+    try {
+      await deleteCollection(id);
+      router.push("/collections");
+    } catch {
+      toast.show({ message: "컬렉션을 삭제하지 못했어요. 다시 시도해주세요." });
+    }
   };
 
   if (colLoading) {
