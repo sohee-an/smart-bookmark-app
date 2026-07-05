@@ -7,30 +7,66 @@ on:
       - dev
 
 jobs:
-  ci:
+  quality:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
-
     steps:
-      - name: 코드 체크아웃
-        uses: actions/checkout@v4
-
-      - name: pnpm 설치
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 10.30.2
-
-      - name: Node.js 설정
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-
-      - name: 의존성 설치
-        run: pnpm install --frozen-lockfile
-
+      - run: pnpm install --frozen-lockfile
       - name: Lint 검사
         run: pnpm lint
-
       - name: 타입 검사
         run: pnpm typecheck
+
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    # 일부 테스트가 모듈 로드 시 Supabase 클라이언트를 생성하므로 placeholder env 필요.
+    # (실제 값 아님 — 테스트는 네트워크 호출 없이 mock으로 검증)
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: placeholder-anon-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # 브라우저(Storybook) 프로젝트 제외한 unit/통합만 — CI에 Playwright 브라우저 미설치
+      - name: 테스트 실행 (unit/통합)
+        run: pnpm --filter @smart-bookmark/web test:unit
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # 빌드 시 참조되는 env — 실제 값이 아닌 placeholder (빌드는 네트워크 호출 없음).
+    # 실제 시크릿은 Vercel 환경변수로 주입되며 CI 빌드엔 불필요.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+      GEMINI_API_KEY: placeholder-gemini-key
+      RESEND_API_KEY: re_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: 빌드
+        run: pnpm build

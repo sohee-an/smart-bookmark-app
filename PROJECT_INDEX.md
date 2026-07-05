@@ -33,7 +33,7 @@
 **테스트**:
 
 - `bookmark.mapper.test.ts` ✅ → `apps/web/src/entities/bookmark/lib/bookmark.mapper.test.ts`
-- `local.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
+- `local.repository.test.ts` ✅ (게스트 5개 제한 등 핵심 경로) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
 - `supabase.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/supabase.repository.test.ts`
 
 ## 북마크 상태 관리
@@ -45,7 +45,7 @@
 **테스트**:
 
 - `useBookmarkStore.test.ts` ✅ → `apps/web/src/entities/bookmark/model/useBookmarkStore.test.ts`
-- `queries.test.ts` (작성 예정) → `apps/web/src/features/bookmark/model/queries.test.ts`
+- `queries.test.tsx` ✅ (낙관적 업데이트/롤백 핵심 경로) → `apps/web/src/features/bookmark/model/queries.test.tsx`
 
 ## 북마크 UI
 
@@ -156,6 +156,8 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 ---
 
 ## 문서 (docs/)
+
+- 개발 워크플로우 (브랜치 · CI · 테스트 · 배포) → `docs/development-workflow.md`
 
 에이전트가 참조할 스펙 문서는 `docs/spec/` 아래에만 있다.
 
