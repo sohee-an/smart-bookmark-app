@@ -28,6 +28,11 @@ jobs:
   test:
     name: Unit & Integration Tests
     runs-on: ubuntu-latest
+    # 일부 테스트가 모듈 로드 시 Supabase 클라이언트를 생성하므로 placeholder env 필요.
+    # (실제 값 아님 — 테스트는 네트워크 호출 없이 mock으로 검증)
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: placeholder-anon-key
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -38,8 +43,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: 테스트 실행
-        run: pnpm test
+      # 브라우저(Storybook) 프로젝트 제외한 unit/통합만 — CI에 Playwright 브라우저 미설치
+      - name: 테스트 실행 (unit/통합)
+        run: pnpm --filter @smart-bookmark/web test:unit
 
   build:
     name: Build
