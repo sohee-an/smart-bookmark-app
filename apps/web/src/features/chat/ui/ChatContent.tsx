@@ -100,106 +100,108 @@ export function ChatContent() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4">
-      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto py-8">
-        {isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
-            <div className="bg-brand-primary/10 text-brand-primary flex h-14 w-14 items-center justify-center rounded-2xl">
-              <Sparkles size={26} />
+    <div className="min-h-[calc(100vh-4rem)] bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4">
+        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto py-8">
+          {isEmpty ? (
+            <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
+              <div className="bg-brand-primary/10 text-brand-primary flex h-14 w-14 items-center justify-center rounded-2xl">
+                <Sparkles size={26} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 dark:text-white">
+                  내 북마크, 정리해드릴게요
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  저장한 걸 근거로 요약·정리·추천해드려요.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                {EXAMPLES.map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => submit(ex)}
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-zinc-900 dark:text-white">
-                내 북마크, 정리해드릴게요
-              </h2>
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                저장한 걸 근거로 요약·정리·추천해드려요.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  onClick={() => submit(ex)}
-                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-6">
-            {messages.map((m, i) =>
-              m.role === "user" ? (
-                <div key={i} className="flex justify-end">
-                  <div className="bg-brand-primary max-w-[80%] rounded-3xl rounded-br-lg px-4 py-2.5 text-sm font-medium text-white">
-                    {m.content}
+          ) : (
+            <div className="flex flex-col gap-6">
+              {messages.map((m, i) =>
+                m.role === "user" ? (
+                  <div key={i} className="flex justify-end">
+                    <div className="bg-brand-primary max-w-[80%] rounded-3xl rounded-br-lg px-4 py-2.5 text-sm font-medium text-white">
+                      {m.content}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div key={i} className="flex flex-col gap-3">
-                  <div className="text-[15px] leading-relaxed text-zinc-800 dark:text-zinc-200">
-                    {m.content ? (
-                      <Markdown text={m.content} />
-                    ) : (
-                      isStreaming &&
-                      i === messages.length - 1 && <span className="text-zinc-400">생각 중…</span>
-                    )}
+                ) : (
+                  <div key={i} className="flex flex-col gap-3">
+                    <div className="text-[15px] leading-relaxed text-zinc-800 dark:text-zinc-200">
+                      {m.content ? (
+                        <Markdown text={m.content} />
+                      ) : (
+                        isStreaming &&
+                        i === messages.length - 1 && <span className="text-zinc-400">생각 중…</span>
+                      )}
+                    </div>
+                    {m.sources && m.sources.length > 0 && <SourceList sources={m.sources} />}
                   </div>
-                  {m.sources && m.sources.length > 0 && <SourceList sources={m.sources} />}
-                </div>
-              )
-            )}
-          </div>
-        )}
-      </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
 
-      {isGuest && (
-        <p className="mb-1 text-center text-xs text-zinc-400">
-          오늘 남은 무료 대화 {remaining}회 ·{" "}
-          <button
-            type="button"
-            onClick={() => router.push("/login")}
-            className="text-brand-primary underline"
-          >
-            로그인
-          </button>
-          하면 무제한
-        </p>
-      )}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit(input);
-        }}
-        className="mb-6 flex items-end gap-2"
-      >
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="북마크에게 물어보기…"
-          className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-base text-zinc-900 outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-        />
-        {isStreaming ? (
-          <button
-            type="button"
-            onClick={stop}
-            aria-label="생성 중단"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            <Square size={16} fill="currentColor" />
-          </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={!input.trim()}
-            aria-label="보내기"
-            className="bg-brand-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
-          >
-            <ArrowUp size={18} />
-          </button>
+        {isGuest && (
+          <p className="mb-1 text-center text-xs text-zinc-400">
+            오늘 남은 무료 대화 {remaining}회 ·{" "}
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="text-brand-primary underline"
+            >
+              로그인
+            </button>
+            하면 무제한
+          </p>
         )}
-      </form>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit(input);
+          }}
+          className="mb-6 flex items-end gap-2"
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="북마크에게 물어보기…"
+            className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-base text-zinc-900 outline-none focus:border-zinc-400 md:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          />
+          {isStreaming ? (
+            <button
+              type="button"
+              onClick={stop}
+              aria-label="생성 중단"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              <Square size={16} fill="currentColor" />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              aria-label="보내기"
+              className="bg-brand-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white transition-all disabled:opacity-40"
+            >
+              <ArrowUp size={18} />
+            </button>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
