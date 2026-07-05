@@ -35,7 +35,7 @@ export function useBookmarkChat() {
   }, []);
 
   const send = useCallback(
-    async (question: string) => {
+    async (question: string, guestBookmarks?: unknown[]) => {
       const q = question.trim();
       if (!q || isStreaming) return;
 
@@ -62,7 +62,10 @@ export function useBookmarkChat() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: q }),
+          // 게스트는 서버에 임베딩이 없으므로 localStorage 북마크를 context로 함께 전송
+          body: JSON.stringify(
+            guestBookmarks ? { question: q, bookmarks: guestBookmarks } : { question: q }
+          ),
           signal: controller.signal,
         });
 

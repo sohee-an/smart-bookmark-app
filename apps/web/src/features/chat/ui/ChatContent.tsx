@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowUp, Square, ExternalLink, Sparkles } from "lucide-react";
 import { useBookmarkChat, type ChatSource } from "../model/useBookmarkChat";
+import {
+  getGuestChatRemaining,
+  recordGuestChat,
+  GUEST_CHAT_DAILY_LIMIT,
+} from "../model/guestChatLimit";
+import { useBookmarks } from "@/features/bookmark/model/queries";
+import { supabase } from "@/shared/api/supabase/client";
+import storage from "@/shared/lib/storage";
+import { toast } from "@/shared/lib/toast";
 import { Markdown } from "./Markdown";
 
 // 검색(찾기)과 겹치지 않게, "종합·정리" 성격의 예시로 유도
@@ -13,8 +23,34 @@ const EXAMPLES = [
 ];
 
 export function ChatContent() {
+  const router = useRouter();
   const { messages, isStreaming, send, stop } = useBookmarkChat();
   const [input, setInput] = useState("");
+
+  // 게스트 판별 + 하루 남은 횟수 (게스트는 localStorage 북마크를 context로 전송)
+  const { data: bookmarks = [] } = useBookmarks();
+  const [isGuest, setIsGuest] = useState(false);
+  const [remaining, setRemaining] = useState(GUEST_CHAT_DAILY_LIMIT);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const guest = !user && storage.cookie.get("is_guest") === "true";
+      setIsGuest(guest);
+      if (guest) setRemaining(getGuestChatRemaining());
+    });
+  }, []);
+
+  const guestBookmarks = useMemo(
+    () =>
+      bookmarks.map((b) => ({
+        id: b.id,
+        url: b.url,
+        title: b.title,
+        summary: b.summary,
+        thumbnailUrl: b.thumbnailUrl,
+      })),
+    [bookmarks]
+  );
 
   // 자동 스크롤 — 맨 아래 고정, 사용자가 위로 스크롤하면 해제
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,8 +73,28 @@ export function ChatContent() {
     if (isStreaming) return;
     const trimmed = q.trim();
     if (!trimmed) return;
-    setStick(true);
-    send(trimmed);
+
+    if (isGuest) {
+      if (bookmarks.length === 0) {
+        toast.show({ message: "먼저 북마크를 저장하면 정리해드릴게요." });
+        return;
+      }
+      if (getGuestChatRemaining() <= 0) {
+        toast.show({
+          message: "오늘 무료 대화를 다 썼어요. 로그인하면 무제한이에요.",
+          action: { label: "로그인", onClick: () => router.push("/login") },
+          duration: 6000,
+        });
+        return;
+      }
+      recordGuestChat();
+      setRemaining(getGuestChatRemaining());
+      setStick(true);
+      send(trimmed, guestBookmarks);
+    } else {
+      setStick(true);
+      send(trimmed);
+    }
     setInput("");
   };
 
@@ -99,6 +155,19 @@ export function ChatContent() {
         )}
       </div>
 
+      {isGuest && (
+        <p className="mb-1 text-center text-xs text-zinc-400">
+          오늘 남은 무료 대화 {remaining}회 ·{" "}
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="text-brand-primary underline"
+          >
+            로그인
+          </button>
+          하면 무제한
+        </p>
+      )}
       <form
         onSubmit={(e) => {
           e.preventDefault();

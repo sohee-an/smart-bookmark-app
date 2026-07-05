@@ -1,8 +1,12 @@
 import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { rateLimit, getClientIp } from "@/shared/lib/rateLimit";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+// 게스트가 요청 본문에 실어 보내는 localStorage 북마크 (서버 payload 상한)
+const MAX_GUEST_CONTEXT = 20;
 
 type MatchRow = {
   id: string;
@@ -11,6 +15,14 @@ type MatchRow = {
   summary: string | null;
   thumbnail_url: string | null;
   similarity: number;
+};
+
+type GuestBookmark = {
+  id: string;
+  url: string;
+  title?: string | null;
+  summary?: string | null;
+  thumbnailUrl?: string | null;
 };
 
 /** SSE 근거 북마크 카드 페이로드 */
@@ -52,14 +64,18 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const isGuest = cookieStore.get("is_guest")?.value === "true";
 
-  // 회원 전용 — 비회원은 대화가 의미 없고 비용 표면이 됨
-  if (!user) {
+  if (!user && !isGuest) {
     return Response.json({ success: false, message: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  // 남용/과금 DoS 방어 (IP + user 조합)
-  const rl = rateLimit(`chat:${user.id}:${getClientIp(request)}`, 20, 60_000);
+  // 남용/과금 DoS 방어 — 게스트는 더 좁게. 클라 카운터가 위조돼도 서버가 실제 비용을 캡한다.
+  const ip = getClientIp(request);
+  const rl = user
+    ? rateLimit(`chat:${user.id}:${ip}`, 20, 60_000)
+    : rateLimit(`chat-guest:${ip}`, 10, 60_000);
   if (!rl.ok) {
     return Response.json(
       { success: false, message: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요." },
@@ -67,36 +83,51 @@ export async function POST(request: Request) {
     );
   }
 
-  const { question } = await request.json();
+  const body = await request.json();
+  const question: string = body.question;
   if (!question?.trim()) {
     return Response.json({ success: false, message: "질문이 없어요." }, { status: 400 });
   }
 
-  // 1. 질문 임베딩 → pgvector 유사도 회수 (semantic-search와 동일 리트리버)
-  const embedModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
-  const emb = await embedModel.embedContent({
-    content: { parts: [{ text: question }], role: "user" },
-    taskType: TaskType.RETRIEVAL_QUERY,
-    outputDimensionality: 3072,
-  } as Parameters<typeof embedModel.embedContent>[0]);
+  // 근거 회수 — 회원은 pgvector 유사도 회수, 게스트는 요청에 담긴 localStorage 북마크를 그대로 context로
+  let sources: ChatSource[];
+  if (user) {
+    const embedModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+    const emb = await embedModel.embedContent({
+      content: { parts: [{ text: question }], role: "user" },
+      taskType: TaskType.RETRIEVAL_QUERY,
+      outputDimensionality: 3072,
+    } as Parameters<typeof embedModel.embedContent>[0]);
 
-  const { data: matches } = await supabase.rpc("match_bookmarks", {
-    query_embedding: emb.embedding.values,
-    p_user_id: user.id,
-    match_threshold: 0.5, // 대화형은 검색보다 넓게 회수
-    match_count: 6,
-    p_tags: null,
-  });
+    const { data: matches } = await supabase.rpc("match_bookmarks", {
+      query_embedding: emb.embedding.values,
+      p_user_id: user.id,
+      match_threshold: 0.5, // 대화형은 검색보다 넓게 회수
+      match_count: 6,
+      p_tags: null,
+    });
 
-  const sources: ChatSource[] = ((matches ?? []) as MatchRow[]).map((r, i) => ({
-    n: i + 1,
-    id: r.id,
-    url: r.url,
-    title: r.title ?? "",
-    summary: r.summary ?? "",
-    thumbnailUrl: r.thumbnail_url,
-    similarity: r.similarity,
-  }));
+    sources = ((matches ?? []) as MatchRow[]).map((r, i) => ({
+      n: i + 1,
+      id: r.id,
+      url: r.url,
+      title: r.title ?? "",
+      summary: r.summary ?? "",
+      thumbnailUrl: r.thumbnail_url,
+      similarity: r.similarity,
+    }));
+  } else {
+    const guest: GuestBookmark[] = Array.isArray(body.bookmarks) ? body.bookmarks : [];
+    sources = guest.slice(0, MAX_GUEST_CONTEXT).map((b, i) => ({
+      n: i + 1,
+      id: b.id,
+      url: b.url,
+      title: b.title ?? "",
+      summary: b.summary ?? "",
+      thumbnailUrl: b.thumbnailUrl ?? null,
+      similarity: 1,
+    }));
+  }
 
   // 2. grounded 프롬프트 → Gemini 스트리밍 → 진짜 SSE(text/event-stream)
   const genModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
