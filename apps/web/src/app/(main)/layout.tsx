@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
-import { Header } from "@/components/layout/Header";
-import { ConditionalRealtimeSync } from "@/shared/lib/ConditionalRealtimeSync";
+import { Header } from "@/widgets/layout/Header";
+import { ConditionalRealtimeSync } from "@/features/bookmark/ui/ConditionalRealtimeSync";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 export default async function MainLayout({ children }: { children: ReactNode }) {

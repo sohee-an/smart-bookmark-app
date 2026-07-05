@@ -20,7 +20,7 @@
 
 ### 1. `match_threshold` (DB 레벨 필터)
 
-- **위치**: `apps/web/src/pages/api/semantic-search.ts`
+- **위치**: `apps/web/src/app/api/semantic-search/route.ts`
 - **현재값**: `0.65`
 - **역할**: Supabase RPC `match_bookmarks`에 전달. 이 값 미만은 DB에서 아예 제외됨.
 - **효과**: 관련 없는 결과를 DB 조회 단계에서 잘라냄.
@@ -36,7 +36,7 @@ const { data, error } = await supabase.rpc("match_bookmarks", {
 
 ### 2. `EXACT_THRESHOLD` (결과 섹션 분리)
 
-- **위치**: `apps/web/src/pages/api/semantic-search.ts`
+- **위치**: `apps/web/src/app/api/semantic-search/route.ts`
 - **현재값**: `0.8`
 - **역할**: DB에서 가져온 결과를 두 섹션으로 분리.
   - `similarity >= 0.8` → **정확한 결과** (exact)
@@ -91,7 +91,7 @@ EXACT_THRESHOLD: 0.8 → 0.75  // 연관 범위를 좁힘
 
 키워드 검색 결과에 이미 포함된 항목은 시맨틱 결과에서 제외된다.
 
-- **위치**: `apps/web/src/pages/bookmarks.tsx`
+- **위치**: `apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx`
 - **이유**: 같은 북마크가 키워드 섹션과 시맨틱 섹션에 동시에 표시되는 것 방지.
 
 ```ts
@@ -117,6 +117,6 @@ const deduplicatedRelated = semanticRelated.filter((r) => !keywordFilteredIds.ha
 
 | 파일                                                          | 역할                                    |
 | ------------------------------------------------------------- | --------------------------------------- |
-| `apps/web/src/pages/api/semantic-search.ts`                   | match_threshold, EXACT_THRESHOLD 설정   |
-| `apps/web/src/pages/bookmarks.tsx`                            | 중복 제거, SemanticResultSection 렌더링 |
+| `apps/web/src/app/api/semantic-search/route.ts`               | match_threshold, EXACT_THRESHOLD 설정   |
+| `apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx`      | 중복 제거, SemanticResultSection 렌더링 |
 | `apps/web/src/features/bookmark/ui/SemanticResultSection.tsx` | 정확한/연관 섹션 UI                     |

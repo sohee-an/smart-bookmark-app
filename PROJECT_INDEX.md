@@ -188,12 +188,12 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 | `docs/spec/extension/extension-import-tasks.md`   | 익스텐션 태스크 목록                                         |
 | `docs/spec/architecture/architecture.md`          | 아키텍처 결정사항                                            |
 
-### 구현 결정 기록 (docs/learning/decisions/)
+### 구현 결정 기록 (docs/decisions/)
 
-| 문서                                                           | 내용                                                                                       |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `docs/learning/decisions/2026-06-07-ios-input-auto-zoom.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                       |
-| `docs/learning/decisions/2026-06-07-webfont-dynamic-subset.md` | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함 |
+| 문서                                                  | 내용                                                                                       |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `docs/decisions/2026-06-07-ios-input-auto-zoom.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                       |
+| `docs/decisions/2026-06-07-webfont-dynamic-subset.md` | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함 |
 
 ### 보안 (docs/security/)
 
