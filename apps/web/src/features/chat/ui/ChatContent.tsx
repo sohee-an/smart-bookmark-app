@@ -46,7 +46,6 @@ export function ChatContent() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4">
-      {/* 메시지 영역 */}
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto py-8">
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
@@ -100,7 +99,6 @@ export function ChatContent() {
         )}
       </div>
 
-      {/* 입력 */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
