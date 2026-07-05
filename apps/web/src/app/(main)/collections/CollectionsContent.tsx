@@ -6,10 +6,11 @@ import { Plus, FolderOpen } from "lucide-react";
 import { CollectionCard } from "@/entities/collection/ui/CollectionCard";
 import { CreateCollectionModal } from "@/features/collection/ui/CreateCollectionModal";
 import { useCollections } from "@/features/collection/model/queries";
+import { ErrorState } from "@/shared/ui/ErrorState";
 
 export function CollectionsContent() {
   const router = useRouter();
-  const { data: collections = [], isLoading } = useCollections();
+  const { data: collections = [], isLoading, isError, refetch } = useCollections();
   const [showCreate, setShowCreate] = useState(false);
 
   return (
@@ -32,7 +33,14 @@ export function CollectionsContent() {
           </button>
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          <ErrorState
+            title="컬렉션을 불러오지 못했어요"
+            description="네트워크 문제일 수 있어요. 다시 시도해 주세요."
+            onRetry={() => refetch()}
+            className="py-32"
+          />
+        ) : isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div

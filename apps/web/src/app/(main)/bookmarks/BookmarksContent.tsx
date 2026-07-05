@@ -16,6 +16,7 @@ import {
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
 import storage from "@/shared/lib/storage";
+import { ErrorState } from "@/shared/ui/ErrorState";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 import { X } from "lucide-react";
 
@@ -35,7 +36,7 @@ export function BookmarksContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
-  const { data: bookmarks = [] } = useBookmarks();
+  const { data: bookmarks = [], isError, refetch } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
   const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
 
@@ -214,25 +215,36 @@ export function BookmarksContent() {
           </div>
         )}
 
-        <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
-          {keywordFiltered.length}개의 북마크
-        </p>
-
-        <BookmarkList
-          bookmarks={keywordFiltered}
-          onBookmarkClick={handleBookmarkClick}
-          onTagClick={handleTagClick}
-        />
-
-        {showSemanticSection && (
-          <SemanticResultSection
-            exact={deduplicatedExact}
-            related={deduplicatedRelated}
-            isLoading={semanticLoading}
-            isGuest={isGuest}
-            onBookmarkClick={handleBookmarkClick}
-            onTagClick={handleTagClick}
+        {isError ? (
+          <ErrorState
+            title="북마크를 불러오지 못했어요"
+            description="네트워크 문제일 수 있어요. 다시 시도해 주세요."
+            onRetry={() => refetch()}
+            className="py-20"
           />
+        ) : (
+          <>
+            <p className="mb-6 text-sm text-zinc-500 dark:text-zinc-400">
+              {keywordFiltered.length}개의 북마크
+            </p>
+
+            <BookmarkList
+              bookmarks={keywordFiltered}
+              onBookmarkClick={handleBookmarkClick}
+              onTagClick={handleTagClick}
+            />
+
+            {showSemanticSection && (
+              <SemanticResultSection
+                exact={deduplicatedExact}
+                related={deduplicatedRelated}
+                isLoading={semanticLoading}
+                isGuest={isGuest}
+                onBookmarkClick={handleBookmarkClick}
+                onTagClick={handleTagClick}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

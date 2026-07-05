@@ -15,12 +15,13 @@ import {
 import { useBookmarkPipeline } from "@/features/bookmark/model/useBookmarkPipeline";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
+import { ErrorState } from "@/shared/ui/ErrorState";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
 export function HomeContent() {
   const router = useRouter();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
-  const { data: bookmarks = [], isLoading } = useBookmarks();
+  const { data: bookmarks = [], isLoading, isError, refetch } = useBookmarks();
   const { mutate: updateBookmark, mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
   const { mutateAsync: deleteBookmarkAsync } = useDeleteBookmark();
   const { runPipeline, patchCache } = useBookmarkPipeline();
@@ -99,36 +100,47 @@ export function HomeContent() {
       />
 
       <main className="pb-20">
-        <RecentBookmarkSlider
-          bookmarks={recentBookmarks}
-          onBookmarkClick={handleBookmarkClick}
-          onTagClick={handleTagClick}
-        />
-
-        <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
-          <div className="mb-6 flex items-baseline gap-2">
-            <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
-              나의 모든 북마크
-            </h2>
-            <span className="text-sm text-zinc-400 dark:text-zinc-500">
-              {allBookmarks.length}개
-            </span>
-          </div>
-          <BookmarkList
-            bookmarks={allBookmarks}
-            isLoading={isLoading}
-            onBookmarkClick={handleBookmarkClick}
-            onTagClick={handleTagClick}
-            onRetry={handleRetry}
-            getRetryExhausted={(id) => exhaustedIds.has(id)}
-            emptyMessage="북마크를 추가하세요."
-            onAddClick={() =>
-              overlay.open(({ isOpen, close }) => (
-                <AddBookmarkOverlay isOpen={isOpen} onClose={close} />
-              ))
-            }
+        {isError ? (
+          <ErrorState
+            title="북마크를 불러오지 못했어요"
+            description="네트워크 문제일 수 있어요. 다시 시도해 주세요."
+            onRetry={() => refetch()}
+            className="min-h-[60vh]"
           />
-        </section>
+        ) : (
+          <>
+            <RecentBookmarkSlider
+              bookmarks={recentBookmarks}
+              onBookmarkClick={handleBookmarkClick}
+              onTagClick={handleTagClick}
+            />
+
+            <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
+              <div className="mb-6 flex items-baseline gap-2">
+                <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
+                  나의 모든 북마크
+                </h2>
+                <span className="text-sm text-zinc-400 dark:text-zinc-500">
+                  {allBookmarks.length}개
+                </span>
+              </div>
+              <BookmarkList
+                bookmarks={allBookmarks}
+                isLoading={isLoading}
+                onBookmarkClick={handleBookmarkClick}
+                onTagClick={handleTagClick}
+                onRetry={handleRetry}
+                getRetryExhausted={(id) => exhaustedIds.has(id)}
+                emptyMessage="북마크를 추가하세요."
+                onAddClick={() =>
+                  overlay.open(({ isOpen, close }) => (
+                    <AddBookmarkOverlay isOpen={isOpen} onClose={close} />
+                  ))
+                }
+              />
+            </section>
+          </>
+        )}
       </main>
     </div>
   );
