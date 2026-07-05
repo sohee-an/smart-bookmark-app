@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { LocalRepository } from "@/entities/bookmark/api/local.repository";
+import { GUEST_BOOKMARK_LIMIT, LocalRepository } from "@/entities/bookmark/api/local.repository";
 import { SupabaseBookmarkRepository } from "@/entities/bookmark/api/supabase.repository";
 import type { StorageProvider } from "@/entities/bookmark/api/local.repository";
 import getGuestId from "@/shared/lib/guest";
@@ -45,9 +45,9 @@ describe("북마크 저장 API (POST 유사 흐름)", () => {
       expect(bookmark.tags).toEqual([]);
     });
 
-    it("6번째 북마크 저장 시도 시 GUEST_LIMIT_EXCEEDED 에러 발생", async () => {
-      // Save 5 bookmarks successfully
-      for (let i = 0; i < 5; i++) {
+    it("한도 초과 시 GUEST_LIMIT_EXCEEDED 에러 발생", async () => {
+      // 한도까지 저장
+      for (let i = 0; i < GUEST_BOOKMARK_LIMIT; i++) {
         await localRepo.save({
           url: `https://example.com/${i}`,
           userMemo: `memo ${i}`,
@@ -55,10 +55,10 @@ describe("북마크 저장 API (POST 유사 흐름)", () => {
         });
       }
 
-      // 6th attempt should throw error
+      // 한도 초과 시도는 에러
       await expect(
         localRepo.save({
-          url: "https://example.com/6",
+          url: "https://example.com/over",
           userMemo: "should fail",
           guestId: getGuestId(),
         })

@@ -7,7 +7,7 @@ import { Avatar } from "@/shared/ui/Avatar";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import storage from "@/shared/lib/storage";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
-import { Folder } from "lucide-react";
+import { Folder, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { overlay } from "@/shared/lib/overlay/overlay";
 import { AddBookmarkOverlay } from "@/features/bookmark/ui/AddBookmarkOverlay";
@@ -260,6 +260,21 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
             >
               <Folder size={15} />
               컬렉션
+            </Link>
+          )}
+
+          {currentUser && (
+            <Link
+              href="/chat"
+              aria-label="대화"
+              className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-sm font-semibold transition-all sm:px-3 ${
+                pathname.startsWith("/chat")
+                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Sparkles size={15} />
+              <span className="hidden sm:inline">대화</span>
             </Link>
           )}
 

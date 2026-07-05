@@ -168,7 +168,7 @@ export function BookmarksContent() {
         <div className="bg-brand-primary/10 border-brand-primary/20 dark:bg-brand-primary/5 border-b">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              지금은 최대 <span className="text-brand-primary font-bold">5개</span>까지 저장할 수
+              지금은 최대 <span className="text-brand-primary font-bold">10개</span>까지 저장할 수
               있어요. 로그인하면 북마크를 무제한으로 저장하고 AI 검색도 사용할 수 있어요.
             </p>
             <div className="flex flex-none items-center gap-3">

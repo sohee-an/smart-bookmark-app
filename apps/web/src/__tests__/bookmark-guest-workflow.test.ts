@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { LocalRepository } from "@/entities/bookmark/api/local.repository";
+import { GUEST_BOOKMARK_LIMIT, LocalRepository } from "@/entities/bookmark/api/local.repository";
 import type { StorageProvider } from "@/entities/bookmark/api/local.repository";
 
-describe("비회원 저장 워크플로우 (5개 제한)", () => {
+describe(`비회원 저장 워크플로우 (${GUEST_BOOKMARK_LIMIT}개 제한)`, () => {
   let mockStorage: StorageProvider;
   let repo: LocalRepository;
   let uuidCounter = 0;
@@ -26,27 +26,24 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
     );
   });
 
-  it("5개의 북마크를 성공적으로 저장", async () => {
-    for (let i = 1; i <= 5; i++) {
-      const result = await repo.save({
-        url: `https://example${i}.com`,
-      });
-      expect(result.id).toBe(`uuid-${i}`);
-    }
-
-    const count = await repo.count();
-    expect(count).toBe(5);
-  });
-
-  it("6번째 북마크에서 GUEST_LIMIT_EXCEEDED 에러 발생", async () => {
-    for (let i = 1; i <= 5; i++) {
+  const fillToLimit = async () => {
+    for (let i = 1; i <= GUEST_BOOKMARK_LIMIT; i++) {
       await repo.save({ url: `https://example${i}.com` });
     }
+  };
 
-    await expect(repo.save({ url: "https://example6.com" })).rejects.toThrow(Error);
+  it("한도까지 북마크를 성공적으로 저장", async () => {
+    await fillToLimit();
+    expect(await repo.count()).toBe(GUEST_BOOKMARK_LIMIT);
+  });
+
+  it("한도 초과 시 GUEST_LIMIT_EXCEEDED 에러 발생", async () => {
+    await fillToLimit();
+
+    await expect(repo.save({ url: "https://over.com" })).rejects.toThrow(Error);
 
     try {
-      await repo.save({ url: "https://example6.com" });
+      await repo.save({ url: "https://over.com" });
     } catch (e: unknown) {
       if (e instanceof Error) {
         expect(e.message).toContain("무료 체험 한도");
@@ -54,30 +51,23 @@ describe("비회원 저장 워크플로우 (5개 제한)", () => {
     }
   });
 
-  it("여러 번 시도해도 5개 제한 유지", async () => {
-    for (let i = 1; i <= 5; i++) {
-      await repo.save({ url: `https://example${i}.com` });
-    }
+  it("여러 번 시도해도 한도 유지", async () => {
+    await fillToLimit();
 
     for (let j = 0; j < 3; j++) {
       await expect(repo.save({ url: `https://fail${j}.com` })).rejects.toThrow(Error);
     }
 
-    const finalCount = await repo.count();
-    expect(finalCount).toBe(5);
+    expect(await repo.count()).toBe(GUEST_BOOKMARK_LIMIT);
   });
 
   it("1개 삭제 후 새로운 북마크 저장 가능", async () => {
-    for (let i = 1; i <= 5; i++) {
-      await repo.save({ url: `https://example${i}.com` });
-    }
+    await fillToLimit();
 
     await repo.delete("uuid-1");
 
-    const result = await repo.save({ url: "https://example6.com" });
-    expect(result.id).toBe("uuid-6");
-
-    const count = await repo.count();
-    expect(count).toBe(5);
+    const result = await repo.save({ url: "https://new.com" });
+    expect(result.id).toBe(`uuid-${GUEST_BOOKMARK_LIMIT + 1}`);
+    expect(await repo.count()).toBe(GUEST_BOOKMARK_LIMIT);
   });
 });

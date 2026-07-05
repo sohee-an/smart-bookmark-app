@@ -8,6 +8,9 @@ import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 
 const GUEST_KEY = "GUEST_BOOKMARK";
 
+/** 비회원 북마크 저장 한도 */
+export const GUEST_BOOKMARK_LIMIT = 10;
+
 export interface StorageProvider {
   get<T>(key: string): T | null;
   set<T>(key: string, value: T): void;
@@ -31,16 +34,16 @@ export class LocalRepository implements BookmarkRepository {
 
   /**
    * @description 북마크를 저장합니다.
-   * 비회원인 경우 guestId 사용하며, 5개 제한 로직이 포함됩니다.
+   * 비회원인 경우 guestId 사용하며, 저장 한도(GUEST_BOOKMARK_LIMIT) 로직이 포함됩니다.
    */
   async save<T extends CreateBookmarkRequest>(request: T): Promise<Bookmark> {
     const guestId = getGuestId();
     const currentRows = this.getRows();
 
-    if (currentRows.length >= 5) {
+    if (currentRows.length >= GUEST_BOOKMARK_LIMIT) {
       throw new BookmarkError(
         BookmarkErrorCode.GUEST_LIMIT_EXCEEDED,
-        "무료 체험 한도(5개)를 초과했습니다. 로그인이 필요합니다."
+        `무료 체험 한도(${GUEST_BOOKMARK_LIMIT}개)를 초과했습니다. 로그인이 필요합니다.`
       );
     }
 
@@ -104,7 +107,7 @@ export class LocalRepository implements BookmarkRepository {
   }
 
   /**
-   * @description 현재 북마크 개수를 조회합니다. (5개 제한 체크용)
+   * @description 현재 북마크 개수를 조회합니다. (저장 한도 체크용)
    */
   async count(): Promise<number> {
     return this.getRows().length;

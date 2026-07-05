@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LocalRepository, type StorageProvider } from "./local.repository";
+import { GUEST_BOOKMARK_LIMIT, LocalRepository, type StorageProvider } from "./local.repository";
 import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 
 vi.mock("@/shared/lib/guest", () => ({ default: () => "guest-fixed" }));
@@ -51,20 +51,20 @@ describe("LocalRepository — 비회원 저장", () => {
     expect(all.map((b) => b.url)).toEqual(["https://2.com", "https://1.com"]);
   });
 
-  describe("5개 제한 (핵심 비즈니스 규칙)", () => {
-    it("5개까지는 저장되고 6번째는 GUEST_LIMIT_EXCEEDED를 던진다", async () => {
+  describe("저장 한도 (핵심 비즈니스 규칙)", () => {
+    it(`${GUEST_BOOKMARK_LIMIT}개까지는 저장되고 그 다음은 GUEST_LIMIT_EXCEEDED를 던진다`, async () => {
       const { repo } = makeRepo();
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < GUEST_BOOKMARK_LIMIT; i++) {
         await repo.save({ url: `https://${i}.com` });
       }
-      expect(await repo.count()).toBe(5);
+      expect(await repo.count()).toBe(GUEST_BOOKMARK_LIMIT);
 
-      await expect(repo.save({ url: "https://6.com" })).rejects.toBeInstanceOf(BookmarkError);
-      await expect(repo.save({ url: "https://6.com" })).rejects.toMatchObject({
+      await expect(repo.save({ url: "https://over.com" })).rejects.toBeInstanceOf(BookmarkError);
+      await expect(repo.save({ url: "https://over.com" })).rejects.toMatchObject({
         code: BookmarkErrorCode.GUEST_LIMIT_EXCEEDED,
       });
       // 한도 초과 시 실제로 저장되지 않아야 함
-      expect(await repo.count()).toBe(5);
+      expect(await repo.count()).toBe(GUEST_BOOKMARK_LIMIT);
     });
   });
 });

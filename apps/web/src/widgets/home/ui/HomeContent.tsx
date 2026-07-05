@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Sparkles, ArrowRight } from "lucide-react";
 import { RecentBookmarkSlider } from "@/widgets/bookmark/RecentBookmarkSlider";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
@@ -109,6 +110,28 @@ export function HomeContent() {
           />
         ) : (
           <>
+            {/* AI 브리핑 진입 — 검색(찾기)과 구분되는 "종합/정리" 성격의 버튼 */}
+            <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+              <button
+                onClick={() => router.push("/chat")}
+                className="from-brand-primary/10 to-brand-primary/5 hover:border-brand-primary/40 group flex w-full items-center gap-4 rounded-3xl border border-transparent bg-gradient-to-r p-4 text-left transition-all dark:from-zinc-900 dark:to-zinc-900"
+              >
+                <div className="bg-brand-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white">
+                  <Sparkles size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-zinc-900 dark:text-white">내 북마크에게 물어보기</p>
+                  <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+                    저장한 걸 요약·정리·추천받아 보세요
+                  </p>
+                </div>
+                <ArrowRight
+                  size={18}
+                  className="text-brand-primary shrink-0 transition-transform group-hover:translate-x-1"
+                />
+              </button>
+            </div>
+
             <RecentBookmarkSlider
               bookmarks={recentBookmarks}
               onBookmarkClick={handleBookmarkClick}
