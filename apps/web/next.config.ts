@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
 
+  compiler: {
+    // 프로덕션 빌드에서만 console 제거 (error/warn은 exclude로 유지)
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
+  },
+
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },

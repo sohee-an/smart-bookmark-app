@@ -21,6 +21,16 @@ export type AnalyzeBookmarkResult = {
   tags: string[];
 };
 
+export type AnalyzeBookmarkOptions = {
+  /** 최초 1회 + 재시도 포함 총 시도 횟수 */
+  maxAttempts?: number;
+  /** 재시도 대기 기준 시간(ms). 실제 대기는 회차에 비례해 증가 */
+  retryDelayMs?: number;
+};
+
+const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_RETRY_DELAY_MS = 500;
+
 function buildAnalysisPrompt({ title, description, bodyChunks }: AnalyzeBookmarkInput) {
   const bodyText = bodyChunks ? bodyChunks.join(" ") : "";
 
@@ -57,8 +67,38 @@ export function parseAiAnalysisResponse(text: string): AnalyzeBookmarkResult {
   };
 }
 
-export async function analyzeBookmark(input: AnalyzeBookmarkInput): Promise<AnalyzeBookmarkResult> {
+async function requestAnalysis(input: AnalyzeBookmarkInput): Promise<AnalyzeBookmarkResult> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const result = await model.generateContent(buildAnalysisPrompt(input));
   return parseAiAnalysisResponse(result.response.text());
+}
+
+/**
+ * Gemini 호출 + 응답 검증을 실행하고, 실패 시 backoff를 두고 재시도한다.
+ * 일시적 API 오류(5xx/타임아웃)뿐 아니라 응답이 스키마를 통과하지 못하는
+ * 경우(LLM 비결정성)도 재시도로 회복될 수 있어 호출 전체를 재시도 대상으로 둔다.
+ */
+export async function analyzeBookmark(
+  input: AnalyzeBookmarkInput,
+  options: AnalyzeBookmarkOptions = {}
+): Promise<AnalyzeBookmarkResult> {
+  const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+  const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await requestAnalysis(input);
+    } catch (error) {
+      lastError = error;
+      console.error(`[AI] 분석 실패 (시도 ${attempt}/${maxAttempts}):`, error);
+
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs * attempt));
+      }
+    }
+  }
+
+  throw lastError;
 }
