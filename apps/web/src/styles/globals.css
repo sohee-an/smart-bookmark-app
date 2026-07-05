@@ -80,9 +80,14 @@
     color: #18181b;
   }
 
-  .dark body {
-    background-color: var(--color-surface-base-dark);
-    color: #fafafa;
+  /* 다크모드는 OS prefers-color-scheme 기반(클래스 토글 미사용)이라 body도 media query로 맞춘다.
+     .dark body 셀렉터는 .dark 클래스가 없어 적용되지 않으며, 이때 흰 body가
+     iOS 세이프에어리어(상단 상태바·하단 홈인디케이터)에 비쳐 흰 띠로 보였다. */
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: var(--color-surface-base-dark);
+      color: #fafafa;
+    }
   }
 }
 
