@@ -15,6 +15,7 @@ import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
 import { useUpdateBookmark } from "@/features/bookmark/model/queries";
 import { supabase } from "@/shared/api/supabase/client";
+import { ErrorState } from "@/shared/ui/ErrorState";
 import { useEffect } from "react";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 
@@ -24,8 +25,18 @@ interface Props {
 
 export function CollectionDetailContent({ id }: Props) {
   const router = useRouter();
-  const { data: collection, isLoading: colLoading } = useCollection(id);
-  const { data: bookmarks = [], isLoading: bkLoading } = useCollectionBookmarks(id);
+  const {
+    data: collection,
+    isLoading: colLoading,
+    isError: colError,
+    refetch: refetchCol,
+  } = useCollection(id);
+  const {
+    data: bookmarks = [],
+    isLoading: bkLoading,
+    isError: bkError,
+    refetch: refetchBk,
+  } = useCollectionBookmarks(id);
   const { mutateAsync: updateCollection } = useUpdateCollection();
   const { mutateAsync: deleteCollection } = useDeleteCollection();
   const { mutateAsync: updateBookmarkAsync } = useUpdateBookmark();
@@ -72,6 +83,19 @@ export function CollectionDetailContent({ id }: Props) {
         <div className="mx-auto max-w-7xl px-4 py-10">
           <div className="h-8 w-48 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
         </div>
+      </div>
+    );
+  }
+
+  if (colError) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+        <ErrorState
+          title="컬렉션을 불러오지 못했어요"
+          description="네트워크 문제일 수 있어요. 다시 시도해 주세요."
+          onRetry={() => refetchCol()}
+          className="min-h-screen"
+        />
       </div>
     );
   }
@@ -186,7 +210,14 @@ export function CollectionDetailContent({ id }: Props) {
         </div>
 
         {/* 북마크 목록 */}
-        {bkLoading ? (
+        {bkError ? (
+          <ErrorState
+            title="북마크를 불러오지 못했어요"
+            description="네트워크 문제일 수 있어요. 다시 시도해 주세요."
+            onRetry={() => refetchBk()}
+            className="py-20"
+          />
+        ) : bkLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <div

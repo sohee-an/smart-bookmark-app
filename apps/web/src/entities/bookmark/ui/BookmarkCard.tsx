@@ -38,7 +38,17 @@ export const BookmarkCard = ({
   return (
     <div
       onClick={() => !isPending && onClick?.(bookmark)}
-      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isPending ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} shadow-sm dark:border-zinc-800 dark:bg-zinc-900`}
+      onKeyDown={(e) => {
+        if (isPending) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.(bookmark);
+        }
+      }}
+      role="button"
+      tabIndex={isPending ? -1 : 0}
+      aria-label={`북마크: ${title}`}
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isPending ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} focus-visible:ring-brand-primary shadow-sm focus-visible:ring-2 focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-900`}
     >
       {/* 1. Thumbnail Area */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
