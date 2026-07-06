@@ -32,8 +32,6 @@ export class CrawlerService {
 
   async crawl(url: string, attempt: number = 1): Promise<CrawlResult> {
     try {
-      console.log(`[Crawler] 시도 ${attempt}/${this.MAX_RETRIES}: ${url} 분석 중...`);
-
       const { response, finalUrl } = await this.safeFetch(url);
 
       if (!response.ok) {
