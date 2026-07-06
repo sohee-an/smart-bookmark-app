@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
 
   const isLandingPage = pathname === "/landing";
   const isLoginPage = pathname === "/login";
-  const isPublicPage = pathname === "/privacy";
+  const isPublicPage = pathname === "/privacy" || pathname === "/demo";
 
   // 인증된 사용자가 랜딩/로그인 페이지 접근 시
   if (isAuth && (isLandingPage || isLoginPage)) {
