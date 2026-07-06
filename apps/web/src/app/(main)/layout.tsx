@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { Header } from "@/widgets/layout/Header";
-import { ConditionalRealtimeSync } from "@/features/bookmark/ui/ConditionalRealtimeSync";
+import { BookmarkRealtimeSync } from "@/features/bookmark/ui/BookmarkRealtimeSync";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 
 export default async function MainLayout({ children }: { children: ReactNode }) {
@@ -12,7 +12,7 @@ export default async function MainLayout({ children }: { children: ReactNode }) 
 
   return (
     <>
-      <ConditionalRealtimeSync />
+      {user && <BookmarkRealtimeSync userId={user.id} />}
       <Suspense
         fallback={
           <div className="h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950" />

@@ -15,7 +15,6 @@ import { FilterBar } from "@/features/bookmark/ui/FilterBar";
 import { SearchDropdown } from "@/features/bookmark/ui/SearchDropdown";
 import { MobileSearchOverlay } from "@/features/bookmark/ui/MobileSearchOverlay";
 import { useBookmarks } from "@/features/bookmark/model/queries";
-import { useAuthStore } from "@/shared/model/useAuthStore";
 import { useRecentSearches } from "@/shared/lib/useRecentSearches";
 import type { User } from "@supabase/supabase-js";
 
@@ -23,10 +22,8 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, initialized } = useAuthStore();
 
-  // 클라이언트 인증 초기화 전엔 서버에서 받은 initialUser로 표시
-  const currentUser = initialized ? user : (initialUser ?? null);
+  const currentUser = initialUser;
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -175,7 +172,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
     router.push("/landing");
   };
 
-  const isGuest = initialized && !user && storage.cookie.get("is_guest") === "true";
+  const isGuest = !currentUser && storage.cookie.get("is_guest") === "true";
   const nickname = currentUser?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
   const isOnBookmarks = pathname === "/bookmarks";
 
