@@ -9,11 +9,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export const PIPELINE_TIMEOUT_MS = 25_000;
 
 export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, url: string) {
-  console.log("[Pipeline] 시작:", url);
-
   // 크롤링
   const crawlResult = await crawlerService.crawl(url);
-  console.log("[Pipeline] 크롤링 결과:", crawlResult.success, crawlResult.errorCode ?? "");
 
   if (!crawlResult.success) {
     await supabase.from("bookmarks").update({ ai_status: "crawl_failed" }).eq("id", bookmarkId);
@@ -32,13 +29,11 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
     .eq("id", bookmarkId);
 
   // AI 분석
-  console.log("[Pipeline] AI 분석 시작");
   const aiData = await analyzeBookmark({ title, description, bodyChunks });
 
   const finalTitle = aiData.title || title || "";
   const summary = aiData.summary ?? "";
   const tags: string[] = aiData.tags ?? [];
-  console.log("[Pipeline] AI 분석 완료 - title:", finalTitle, "tags:", tags);
 
   // 태그 저장 — 태그별 순차 왕복(2N) 대신 배치 upsert 2회로 처리
   if (tags.length > 0) {
@@ -58,7 +53,6 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
   }
 
   // 임베딩 생성 (실패해도 북마크 저장은 completed 처리)
-  console.log("[Pipeline] 임베딩 시작");
   try {
     const embeddingText = [finalTitle, summary].filter(Boolean).join(" ");
     if (embeddingText.trim()) {
@@ -81,6 +75,4 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
     .from("bookmarks")
     .update({ title: finalTitle, summary, ai_status: "completed" })
     .eq("id", bookmarkId);
-
-  console.log("[Pipeline] 완료:", bookmarkId);
 }

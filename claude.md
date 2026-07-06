@@ -103,21 +103,7 @@ pnpm test       # 테스트 실행
 
 ## Notion 워크플로우 트리거
 
-### Notion 구조 & 페이지 ID
-
-경로: 스켸줄 > 프로젝트 > 북마크 > 할일 매니저
-
-- 할일 매니저 page_id: `31cd9ab9-9d63-809e-80c6-c0d503c72341`
-
-**현재 진행중: 🔖 북마크 저장하기**
-
-- 큰 할일 page_id: `31dd9ab9-9d63-8169-9fc9-d4f938970f77`
-- 세부 태스크 DB data_source_id: `74885a2f-4cde-4f00-acb8-b80d4bb502ef`
-- Task 1 (카드 즉시 표시): `31dd9ab9-9d63-8180-89fb-dde90ddf2f2a`
-- Task 2 (title/summary/tags 자동 채워짐): `31dd9ab9-9d63-8158-8048-ce58e725ab2d`
-- Task 3 (에러 시 모달 내 메시지): `31dd9ab9-9d63-8147-8d02-d8ad6ff8a604`
-- Task 4 (URL 크롤링): `31dd9ab9-9d63-8103-b287-ea3d2b323408`
-- Task 5 (AI 결과 수신): `31dd9ab9-9d63-81f1-956b-d4dab5dd3698`
+> 세부 태스크는 Notion DB로 관리(태스크명/상태/검수 컬럼). 구체적 page/DB ID는 로컬 설정에 둔다.
 
 ### "노션 댓글 확인해줘"
 
@@ -222,6 +208,7 @@ apps/web/e2e/                     ← e2e 테스트
 - e2e 테스트: `apps/web/e2e/`
 
 **테스트 전략 상세 가이드**: [docs/spec/testing-strategy.md](docs/spec/testing-strategy.md)
+
 - 파일별 테스트 체크리스트
 - 단위/통합/E2E 테스트 로드맵
 - 커버리지 목표 및 모킹 패턴

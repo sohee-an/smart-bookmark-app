@@ -195,11 +195,6 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 | `docs/decisions/2026-06-07-ios-input-auto-zoom.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                       |
 | `docs/decisions/2026-06-07-webfont-dynamic-subset.md` | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함 |
 
-### 보안 (docs/security/)
-
-- 보안 취약점 분석 결과 → `docs/security/`
-- 보안 에이전트가 참조하는 기준 문서
-
 ### 개인 학습/포폴 (docs/personal/)
 
 - 에이전트가 참조하지 않는 개인 학습 노트 및 포폴 어필용 문서
