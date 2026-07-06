@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { makeFakeBookmarks } from "@/features/bookmark/lib/fakeBookmarks";
 import { VirtualBookmarkGrid } from "@/features/bookmark/ui/VirtualBookmarkGrid";
-import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
+import { BookmarkCard } from "@/entities/bookmark/ui/BookmarkCard";
 
 const COUNT_PRESETS = [2000, 5000, 10000];
 
@@ -87,7 +87,17 @@ export function DemoContent() {
         {virtual ? (
           <VirtualBookmarkGrid bookmarks={bookmarks} onBookmarkClick={noop} onTagClick={noop} />
         ) : (
-          <BookmarkList bookmarks={bookmarks} onBookmarkClick={noop} onTagClick={noop} />
+          // OFF: 가상화 없이 전부 DOM에 렌더 (BookmarkList는 임계값 초과 시 자동 가상화하므로 우회)
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {bookmarks.map((bookmark) => (
+              <BookmarkCard
+                key={bookmark.id}
+                bookmark={bookmark}
+                onClick={noop}
+                onTagClick={noop}
+              />
+            ))}
+          </div>
         )}
       </main>
     </div>
