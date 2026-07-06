@@ -16,16 +16,16 @@
       ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": []
     },
     "test": {
-      "dependsOn": ["^test"]
+      "dependsOn": []
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": []
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": []
     },
     "dev": {
       "cache": false,
