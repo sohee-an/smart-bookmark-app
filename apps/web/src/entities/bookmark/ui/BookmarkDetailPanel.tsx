@@ -132,7 +132,7 @@ export const BookmarkDetailPanel = ({
         role="dialog"
         aria-modal="true"
         aria-label="북마크 상세"
-        className={`fixed top-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out dark:bg-zinc-900 ${
+        className={`fixed top-0 right-0 z-50 flex h-full w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-in-out md:max-w-md dark:bg-zinc-900 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -181,7 +181,7 @@ export const BookmarkDetailPanel = ({
                       src={bookmark.thumbnailUrl}
                       alt={bookmark.title}
                       fill
-                      sizes="448px"
+                      sizes="(max-width: 768px) 100vw, 448px"
                       className="object-cover"
                     />
                   </div>
