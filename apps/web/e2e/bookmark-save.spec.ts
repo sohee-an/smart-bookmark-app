@@ -10,6 +10,40 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
   });
 
   test("북마크 추가 버튼 클릭 → 모달 열림 → URL 입력 → 저장 → 카드 표시", async ({ page }) => {
+    // API mock — CI에서 placeholder env로 실제 API 호출 불가하므로 mock 필수
+    await page.route("**/api/crawl", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            title: "React",
+            description: "",
+            thumbnailUrl: null,
+            bodyChunks: [],
+          },
+        }),
+      })
+    );
+    await page.route("**/api/ai-analyze", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: { title: "React", summary: "UI 라이브러리", tags: [] },
+        }),
+      })
+    );
+    await page.route("**/api/embed", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true, data: { embedding: [] } }),
+      })
+    );
+
     // 1. 추가 버튼 클릭
     const addButton = page.getByRole("button", { name: /북마크 추가/i });
     await addButton.click();
@@ -28,8 +62,8 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     // 5. 모달 닫힘
     await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
 
-    // 6. 카드 표시 (crawling 상태로 즉시 표시됨)
-    await expect(page.getByText("https://react.dev")).toBeVisible();
+    // 6. 카드 표시 (크롤링 중 → 완료 후 카드에 URL 표시)
+    await expect(page.getByText("https://react.dev")).toBeVisible({ timeout: 10000 });
   });
 
   test("빈 URL 저장 시도 → 에러 메시지 표시", async ({ page }) => {
