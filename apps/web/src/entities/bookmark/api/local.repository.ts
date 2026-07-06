@@ -9,7 +9,7 @@ import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 const GUEST_KEY = "GUEST_BOOKMARK";
 
 /** 비회원 북마크 저장 한도 */
-export const GUEST_BOOKMARK_LIMIT = 10;
+export const GUEST_BOOKMARK_LIMIT = 20;
 
 export interface StorageProvider {
   get<T>(key: string): T | null;

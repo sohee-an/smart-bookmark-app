@@ -48,7 +48,7 @@ export class BookmarkError extends Error {
  */
 export const BookmarkErrorMessages: Record<BookmarkErrorCode, string> = {
   [BookmarkErrorCode.GUEST_LIMIT_EXCEEDED]:
-    "무료 체험 한도(10개)를 초과했습니다. 로그인이 필요합니다.",
+    "무료 체험 한도(20개)를 초과했습니다. 로그인이 필요합니다.",
   [BookmarkErrorCode.BOOKMARK_NOT_FOUND]: "북마크를 찾을 수 없습니다.",
   [BookmarkErrorCode.DB_INSERT_FAILED]: "북마크 저장에 실패했습니다.",
   [BookmarkErrorCode.DB_QUERY_FAILED]: "북마크 조회에 실패했습니다.",
