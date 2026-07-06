@@ -18,7 +18,7 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
         body: JSON.stringify({
           success: true,
           data: {
-            title: "React",
+            title: "테스트 저장 페이지",
             description: "",
             thumbnailUrl: null,
             bodyChunks: [],
@@ -32,7 +32,7 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
-          data: { title: "React", summary: "UI 라이브러리", tags: [] },
+          data: { title: "테스트 저장 페이지", summary: "테스트 요약입니다", tags: [] },
         }),
       })
     );
@@ -62,8 +62,8 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     // 5. 모달 닫힘
     await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
 
-    // 6. 카드 표시 (크롤링 중 → 완료 후 카드에 URL 표시)
-    await expect(page.getByText("https://react.dev")).toBeVisible({ timeout: 10000 });
+    // 6. 카드 표시 (title이 표시됨)
+    await expect(page.getByText("테스트 저장 페이지")).toBeVisible({ timeout: 10000 });
   });
 
   test("빈 URL 저장 시도 → 에러 메시지 표시", async ({ page }) => {
@@ -102,10 +102,10 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
         body: JSON.stringify({
           success: true,
           data: {
-            title: "React 공식 문서",
-            description: "React 라이브러리 공식 문서",
+            title: "파이프라인 검증 페이지",
+            description: "파이프라인 테스트용 페이지",
             thumbnailUrl: null,
-            bodyChunks: ["React는 UI를 만들기 위한 라이브러리입니다."],
+            bodyChunks: ["본문 내용입니다."],
           },
         }),
       });
@@ -120,9 +120,9 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
         body: JSON.stringify({
           success: true,
           data: {
-            title: "React 공식 문서",
-            summary: "React는 컴포넌트 기반 UI 라이브러리입니다.",
-            tags: ["React", "프론트엔드"],
+            title: "파이프라인 검증 페이지",
+            summary: "파이프라인이 정상적으로 완료된 요약문입니다.",
+            tags: ["파이프라인테스트"],
           },
         }),
       });
@@ -140,7 +140,7 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     // 1. 저장
     const addButton = page.getByRole("button", { name: /북마크 추가/i });
     await addButton.click();
-    await page.getByPlaceholder("https://example.com").fill("https://react.dev");
+    await page.getByPlaceholder("https://example.com").fill("https://pipeline-test.example.com");
     await page.getByRole("button", { name: /북마크 저장/i }).click();
 
     // 2. 모달 닫히고 "크롤링 중..." 표시
@@ -151,9 +151,9 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     await expect(page.getByText("AI 분석 중...")).toBeVisible({ timeout: 10000 });
 
     // 4. 파이프라인 완료 → title, summary, tags 표시
-    await expect(page.getByText("React 공식 문서")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("React는 컴포넌트 기반 UI 라이브러리입니다.")).toBeVisible();
-    await expect(page.getByText("React")).toBeVisible();
+    await expect(page.getByText("파이프라인 검증 페이지")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("파이프라인이 정상적으로 완료된 요약문입니다.")).toBeVisible();
+    await expect(page.getByText("#파이프라인테스트")).toBeVisible();
   });
 
   test("모달 ESC로 닫기", async ({ page }) => {

@@ -14,10 +14,10 @@ test.describe("랜딩 페이지 크리티컬 플로우", () => {
     await expect(page.getByRole("button", { name: /시작하기/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /로그인 \/ 회원가입/i })).toBeVisible();
 
-    // 기능 카드 3개
-    await expect(page.getByText("스마트 AI 요약")).toBeVisible();
-    await expect(page.getByText("AI 의미 검색")).toBeVisible();
-    await expect(page.getByText("태그 기반 필터")).toBeVisible();
+    // 기능 카드 3개 (heading으로 정확히 특정)
+    await expect(page.getByRole("heading", { name: "스마트 AI 요약" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI 의미 검색" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "태그 기반 필터" })).toBeVisible();
   });
 
   test("비회원으로 시작하기 버튼 → 메인 페이지 이동", async ({ page }) => {

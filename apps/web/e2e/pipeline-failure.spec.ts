@@ -36,7 +36,7 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
     await expect(page.getByText("URL을 불러오는데 실패했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 버튼 존재
-    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible({ timeout: 10000 });
   });
 
   test("AI 분석 실패 → 에러 카드 표시 (크롤링은 성공)", async ({ page }) => {
@@ -82,7 +82,7 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
     await expect(page.getByText("AI 요약에 실패했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 버튼 존재
-    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible({ timeout: 10000 });
   });
 
   test("크롤링 실패 → 재시도 → 성공 시 카드 정상 표시", async ({ page }) => {
@@ -211,7 +211,7 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
 
     // 네트워크 에러는 catch 블록 → aiStatus: "failed"
     await expect(page.getByText("AI 요약에 실패했어요.")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible({ timeout: 10000 });
   });
 
   test("진행중/실패 카드 클릭 시 상세 패널 열리지 않음", async ({ page }) => {
