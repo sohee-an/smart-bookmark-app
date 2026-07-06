@@ -9,6 +9,20 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/shared/lib/test-setup.ts"],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "json"],
+      reportsDirectory: "./coverage",
+      include: [
+        "src/entities/**/api/**",
+        "src/entities/**/model/**",
+        "src/entities/**/lib/**",
+        "src/features/**/model/**",
+        "src/shared/lib/**",
+        "src/server/services/**",
+      ],
+      exclude: ["**/*.test.*", "**/*.spec.*", "**/test-setup.*"],
+    },
   },
   resolve: {
     alias: {
