@@ -58,6 +58,70 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     await expect(page.getByText("새 북마크 추가")).toBeVisible();
   });
 
+  test("저장 → 크롤링 중 → AI 분석 중 → 완료 (title/summary/tags 표시)", async ({ page }) => {
+    // 크롤링 API mock — 약간의 딜레이로 중간 상태 확인
+    await page.route("**/api/crawl", async (route) => {
+      await new Promise((r) => setTimeout(r, 500));
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            title: "React 공식 문서",
+            description: "React 라이브러리 공식 문서",
+            thumbnailUrl: null,
+            bodyChunks: ["React는 UI를 만들기 위한 라이브러리입니다."],
+          },
+        }),
+      });
+    });
+
+    // AI 분석 API mock
+    await page.route("**/api/ai-analyze", async (route) => {
+      await new Promise((r) => setTimeout(r, 500));
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            title: "React 공식 문서",
+            summary: "React는 컴포넌트 기반 UI 라이브러리입니다.",
+            tags: ["React", "프론트엔드"],
+          },
+        }),
+      });
+    });
+
+    // 임베딩 API mock
+    await page.route("**/api/embed", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true, data: { embedding: [] } }),
+      })
+    );
+
+    // 1. 저장
+    const addButton = page.getByRole("button", { name: /북마크 추가/i });
+    await addButton.click();
+    await page.getByPlaceholder("https://example.com").fill("https://react.dev");
+    await page.getByRole("button", { name: /북마크 저장/i }).click();
+
+    // 2. 모달 닫히고 "크롤링 중..." 표시
+    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(page.getByText("크롤링 중...")).toBeVisible();
+
+    // 3. 크롤링 완료 후 "AI 분석 중..." 전환
+    await expect(page.getByText("AI 분석 중...")).toBeVisible({ timeout: 10000 });
+
+    // 4. 파이프라인 완료 → title, summary, tags 표시
+    await expect(page.getByText("React 공식 문서")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("React는 컴포넌트 기반 UI 라이브러리입니다.")).toBeVisible();
+    await expect(page.getByText("React")).toBeVisible();
+  });
+
   test("모달 ESC로 닫기", async ({ page }) => {
     const addButton = page.getByRole("button", { name: /북마크 추가/i });
     await addButton.click();
