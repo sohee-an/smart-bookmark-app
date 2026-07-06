@@ -47,6 +47,31 @@ jobs:
       - name: 테스트 실행 (unit/통합)
         run: pnpm --filter @smart-bookmark/web test:unit
 
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+      GEMINI_API_KEY: placeholder-gemini-key
+      RESEND_API_KEY: re_placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Playwright 브라우저 설치
+        run: pnpm --filter @smart-bookmark/web exec playwright install --with-deps chromium
+      - name: E2E 테스트 실행
+        run: pnpm --filter @smart-bookmark/web test:e2e --project=chromium
+
   build:
     name: Build
     runs-on: ubuntu-latest
