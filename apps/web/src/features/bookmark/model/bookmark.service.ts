@@ -93,11 +93,17 @@ export class BookmarkService {
 
   /**
    * @description 임베딩 벡터를 저장합니다. (회원 전용)
+   * 파이프라인 단계마다 세션을 재확인하므로, 저장은 게스트(localStorage)로 됐는데
+   * 임베딩 시점에 세션이 살아나면(만료→자동갱신 등) Supabase에 없는 북마크 id로
+   * insert를 시도해 RLS 위반이 난다 → 소유 확인 후에만 저장한다.
    */
   async saveEmbedding(bookmarkId: string, embedding: number[]): Promise<void> {
     const repo = await this.getRepository();
     if (repo instanceof SupabaseBookmarkRepository) {
-      await repo.saveEmbedding(bookmarkId, embedding);
+      const owned = await repo.findById(bookmarkId);
+      if (owned) {
+        await repo.saveEmbedding(bookmarkId, embedding);
+      }
     }
   }
 
