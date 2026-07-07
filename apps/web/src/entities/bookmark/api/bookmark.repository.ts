@@ -2,7 +2,7 @@ import type { Bookmark } from "../model/types";
 import type { BookmarkFilter, CreateBookmarkRequest } from "./bookmark.types.db";
 
 export type UpdateBookmarkData = Partial<
-  Pick<Bookmark, "title" | "summary" | "tags" | "aiStatus" | "status">
+  Pick<Bookmark, "title" | "summary" | "tags" | "aiStatus" | "status" | "thumbnailUrl">
 >;
 
 /**

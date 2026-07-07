@@ -149,6 +149,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
     if (data.summary !== undefined) updateFields.summary = data.summary;
     if (data.aiStatus !== undefined) updateFields.ai_status = data.aiStatus;
     if (data.status !== undefined) updateFields.status = data.status;
+    if (data.thumbnailUrl !== undefined) updateFields.thumbnail_url = data.thumbnailUrl;
 
     // user_id 필터로 타인 소유 북마크 수정(IDOR) 차단.
     // .select()로 실제 갱신된 행을 받아, 소유하지 않으면(0행) 태그 교체까지 막는다.
