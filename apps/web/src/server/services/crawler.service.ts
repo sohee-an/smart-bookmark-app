@@ -1,6 +1,27 @@
 import * as cheerio from "cheerio";
 import { validateSsrf, SsrfError } from "@/shared/lib/validateSsrf";
 
+/**
+ * 일부 사이트는 본문이 iframe 래퍼 뒤에 있어 원 URL로는 내용을 얻을 수 없다.
+ * 네이버 블로그가 대표적: blog.naver.com/{blogId}/{logNo} 는 JS frameset 래퍼(약 3KB,
+ * og 태그·본문 없음)이고 실제 본문·og는 PostView.naver 에 있다.
+ * → 크롤링 "대상" URL만 치환한다 (북마크에 저장되는 원본 URL은 그대로).
+ */
+export function resolveCrawlUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "blog.naver.com" || u.hostname === "m.blog.naver.com") {
+      const m = u.pathname.match(/^\/([A-Za-z0-9_-]+)\/(\d+)\/?$/);
+      if (m) {
+        return `https://blog.naver.com/PostView.naver?blogId=${m[1]}&logNo=${m[2]}`;
+      }
+    }
+  } catch {
+    // URL 파싱 실패 시 원본 유지 — 이후 validateSsrf가 걸러낸다
+  }
+  return url;
+}
+
 export type CrawlerErrorCode =
   | "FETCH_FAILED"
   | "PARSE_FAILED"
@@ -32,7 +53,7 @@ export class CrawlerService {
 
   async crawl(url: string, attempt: number = 1): Promise<CrawlResult> {
     try {
-      const { response, finalUrl } = await this.safeFetch(url);
+      const { response, finalUrl } = await this.safeFetch(resolveCrawlUrl(url));
 
       if (!response.ok) {
         return this.handleRetry(url, attempt, "FETCH_FAILED");
