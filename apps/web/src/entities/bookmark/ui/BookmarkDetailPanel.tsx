@@ -176,7 +176,7 @@ export const BookmarkDetailPanel = ({
               {/* sticky: 썸네일 + 제목 */}
               <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900">
                 {bookmark.thumbnailUrl && (
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                  <div className="relative aspect-[1.91/1] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
                     <Image
                       src={bookmark.thumbnailUrl}
                       alt={bookmark.title}

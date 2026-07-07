@@ -51,7 +51,7 @@ export const BookmarkCard = ({
       className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isPending ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} focus-visible:ring-brand-primary shadow-sm focus-visible:ring-2 focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-900`}
     >
       {/* 1. Thumbnail Area */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
+      <div className="relative aspect-[1.91/1] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
         {isCrawling ? (
           <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700">
             <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-xl dark:bg-zinc-900/90">
