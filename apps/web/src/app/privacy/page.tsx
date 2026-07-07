@@ -10,7 +10,6 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950">
       <div className="mx-auto max-w-3xl px-6 py-16">
-        {/* 헤더 */}
         <div className="mb-12">
           <Link
             href="/"
@@ -23,7 +22,6 @@ export default function PrivacyPage() {
         </div>
 
         <div className="space-y-10 text-zinc-700 dark:text-zinc-300">
-          {/* 1 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">
               1. 수집하는 개인정보
@@ -53,7 +51,6 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 2 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">
               2. 개인정보 수집 및 이용 목적
@@ -74,7 +71,6 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 3 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">
               3. 개인정보 보관 및 파기
@@ -91,7 +87,6 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 4 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">
               4. 제3자 제공 및 위탁
@@ -136,7 +131,6 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          {/* 5 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">
               5. 이용자의 권리
@@ -153,7 +147,6 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 6 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">
               6. 크롬 확장 프로그램 관련
@@ -174,7 +167,6 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 7 */}
           <section>
             <h2 className="mb-3 text-lg font-bold text-zinc-900 dark:text-white">7. 문의</h2>
             <p className="text-sm leading-relaxed">

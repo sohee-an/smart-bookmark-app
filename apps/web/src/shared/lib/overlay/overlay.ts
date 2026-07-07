@@ -6,7 +6,6 @@ export const overlay = {
     const id = crypto.randomUUID();
 
     overlayEmitter.emit("OPEN", { id, component });
-    //             ↑신호이름   ↑OverlayProvider한테 보낼 데이터
   },
 
   close: (id: string) => {

@@ -1,16 +1,13 @@
 import { ReactNode } from "react";
 
-// props 타입 먼저
 type OverlayProps = {
   isOpen: boolean;
   close: () => void;
   unmount: () => void;
 };
 
-// component 타입 명시적으로
 type OverlayComponent = (props: OverlayProps) => ReactNode;
 
-// 적용
 type OverlayItem = {
   id: string;
   isOpen: boolean;

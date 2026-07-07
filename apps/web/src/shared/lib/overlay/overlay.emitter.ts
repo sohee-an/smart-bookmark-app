@@ -1,6 +1,5 @@
 import type { OverlayComponent } from "./overlay.types";
 
-// 이벤트별 payload 타입 정의
 type OverlayEventMap = {
   OPEN: { id: string; component: OverlayComponent };
   CLOSE: { id: string };

@@ -63,7 +63,6 @@ export const RecentBookmarkSlider = ({
   return (
     <section className="w-full py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl dark:text-white">
@@ -87,7 +86,6 @@ export const RecentBookmarkSlider = ({
           )}
         </div>
 
-        {/* Slider Container */}
         <div className="relative -mx-4 sm:mx-0">
           <div
             className="flex w-full snap-x snap-mandatory gap-5 overflow-x-auto px-4 pt-4 pb-8 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

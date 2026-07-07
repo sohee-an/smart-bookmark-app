@@ -44,7 +44,6 @@ export async function POST(request: Request) {
   const existingUser = existingUsers?.[0];
 
   if (existingUser) {
-    // 이미 가입된 유저 → 바로 멤버 추가
     const { error } = await supabase
       .from("collection_members")
       .upsert({ collection_id: collectionId, user_id: existingUser.id, role, invited_by: user.id });
@@ -52,7 +51,6 @@ export async function POST(request: Request) {
     if (error)
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   } else {
-    // 미가입 유저 → Supabase Auth 초대 이메일 발송
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/collections/${collectionId}`;
     const { error } = await adminSupabase.auth.admin.inviteUserByEmail(email, {
       redirectTo: redirectUrl,

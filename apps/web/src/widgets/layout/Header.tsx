@@ -133,7 +133,6 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
     setShowDropdown(false);
   };
 
-  // 드롭다운 외부 클릭 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!searchContainerRef.current?.contains(e.target as Node)) {
@@ -187,7 +186,6 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
         className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
         aria-label="Global"
       >
-        {/* 왼쪽: 로고 + 데스크톱 검색 */}
         <div className="flex items-center gap-4">
           <Link href="/" className="group flex items-center gap-2">
             <h1 className="text-brand-primary text-2xl font-bold tracking-tight transition-opacity group-hover:opacity-80">
@@ -238,9 +236,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
           </div>
         </div>
 
-        {/* 오른쪽: 모바일 검색 아이콘 + 컬렉션 + 추가 버튼 + 유저 */}
         <div className="flex items-center gap-3">
-          {/* 모바일 전용 검색 아이콘 */}
           <button
             type="button"
             onClick={() => setShowMobileSearch(true)}
@@ -294,7 +290,6 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
 
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-          {/* 유저 영역 — initialUser로 즉시 표시, 클라이언트 초기화 후 교체 */}
           {currentUser || isGuest ? (
             <div className="flex items-center gap-3">
               <div className="hidden flex-col items-end lg:flex">
@@ -363,7 +358,6 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
         </div>
       </nav>
 
-      {/* 모바일: /bookmarks 에서만 필터바 표시 */}
       {isOnBookmarks && (
         <div className="border-t border-zinc-100 px-4 py-3 md:hidden dark:border-zinc-800">
           <FilterBar
@@ -377,7 +371,6 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
         </div>
       )}
 
-      {/* 모바일 전체화면 검색 오버레이 */}
       <MobileSearchOverlay
         isOpen={showMobileSearch}
         onClose={() => setShowMobileSearch(false)}

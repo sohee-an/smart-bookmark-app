@@ -9,7 +9,6 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  // 1. 인증
   const auth = await getUserFromBearer(request.headers.get("Authorization"));
   if (!auth) {
     return NextResponse.json(
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 2. SSRF 방어
   try {
     await validateSsrf(url);
   } catch (e) {
@@ -39,7 +37,6 @@ export async function POST(request: Request) {
     }
   }
 
-  // 3. DB 저장
   const { data: bookmark, error: insertError } = await supabase
     .from("bookmarks")
     .insert([
@@ -62,7 +59,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. 백그라운드 파이프라인
   const timeout = new Promise<void>((_, reject) =>
     setTimeout(() => reject(new Error("pipeline timeout")), PIPELINE_TIMEOUT_MS)
   );

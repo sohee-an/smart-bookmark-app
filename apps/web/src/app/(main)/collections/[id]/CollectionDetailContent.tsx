@@ -134,7 +134,6 @@ export function CollectionDetailContent({ id }: Props) {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* 뒤로가기 */}
         <button
           onClick={() => router.push("/collections")}
           className="mb-6 flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-600 dark:hover:text-zinc-300"
@@ -143,7 +142,6 @@ export function CollectionDetailContent({ id }: Props) {
           컬렉션 목록
         </button>
 
-        {/* 헤더 */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div className="flex-1">
             {isEditingName ? (
@@ -218,7 +216,6 @@ export function CollectionDetailContent({ id }: Props) {
           </div>
         </div>
 
-        {/* 북마크 목록 */}
         {bkError ? (
           <ErrorState
             title="북마크를 불러오지 못했어요"

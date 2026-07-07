@@ -23,9 +23,7 @@ export const Avatar = ({ src, username, size = "md", className = "" }: AvatarPro
     <AvatarPrimitive
       src={src}
       username={username}
-      // 뼈대에 입힐 스타일(Class) 전달
       className={`relative inline-block overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800 ${sizeClasses[size]} ${className}`}
-      // 내부 img 태그에 적용될 스타일 (필요 시)
       style={{ display: "flex" }}
     >
       {/* 참고: AvatarPrimitive 내부에서 img에 

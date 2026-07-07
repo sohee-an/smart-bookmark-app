@@ -9,7 +9,6 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export const PIPELINE_TIMEOUT_MS = 25_000;
 
 export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, url: string) {
-  // 크롤링
   const crawlResult = await crawlerService.crawl(url);
 
   if (!crawlResult.success) {
@@ -28,7 +27,6 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
     })
     .eq("id", bookmarkId);
 
-  // AI 분석
   const aiData = await analyzeBookmark({ title, description, bodyChunks });
 
   const finalTitle = aiData.title || title || "";
@@ -76,7 +74,6 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
     console.error("[Pipeline] 임베딩 오류:", e);
   }
 
-  // 최종 업데이트
   await supabase
     .from("bookmarks")
     .update({ title: finalTitle, summary, ai_status: "completed" })

@@ -43,7 +43,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "검색어가 없습니다." }, { status: 400 });
     }
 
-    // 1. 검색어 임베딩 생성
     const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
     const result = await model.embedContent({
       content: { parts: [{ text: query }], role: "user" },
@@ -52,7 +51,6 @@ export async function POST(request: Request) {
     } as Parameters<typeof model.embedContent>[0]);
     const embedding = result.embedding.values;
 
-    // 2. Supabase RPC로 유사도 검색 (세션에서 추출한 user.id 사용)
     const { data, error } = await supabase.rpc("match_bookmarks", {
       query_embedding: embedding,
       p_user_id: user.id,
@@ -63,7 +61,6 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    // 3. 태그 조회 (별도)
     const ids = ((data ?? []) as unknown as SearchResultRow[]).map((r) => r.id);
     let tagsMap: Record<string, string[]> = {};
 
