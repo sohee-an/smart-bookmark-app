@@ -1,12 +1,11 @@
 # iOS Safari input 자동 줌 대응 방식 결정
 
-- **날짜**: 2026-06-07
-- **상태**: 적용 완료
-- **태그**: 반응형, 크로스 브라우징, 접근성, iOS Safari
+> iPhone Safari 실기기에서 발견한 input 포커스 자동 줌 문제 — 대안 4개를 비교해
+> 모바일 16px 하한을 디자인 시스템 레벨에서 채택한 기록 (2026-06-07 적용).
 
 ---
 
-## 1. 문제 상황
+## 문제 상황
 
 iPhone Safari 실기기 테스트 중 발견:
 
@@ -15,7 +14,7 @@ iPhone Safari 실기기 테스트 중 발견:
 
 > Chrome DevTools 기기 모드에서는 절대 재현되지 않음 — 화면 크기만 흉내 낼 뿐 엔진은 데스크톱 Chrome이기 때문. **실기기에서만 발견 가능한 버그**였다.
 
-## 2. 원인
+## 원인
 
 iOS Safari(WebKit)의 자동 줌 동작:
 
@@ -43,7 +42,7 @@ className = "flex-1 bg-transparent text-sm ...";
 | `InviteMemberModal.tsx`     | input + select              | 14px              | select도 줌 대상                    |
 | `BookmarkDetailPanel.tsx`   | 제목 편집 input             | 14px              |                                     |
 
-## 3. 검토한 대안
+## 검토한 대안
 
 자동 줌 발동 조건이 「**A.** font-size < 16px」 AND 「**B.** 줌이 허용된 viewport」이므로, 해법도 두 갈래로 나뉜다.
 
@@ -93,7 +92,7 @@ computed는 16px, 시각적으론 14px. 박스 크기·캐럿·주변 정렬 보
 
 포커스 시점 폰트로 줌 여부가 판정되는 것을 이용. 타이핑 시작 시 글자가 눈에 띄게 점프하고 iOS 버전별 동작이 불안정.
 
-## 4. 결정과 근거
+## 결정과 근거
 
 **①(16px 하한)을 채택.**
 
@@ -103,7 +102,7 @@ computed는 16px, 시각적으론 14px. 박스 크기·캐럿·주변 정렬 보
 
 > 디자인 제약이 강한 프로젝트였다면 ②(iOS 한정 주입)가 합리적 선택일 수 있다. 이 결정은 "유일한 정답"이 아니라 트레이드오프 선택이다.
 
-## 5. 적용 내역
+## 적용 내역
 
 5개 파일 6곳 — `text-sm` → `text-base md:text-sm` 패턴 (모바일 전용 UI인 MobileSearchOverlay만 `text-base` 단독):
 
@@ -113,14 +112,14 @@ computed는 16px, 시각적으론 14px. 박스 크기·캐럿·주변 정렬 보
 - `features/collection/ui/InviteMemberModal.tsx` — input + select
 - `entities/bookmark/ui/BookmarkDetailPanel.tsx` — 제목 편집 input
 
-## 6. 검증 방법
+## 검증 방법
 
 - **재현/확인은 반드시 iOS 실기기** (DevTools 기기 모드·Android에서는 재현 불가)
 - 같은 Wi-Fi에서 `pnpm dev` → iPhone Safari로 `http://<PC IP>:3000` 접속
 - 수정 전: 🔍 탭 → 오버레이 열리며 즉시 줌인 / 수정 후: 줌 없음
 - iPhone이 없으면 BrowserStack 등 원격 실기기 서비스로 대체 가능
 
-## 7. 배운 점
+## 배운 점
 
 1. **에뮬레이터의 한계**: 브라우저 엔진 동작(WebKit 자동 줌)은 DevTools가 흉내 내지 못한다 — 모바일 품질 검증은 실기기가 기본
 2. **조건을 분해하면 해법이 보인다**: "A AND B"로 발동하는 동작은 A를 깨는 계열과 B를 깨는 계열로 해법이 나뉜다
