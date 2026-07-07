@@ -231,6 +231,8 @@ return (
 → Zustand 아티클, Context API 비교 글도 검색됨 (키워드 불일치여도)
 ```
 
+![시맨틱 서치 데모 — 키워드가 달라도 의미로 관련 북마크를 찾아낸다](./docs/assets/demo-semantic-search.gif)
+
 **PostgreSQL 시그니처 충돌 문제**: 태그 필터 파라미터(`p_tags text[]`) 추가 시 `CREATE OR REPLACE`만으로는 교체 불가 — PostgreSQL은 시그니처가 다르면 오버로드로 처리. 기존 함수를 먼저 `DROP`한 뒤 재생성해 해결.
 
 **`SELECT DISTINCT` + `ORDER BY` 충돌**: `ORDER BY` 식이 `SELECT` 목록에 없으면 PostgreSQL이 에러를 던짐. DISTINCT를 제거하고 EXISTS 서브쿼리로 교체해 해결.
