@@ -84,6 +84,11 @@ export function HomeContent() {
       return;
     }
     retryCounts.current[bookmark.id] = count + 1;
+    // 마지막(3번째) 재시도를 소진하는 시점에 미리 마킹 — 이 재시도마저 실패하면
+    // 무의미한 버튼 대신 초과 메시지가 바로 보인다 (성공하면 completed라 표시 안 됨)
+    if (count + 1 >= 3) {
+      setExhaustedIds((prev) => new Set(prev).add(bookmark.id));
+    }
     patchCache(bookmark.id, { aiStatus: "crawling" });
     runPipeline(bookmark.id, bookmark.url);
   };
@@ -136,6 +141,8 @@ export function HomeContent() {
               bookmarks={recentBookmarks}
               onBookmarkClick={handleBookmarkClick}
               onTagClick={handleTagClick}
+              onRetry={handleRetry}
+              getRetryExhausted={(id) => exhaustedIds.has(id)}
             />
 
             <section className="mx-auto max-w-7xl border-t border-zinc-200 px-4 py-8 sm:px-6 lg:px-8 dark:border-zinc-800">
