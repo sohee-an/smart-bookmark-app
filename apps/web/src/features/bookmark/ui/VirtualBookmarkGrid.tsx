@@ -48,7 +48,6 @@ export function VirtualBookmarkGrid({
   const listRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(4);
 
-  // 뷰포트 너비 → 열 수 (리사이즈 대응)
   useEffect(() => {
     const update = () => setColumns(columnsForWidth(window.innerWidth));
     update();

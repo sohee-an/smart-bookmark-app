@@ -83,7 +83,6 @@ export const InviteMemberModal = ({ collection, currentUserId, onClose }: Props)
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl dark:bg-zinc-900">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <UserPlus size={18} className="text-zinc-500" />
@@ -99,7 +98,6 @@ export const InviteMemberModal = ({ collection, currentUserId, onClose }: Props)
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto px-6 py-4">
-          {/* 초대 폼 (owner만) */}
           {isOwner && (
             <div className="mb-6">
               <label className="mb-2 block text-xs font-bold tracking-widest text-zinc-400 uppercase">
@@ -152,7 +150,6 @@ export const InviteMemberModal = ({ collection, currentUserId, onClose }: Props)
             </div>
           )}
 
-          {/* 멤버 목록 */}
           <div>
             <label className="mb-2 block text-xs font-bold tracking-widest text-zinc-400 uppercase">
               현재 멤버 ({collection.members.length}명)

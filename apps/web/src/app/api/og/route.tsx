@@ -22,7 +22,6 @@ export function GET(req: NextRequest) {
         fontFamily: "sans-serif",
       }}
     >
-      {/* Brand badge */}
       <div
         style={{
           display: "flex",
@@ -59,7 +58,6 @@ export function GET(req: NextRequest) {
         </span>
       </div>
 
-      {/* Title */}
       <div
         style={{
           color: "#ffffff",
@@ -73,7 +71,6 @@ export function GET(req: NextRequest) {
         {title}
       </div>
 
-      {/* Description */}
       <div
         style={{
           color: "#a1a1aa",
@@ -85,7 +82,6 @@ export function GET(req: NextRequest) {
         {description}
       </div>
 
-      {/* Bottom decoration */}
       <div
         style={{
           position: "absolute",
@@ -104,7 +100,6 @@ export function GET(req: NextRequest) {
         AI 북마크 관리
       </div>
 
-      {/* Background glow */}
       <div
         style={{
           position: "absolute",

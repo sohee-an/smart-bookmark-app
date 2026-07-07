@@ -62,7 +62,6 @@ export const FilterBar = ({
 
   return (
     <div ref={ref} className="relative">
-      {/* 필터 버튼 */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -77,10 +76,8 @@ export const FilterBar = ({
         )}
       </button>
 
-      {/* 드롭다운 */}
       {open && (
         <div className="absolute top-full left-0 z-20 mt-2 w-72 rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
-          {/* 탭 */}
           <div className="flex border-b border-zinc-100 dark:border-zinc-800">
             {tabs.map((tab) => (
               <button
@@ -98,7 +95,6 @@ export const FilterBar = ({
             ))}
           </div>
 
-          {/* 태그 목록 */}
           <div className="p-4">
             {currentTags.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">

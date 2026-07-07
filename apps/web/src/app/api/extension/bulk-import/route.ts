@@ -11,7 +11,6 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  // 1. 인증
   const auth = await getUserFromBearer(request.headers.get("Authorization"));
   if (!auth) {
     return NextResponse.json(
@@ -36,9 +35,7 @@ export async function POST(request: Request) {
       try {
         await validateSsrf(item.url);
         validItems.push(item);
-      } catch {
-        // 스킵
-      }
+      } catch {}
     })
   );
 
@@ -59,7 +56,6 @@ export async function POST(request: Request) {
 
   const existingUrls = new Set((existingRows ?? []).map((r: { url: string }) => r.url));
 
-  // 4. 중복 제거
   const newItems = validItems.filter((i) => !existingUrls.has(i.url));
   const skipped = validItems.length - newItems.length;
 
@@ -70,7 +66,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. Bulk INSERT — ai_status: "crawling" (AI 파이프라인 대기 상태)
   const { data: inserted, error: insertError } = await supabase
     .from("bookmarks")
     .insert(
@@ -95,7 +90,6 @@ export async function POST(request: Request) {
   const saved = inserted.length;
   const failed = newItems.length - saved;
 
-  // 6. AI 파이프라인 순차 처리
   // TODO: QStash 큐로 교체 예정
   waitUntil(
     (async () => {
