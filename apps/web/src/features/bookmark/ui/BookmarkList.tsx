@@ -35,7 +35,7 @@ export const BookmarkList = ({
             key={i}
             className="flex h-72 flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
           >
-            <div className="aspect-[16/10] w-full animate-pulse bg-zinc-100 dark:bg-zinc-800" />
+            <div className="aspect-[1.91/1] w-full animate-pulse bg-zinc-100 dark:bg-zinc-800" />
             <div className="flex flex-1 flex-col gap-3 p-6">
               <div className="h-5 w-3/4 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
               <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
