@@ -44,9 +44,19 @@ export const RecentBookmarkSlider = ({
                 className="w-[85vw] flex-none overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] dark:border-zinc-800 dark:bg-zinc-900"
               >
                 <div className="aspect-[1.91/1] w-full animate-pulse bg-zinc-100 dark:bg-zinc-800" />
-                <div className="flex flex-col gap-3 p-6">
-                  <div className="h-5 w-3/4 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
-                  <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                <div className="flex flex-col p-6">
+                  <div className="mb-3 space-y-2">
+                    <div className="h-5 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                    <div className="h-5 w-2/3 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                  </div>
+                  <div className="mb-6 space-y-2">
+                    <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                    <div className="h-3 w-3/5 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-6 w-16 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+                    <div className="h-6 w-12 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+                  </div>
                 </div>
               </div>
             ))}

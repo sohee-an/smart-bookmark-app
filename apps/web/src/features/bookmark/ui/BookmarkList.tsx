@@ -30,16 +30,26 @@ export const BookmarkList = ({
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {/* 실제 카드와 동형 구조(이미지 비율·여백·줄 수) — 고정 높이(h-72)는 로드 완료 시 레이아웃 점프(CLS)를 만든다 */}
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="flex h-72 flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            className="flex flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
           >
             <div className="aspect-[1.91/1] w-full animate-pulse bg-zinc-100 dark:bg-zinc-800" />
-            <div className="flex flex-1 flex-col gap-3 p-6">
-              <div className="h-5 w-3/4 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
-              <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
-              <div className="h-3 w-1/2 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+            <div className="flex flex-1 flex-col p-6">
+              <div className="mb-3 space-y-2">
+                <div className="h-5 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                <div className="h-5 w-2/3 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+              </div>
+              <div className="mb-6 flex-1 space-y-2">
+                <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                <div className="h-3 w-3/5 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+              </div>
+              <div className="flex gap-2">
+                <div className="h-6 w-16 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+                <div className="h-6 w-12 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+              </div>
             </div>
           </div>
         ))}
