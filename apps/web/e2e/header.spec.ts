@@ -39,8 +39,9 @@ test.describe("Header 깜빡임 테스트", () => {
 
     await page.goto("/");
 
-    // 게스트님 텍스트가 보여야 함
-    await expect(page.getByText("게스트님")).toBeVisible();
+    // 게스트 아바타(사용자 메뉴)가 보여야 함 — 닉네임 텍스트는 lg 미만에서 숨기는 디자인이라
+    // 뷰포트 무관한 아바타 버튼으로 검증 (Mobile Chrome 프로젝트 포함)
+    await expect(page.getByRole("button", { name: "사용자 메뉴" })).toBeVisible();
     // 로그인 버튼은 없어야 함
     await expect(page.getByText("로그인", { exact: true })).not.toBeVisible();
   });

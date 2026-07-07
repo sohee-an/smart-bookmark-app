@@ -181,9 +181,10 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   const isOnBookmarks = pathname === "/bookmarks";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-black/80">
+    // h-16 고정(border 포함) — 레이아웃 스켈레톤과 챗 페이지의 calc(100dvh-4rem)가 이 높이를 전제한다
+    <header className="sticky top-0 z-50 h-16 border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-black/80">
       <nav
-        className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
+        className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
         aria-label="Global"
       >
         {/* 왼쪽: 로고 + 데스크톱 검색 */}

@@ -100,8 +100,9 @@ export function ChatContent() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <div className="mx-auto flex h-[calc(100vh-4rem)] max-w-3xl flex-col px-4">
+    // 100dvh: 모바일 주소창 수축/확장에도 실제 보이는 높이 기준. 헤더는 h-16 고정(border 포함) 전제
+    <div className="min-h-[calc(100dvh-4rem)] bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <div className="mx-auto flex h-[calc(100dvh-4rem)] max-w-3xl flex-col px-4">
         <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto py-8">
           {isEmpty ? (
             <div className="flex h-full flex-col items-center justify-center gap-6 text-center">
