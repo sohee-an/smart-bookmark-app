@@ -71,12 +71,15 @@ export function BookmarksContent() {
     setSemanticRelated([]);
     setSemanticLoading(true);
 
+    const controller = new AbortController();
+
     const run = async () => {
       try {
+        // 게이트 용도라 로컬 세션 확인으로 충분 (네트워크 왕복 없음) — 실제 인증은 API Route가 getUser()로 검증
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
           setSemanticLoading(false);
           return;
         }
@@ -85,24 +88,28 @@ export function BookmarksContent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query, tags: selectedTags }),
+          signal: controller.signal,
         });
         const json = await res.json();
 
         if (json.success) {
           setSemanticExact(json.data.exact);
           setSemanticRelated(json.data.related);
-        } else {
+        } else if (res.status !== 401) {
           toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.error("[SemanticSearch] 오류:", e);
         toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
       } finally {
-        setSemanticLoading(false);
+        if (!controller.signal.aborted) setSemanticLoading(false);
       }
     };
 
     run();
+
+    return () => controller.abort();
   }, [query, selectedTags]);
 
   useEffect(() => {

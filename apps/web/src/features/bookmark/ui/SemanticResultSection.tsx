@@ -59,9 +59,14 @@ export const SemanticResultSection = ({
     return (
       <div className="mt-10">
         <SectionHeader />
-        <div className="flex items-center gap-2 py-8 text-sm text-zinc-400 dark:text-zinc-500">
+        <div className="mb-3 flex items-center gap-2 text-sm text-zinc-400 dark:text-zinc-500">
           <Sparkles size={16} className="animate-pulse" />
           AI가 의미를 분석하는 중...
+        </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       </div>
     );
@@ -111,6 +116,23 @@ export const SemanticResultSection = ({
     </div>
   );
 };
+
+const SkeletonCard = () => (
+  <div className="flex h-full w-full animate-pulse flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="aspect-[16/10] w-full bg-zinc-100 dark:bg-zinc-800" />
+    <div className="flex flex-1 flex-col p-6">
+      <div className="mb-3 h-5 w-3/4 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="space-y-2">
+        <div className="h-3 w-full rounded-full bg-zinc-100 dark:bg-zinc-800" />
+        <div className="h-3 w-[60%] rounded-full bg-zinc-100 dark:bg-zinc-800" />
+      </div>
+      <div className="mt-auto flex gap-2 pt-4">
+        <div className="h-6 w-14 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+        <div className="h-6 w-14 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+      </div>
+    </div>
+  </div>
+);
 
 const SectionHeader = () => (
   <div className="mb-4 flex items-center gap-2">
