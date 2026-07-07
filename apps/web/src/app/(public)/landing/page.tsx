@@ -20,7 +20,6 @@ export const metadata: Metadata = {
 export default function LandingPage() {
   return (
     <div className="bg-surface-card dark:bg-surface-base-dark selection:bg-brand-primary/10 selection:text-brand-primary min-h-screen overflow-x-hidden text-zinc-900 dark:text-zinc-50">
-      {/* Decorative Background Elements */}
       <div className="pointer-events-none absolute top-0 left-1/2 -z-10 h-[600px] w-full -translate-x-1/2 overflow-hidden">
         <div className="bg-brand-primary/10 absolute top-[-100px] left-[-100px] h-[400px] w-[400px] rounded-full blur-[100px]" />
         <div className="bg-brand-accent/10 absolute top-[200px] right-[-100px] h-[500px] w-[500px] rounded-full blur-[120px]" />
@@ -113,7 +112,6 @@ export default function LandingPage() {
           ))}
         </section>
 
-        {/* 익스텐션 섹션 */}
         <section className="pb-32">
           <div className="from-brand-primary/5 to-brand-accent/5 dark:from-brand-primary/10 dark:to-brand-accent/10 relative overflow-hidden rounded-3xl border border-zinc-100 bg-gradient-to-br via-white p-6 sm:p-8 md:p-12 dark:border-zinc-800 dark:via-zinc-900">
             <div className="bg-brand-primary/10 pointer-events-none absolute top-0 right-0 -z-0 h-64 w-64 translate-x-1/3 -translate-y-1/3 rounded-full blur-3xl" />

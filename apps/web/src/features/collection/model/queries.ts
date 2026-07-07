@@ -13,7 +13,6 @@ export const collectionKeys = {
   bookmarks: (id: string) => [...collectionKeys.all, "bookmarks", id] as const,
 };
 
-// ── 목록 ──────────────────────────────────────────────────────
 export function useCollections() {
   return useQuery({
     queryKey: collectionKeys.list(),
@@ -26,7 +25,6 @@ export function useCollections() {
   });
 }
 
-// ── 상세 ──────────────────────────────────────────────────────
 export function useCollection(id: string) {
   return useQuery({
     queryKey: collectionKeys.detail(id),
@@ -40,7 +38,6 @@ export function useCollection(id: string) {
   });
 }
 
-// ── 북마크 목록 ───────────────────────────────────────────────
 export function useCollectionBookmarks(collectionId: string) {
   return useQuery({
     queryKey: collectionKeys.bookmarks(collectionId),
@@ -54,7 +51,6 @@ export function useCollectionBookmarks(collectionId: string) {
   });
 }
 
-// ── 생성 ──────────────────────────────────────────────────────
 export function useCreateCollection() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -72,7 +68,6 @@ export function useCreateCollection() {
   });
 }
 
-// ── 수정 ──────────────────────────────────────────────────────
 export function useUpdateCollection() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -92,7 +87,6 @@ export function useUpdateCollection() {
   });
 }
 
-// ── 삭제 ──────────────────────────────────────────────────────
 export function useDeleteCollection() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -105,7 +99,6 @@ export function useDeleteCollection() {
   });
 }
 
-// ── 북마크 추가/제거 ──────────────────────────────────────────
 export function useAddBookmarkToCollection() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -156,7 +149,6 @@ export function useRemoveBookmarkFromCollection() {
   });
 }
 
-// ── 멤버 초대 / 역할 변경 / 제거 ──────────────────────────────
 export function useInviteMember() {
   const queryClient = useQueryClient();
   return useMutation({

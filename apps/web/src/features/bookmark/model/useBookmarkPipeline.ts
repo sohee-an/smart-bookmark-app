@@ -18,7 +18,6 @@ export function useBookmarkPipeline() {
 
   const runPipeline = async (bookmarkId: string, url: string) => {
     try {
-      // 1. 크롤링
       const crawlRes = await fetch("/api/crawl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,7 +33,6 @@ export function useBookmarkPipeline() {
 
       const { title, thumbnailUrl, description, bodyChunks } = crawlJson.data;
 
-      // 2. 크롤링 결과 반영 + AI 분석 중 상태 전환
       const crawlUpdate = {
         thumbnailUrl,
         aiStatus: "processing" as const,
@@ -43,7 +41,6 @@ export function useBookmarkPipeline() {
       await bookmarkService.updateBookmark(bookmarkId, crawlUpdate);
       patchCache(bookmarkId, crawlUpdate);
 
-      // 3. AI 분석
       const aiRes = await fetch("/api/ai-analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,7 +71,6 @@ export function useBookmarkPipeline() {
         })
         .catch((e) => console.error("[Pipeline] 임베딩 오류:", e));
 
-      // 5. AI 결과 반영 + 완료
       const finalUpdate = {
         summary,
         tags,

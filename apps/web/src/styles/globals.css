@@ -89,6 +89,16 @@
       color: #fafafa;
     }
   }
+
+  /* Tailwind v4 preflight는 button 기본 cursor를 pointer로 주지 않는다(v3와 다름).
+     클릭 가능한 요소 전체에 일괄 적용 — 개별 컴포넌트에 cursor-pointer를 흩뿌리지 않는다. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  select,
+  summary {
+    cursor: pointer;
+  }
 }
 
 /* -------------------------------------------------------------------------- */

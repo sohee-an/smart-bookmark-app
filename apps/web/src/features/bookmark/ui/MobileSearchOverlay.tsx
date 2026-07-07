@@ -71,7 +71,6 @@ export function MobileSearchOverlay({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-zinc-950">
-      {/* 헤더 */}
       <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
         <button
           type="button"
@@ -96,7 +95,6 @@ export function MobileSearchOverlay({
         </form>
       </div>
 
-      {/* 본문 */}
       <div className="flex-1 overflow-y-auto px-4 py-5">
         {!hasQuery && (
           <>

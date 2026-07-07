@@ -59,7 +59,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. 게스트 쿠키 확인
   const isGuest = request.cookies.get("is_guest")?.value === "true";
 
   const isAuth = !!user || isGuest;
@@ -69,7 +68,6 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = pathname === "/login";
   const isPublicPage = pathname === "/privacy" || pathname === "/demo";
 
-  // 인증된 사용자가 랜딩/로그인 페이지 접근 시
   if (isAuth && (isLandingPage || isLoginPage)) {
     // 익스텐션에서 온 경우 → 토큰을 익스텐션에 전달
     const fromExtension = request.nextUrl.searchParams.get("from") === "extension";

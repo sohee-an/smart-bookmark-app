@@ -169,14 +169,12 @@ export const BookmarkDetailPanel = ({
 
         {bookmark && (
           <>
-            {/* 스크롤 영역 */}
             <div
               className={`flex-1 overflow-y-auto transition-opacity duration-200 ${isConfirmingDelete ? "pointer-events-none opacity-40" : "opacity-100"}`}
             >
-              {/* sticky: 썸네일 + 제목 */}
               <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900">
                 {bookmark.thumbnailUrl && (
-                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                  <div className="relative aspect-[1.91/1] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
                     <Image
                       src={bookmark.thumbnailUrl}
                       alt={bookmark.title}
@@ -205,7 +203,6 @@ export const BookmarkDetailPanel = ({
                 </div>
               </div>
 
-              {/* 스크롤되는 본문 */}
               <div className="flex flex-col gap-6 p-6">
                 <div>
                   <label className="mb-1.5 block text-xs font-bold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
@@ -260,7 +257,6 @@ export const BookmarkDetailPanel = ({
               </div>
             </div>
 
-            {/* 고정 footer */}
             <div className="border-t border-zinc-100 px-6 py-4 dark:border-zinc-800">
               {isEditing ? (
                 <div className="flex gap-3">

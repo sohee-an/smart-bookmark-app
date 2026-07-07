@@ -50,8 +50,7 @@ export const BookmarkCard = ({
       aria-label={`북마크: ${title}`}
       className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white transition-all ${isPending ? "cursor-wait opacity-90" : "cursor-pointer hover:-translate-y-1 hover:shadow-2xl"} focus-visible:ring-brand-primary shadow-sm focus-visible:ring-2 focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-900`}
     >
-      {/* 1. Thumbnail Area */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
+      <div className="relative aspect-[1.91/1] w-full overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
         {isCrawling ? (
           <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-700">
             <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-xl dark:bg-zinc-900/90">
@@ -86,7 +85,6 @@ export const BookmarkCard = ({
           </div>
         )}
 
-        {/* AI Processing Overlay */}
         {isProcessing && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/20 backdrop-blur-[2px]">
             <div className="flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-xl dark:bg-zinc-900/90">
@@ -98,7 +96,6 @@ export const BookmarkCard = ({
           </div>
         )}
 
-        {/* New Badge */}
         {isNew && !isPending && (
           <div className="bg-brand-primary absolute top-4 right-4 flex h-6 w-14 items-center justify-center rounded-full px-2 text-[10px] font-black text-white shadow-lg">
             NEW
@@ -106,9 +103,7 @@ export const BookmarkCard = ({
         )}
       </div>
 
-      {/* 2. Content Area */}
       <div className="flex flex-1 flex-col p-6">
-        {/* Title with Unread Dot */}
         <div className="mb-3 flex items-start gap-2">
           {isUnread && !isPending && (
             <div className="bg-brand-primary mt-2 h-2 w-2 flex-none rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
@@ -124,7 +119,6 @@ export const BookmarkCard = ({
           </h3>
         </div>
 
-        {/* Summary or Loading placeholder */}
         <div className="mb-6 flex-1">
           {isCrawling ? (
             <div className="space-y-2">
@@ -193,7 +187,6 @@ export const BookmarkCard = ({
           )}
         </div>
 
-        {/* 3. Bottom Info: Tags & AI completed badge */}
         <div className="mt-auto flex items-center justify-between pt-4">
           {!isPending && !isCrawlFailed && (
             <TagGroup
@@ -205,7 +198,6 @@ export const BookmarkCard = ({
             />
           )}
 
-          {/* AI Completed Indicator */}
           {!isPending && !isFailed && !isCrawlFailed && summary && (
             <div
               className="bg-brand-primary/10 text-brand-primary flex h-8 w-8 items-center justify-center rounded-xl shadow-sm"

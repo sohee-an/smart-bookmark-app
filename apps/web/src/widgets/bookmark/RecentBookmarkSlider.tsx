@@ -43,7 +43,7 @@ export const RecentBookmarkSlider = ({
                 key={i}
                 className="w-[85vw] flex-none overflow-hidden rounded-[2.5rem] border border-zinc-100 bg-white shadow-sm sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)] dark:border-zinc-800 dark:bg-zinc-900"
               >
-                <div className="aspect-[16/10] w-full animate-pulse bg-zinc-100 dark:bg-zinc-800" />
+                <div className="aspect-[1.91/1] w-full animate-pulse bg-zinc-100 dark:bg-zinc-800" />
                 <div className="flex flex-col gap-3 p-6">
                   <div className="h-5 w-3/4 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
                   <div className="h-3 w-full animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
@@ -63,7 +63,6 @@ export const RecentBookmarkSlider = ({
   return (
     <section className="w-full py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl dark:text-white">
@@ -87,7 +86,6 @@ export const RecentBookmarkSlider = ({
           )}
         </div>
 
-        {/* Slider Container */}
         <div className="relative -mx-4 sm:mx-0">
           <div
             className="flex w-full snap-x snap-mandatory gap-5 overflow-x-auto px-4 pt-4 pb-8 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

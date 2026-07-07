@@ -119,15 +119,12 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      {/* Backdrop */}
       <div
         className="animate-in fade-in absolute inset-0 bg-zinc-950/60 backdrop-blur-sm transition-opacity duration-300"
         onClick={handleClose}
       />
 
-      {/* Modal Container */}
       <div className="animate-in zoom-in-95 fade-in relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-2xl duration-300 dark:bg-zinc-900">
-        {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
@@ -158,7 +155,6 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
           </button>
         </div>
 
-        {/* 한도 초과 UI */}
         {isLimitReached ? (
           <div className="space-y-4">
             <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
@@ -210,7 +206,6 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
               className="w-full"
             />
 
-            {/* Footer Actions */}
             <div className="mt-8 flex gap-3">
               <button
                 type="button"

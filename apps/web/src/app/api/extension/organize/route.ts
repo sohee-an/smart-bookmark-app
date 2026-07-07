@@ -51,9 +51,7 @@ async function classifyChunk(
       let domain = item.url;
       try {
         domain = new URL(item.url).hostname.replace(/^www\./, "");
-      } catch {
-        // URL 파싱 실패시 기본값 유지
-      }
+      } catch {}
       const title = (item.title || "(없음)").slice(0, 40);
       return `${i + 1}. ${title} | ${domain}`;
     })
@@ -92,7 +90,6 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  // 1. 인증
   const auth = await getUserFromBearer(request.headers.get("Authorization"));
   if (!auth) {
     return NextResponse.json(
@@ -110,7 +107,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 2. 아이템 수 제한
   if (items.length > MAX_ITEMS) {
     await sendErrorAlert({
       userEmail: user.email ?? "unknown",
@@ -155,7 +151,6 @@ export async function POST(request: Request) {
     }
   }
 
-  // 4. Gemini로 카테고리 분류 (청크 병렬 처리)
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const chunks: Item[][] = [];
@@ -197,7 +192,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. 사용 기록 저장
   await supabase.from("feature_usage").insert({ user_id: user.id, feature: FEATURE_KEY });
 
   return NextResponse.json({ success: true, categories }, { headers: CORS_HEADERS });

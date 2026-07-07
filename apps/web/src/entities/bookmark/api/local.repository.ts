@@ -65,7 +65,6 @@ export class LocalRepository implements BookmarkRepository {
 
     this.storageProvider.set(GUEST_KEY, [newRow, ...currentRows]);
 
-    // BookmarkRow → Bookmark 변환 후 반환
     return toBookmark(newRow);
   }
 
@@ -75,7 +74,6 @@ export class LocalRepository implements BookmarkRepository {
   async findAll(): Promise<Bookmark[]> {
     const rows = this.getRows();
 
-    // BookmarkRow[] → Bookmark[] 변환
     return rows.map(toBookmark);
   }
 
