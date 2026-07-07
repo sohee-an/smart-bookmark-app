@@ -70,7 +70,7 @@
 - `BookmarkList` (48개 초과 시 가상 스크롤 전환) → `apps/web/src/features/bookmark/ui/BookmarkList.tsx`
 - `VirtualBookmarkGrid` (window 가상 스크롤·반응형 그리드·동적 측정) → `apps/web/src/features/bookmark/ui/VirtualBookmarkGrid.tsx`
 - `makeFakeBookmarks` (성능 데모용 가짜 데이터 팩토리) → `apps/web/src/features/bookmark/lib/fakeBookmarks.ts`
-- 공개 성능 데모 라우트 (`/demo?count=N&virtual=off`) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
+- 성능 데모 라우트 (`/demo?count=N&virtual=off`, **로컬 전용** — 프로덕션 404) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
   - **결정 문서**: `docs/decisions/025-리스트-가상화-렌더성능.md`
 
 ## 컬렉션 (북마크 폴더, 공유)
