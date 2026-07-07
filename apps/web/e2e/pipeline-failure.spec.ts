@@ -241,12 +241,12 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
 });
 
 test.describe("비회원 저장 한도", () => {
-  test("비회원 10개 제한 → 한도 초과 UI 표시", async ({ page }) => {
+  test("비회원 저장 한도(20개) 초과 → 한도 초과 UI 표시", async ({ page }) => {
     await page
       .context()
       .addCookies([{ name: "is_guest", value: "true", domain: "localhost", path: "/" }]);
 
-    // localStorage에 북마크 10개 미리 채우기
+    // localStorage에 한도(GUEST_BOOKMARK_LIMIT=20)만큼 미리 채우기
     await page.goto("/");
     await page.evaluate((limit) => {
       const bookmarks = Array.from({ length: limit }, (_, i) => ({
@@ -262,7 +262,7 @@ test.describe("비회원 저장 한도", () => {
         updatedAt: new Date().toISOString(),
       }));
       localStorage.setItem("GUEST_BOOKMARK", JSON.stringify(bookmarks));
-    }, 10);
+    }, 20);
 
     // 페이지 새로고침으로 localStorage 반영
     await page.reload();
