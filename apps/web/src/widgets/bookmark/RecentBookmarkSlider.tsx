@@ -10,6 +10,9 @@ interface RecentBookmarkSliderProps {
   onBookmarkClick?: (bookmark: Bookmark) => void;
   onTagClick?: (tag: string) => void;
   onViewAll?: () => void;
+  // 방금 저장한(=최근) 카드가 이 슬라이더에 뜨므로, 실패 시 재시도가 여기서 가능해야 한다
+  onRetry?: (bookmark: Bookmark) => void;
+  getRetryExhausted?: (id: string) => boolean;
 }
 
 /**
@@ -23,6 +26,8 @@ export const RecentBookmarkSlider = ({
   onBookmarkClick,
   onTagClick,
   onViewAll,
+  onRetry,
+  getRetryExhausted,
 }: RecentBookmarkSliderProps) => {
   if (isLoading) {
     return (
@@ -97,6 +102,8 @@ export const RecentBookmarkSlider = ({
                   bookmark={bookmark}
                   onClick={onBookmarkClick}
                   onTagClick={onTagClick}
+                  onRetry={onRetry}
+                  retryExhausted={getRetryExhausted?.(bookmark.id)}
                 />
               </div>
             ))}

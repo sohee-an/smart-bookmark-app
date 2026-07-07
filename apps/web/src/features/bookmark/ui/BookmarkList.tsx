@@ -1,6 +1,10 @@
 import { Bookmark as BookmarkIcon, Plus } from "lucide-react";
 import { BookmarkCard } from "@/entities/bookmark/ui/BookmarkCard";
+import { VirtualBookmarkGrid } from "./VirtualBookmarkGrid";
 import type { Bookmark } from "@/entities/bookmark/model/types";
+
+// 이 수를 넘으면 가상 스크롤로 전환 (작은 리스트는 가상화 오버헤드가 오히려 손해)
+const VIRTUALIZE_THRESHOLD = 48;
 
 interface BookmarkListProps {
   bookmarks: Bookmark[];
@@ -60,6 +64,19 @@ export const BookmarkList = ({
           </button>
         )}
       </div>
+    );
+  }
+
+  // 대량 리스트는 가상 스크롤 — DOM 노드 수를 일정하게 유지해 렌더/스크롤 성능 확보
+  if (bookmarks.length > VIRTUALIZE_THRESHOLD) {
+    return (
+      <VirtualBookmarkGrid
+        bookmarks={bookmarks}
+        onBookmarkClick={onBookmarkClick}
+        onTagClick={onTagClick}
+        onRetry={onRetry}
+        getRetryExhausted={getRetryExhausted}
+      />
     );
   }
 

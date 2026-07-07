@@ -50,13 +50,13 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <h1 className="mb-8 text-5xl leading-[1.1] font-black tracking-tight text-zinc-900 md:text-7xl dark:text-white">
+          <h1 className="mb-8 text-4xl leading-[1.1] font-black tracking-tight text-zinc-900 sm:text-5xl md:text-7xl dark:text-white">
             수많은 링크 속에서
             <br />
             <span className="text-gradient">진짜 가치</span>를 찾아내세요
           </h1>
 
-          <p className="mx-auto mb-12 max-w-2xl text-xl leading-relaxed text-zinc-600 dark:text-zinc-400">
+          <p className="mx-auto mb-12 max-w-2xl text-base leading-relaxed text-zinc-600 sm:text-xl dark:text-zinc-400">
             단순한 링크 저장을 넘어, AI가 내용을 요약하고 최적의 태그를 추천합니다. 제목이 기억 안
             나도 괜찮아요. 의미만 알아도 관련된 북마크를 찾아드려요.
           </p>
@@ -64,12 +64,12 @@ export default function LandingPage() {
           {/* 인터랙티브 버튼만 Client Component */}
           <LandingActions />
 
-          <div className="mt-16 flex items-center justify-center gap-8 text-sm font-medium text-zinc-500 dark:text-zinc-500">
+          <div className="mt-16 flex flex-col items-center justify-center gap-4 text-sm font-medium text-zinc-500 sm:flex-row sm:gap-8 dark:text-zinc-500">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               안전한 데이터 보관
             </div>
-            <div className="h-1 w-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+            <div className="hidden h-1 w-1 rounded-full bg-zinc-300 sm:block dark:bg-zinc-700" />
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               실시간 AI 분석
@@ -77,7 +77,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="grid gap-8 pb-32 md:grid-cols-3">
+        <section className="grid gap-8 pb-32 sm:grid-cols-2 md:grid-cols-3">
           {[
             {
               title: "스마트 AI 요약",
@@ -115,7 +115,7 @@ export default function LandingPage() {
 
         {/* 익스텐션 섹션 */}
         <section className="pb-32">
-          <div className="from-brand-primary/5 to-brand-accent/5 dark:from-brand-primary/10 dark:to-brand-accent/10 relative overflow-hidden rounded-3xl border border-zinc-100 bg-gradient-to-br via-white p-12 dark:border-zinc-800 dark:via-zinc-900">
+          <div className="from-brand-primary/5 to-brand-accent/5 dark:from-brand-primary/10 dark:to-brand-accent/10 relative overflow-hidden rounded-3xl border border-zinc-100 bg-gradient-to-br via-white p-6 sm:p-8 md:p-12 dark:border-zinc-800 dark:via-zinc-900">
             <div className="bg-brand-primary/10 pointer-events-none absolute top-0 right-0 -z-0 h-64 w-64 translate-x-1/3 -translate-y-1/3 rounded-full blur-3xl" />
 
             <div className="relative flex flex-col items-start gap-10 md:flex-row md:items-center">
@@ -126,7 +126,7 @@ export default function LandingPage() {
                     Chrome Extension
                   </span>
                 </div>
-                <h2 className="mb-4 text-3xl font-black tracking-tight text-zinc-900 md:text-4xl dark:text-white">
+                <h2 className="mb-4 text-2xl font-black tracking-tight text-zinc-900 sm:text-3xl md:text-4xl dark:text-white">
                   브라우징 중에도
                   <br />
                   <span className="text-gradient">원클릭으로 저장</span>

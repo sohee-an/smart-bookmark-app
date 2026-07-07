@@ -35,20 +35,22 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
   const summary = aiData.summary ?? "";
   const tags: string[] = aiData.tags ?? [];
 
-  // 태그 저장 — 태그별 순차 왕복(2N) 대신 배치 upsert 2회로 처리
+  // 태그 저장 — 배치 처리. 충돌 시 DO NOTHING(ignoreDuplicates): DO UPDATE 경로는
+  // tags에 UPDATE RLS 정책이 없어 저장 전체가 실패한다. (DO NOTHING은 기존 행 id를
+  // 반환하지 않으므로 이름으로 일괄 재조회)
   if (tags.length > 0) {
-    const { data: tagRows } = await supabase
-      .from("tags")
-      .upsert(
-        tags.map((name) => ({ name })),
-        { onConflict: "name" }
-      )
-      .select("id");
+    await supabase.from("tags").upsert(
+      tags.map((name) => ({ name })),
+      { onConflict: "name", ignoreDuplicates: true }
+    );
+
+    const { data: tagRows } = await supabase.from("tags").select("id").in("name", tags);
 
     if (tagRows && tagRows.length > 0) {
-      await supabase
-        .from("bookmark_tags")
-        .upsert(tagRows.map((t) => ({ bookmark_id: bookmarkId, tag_id: t.id })));
+      await supabase.from("bookmark_tags").upsert(
+        tagRows.map((t) => ({ bookmark_id: bookmarkId, tag_id: t.id })),
+        { ignoreDuplicates: true }
+      );
     }
   }
 
@@ -62,9 +64,13 @@ export async function runPipeline(supabase: SupabaseClient, bookmarkId: string, 
         taskType: TaskType.RETRIEVAL_DOCUMENT,
         outputDimensionality: 3072,
       } as Parameters<typeof embeddingModel.embedContent>[0]);
+      // onConflict를 bookmark_id(unique)로 명시 — 재저장 시 갱신 경로는 migration 006 정책 필요
       await supabase
         .from("embeddings")
-        .upsert({ bookmark_id: bookmarkId, embedding: embeddingResult.embedding.values });
+        .upsert(
+          { bookmark_id: bookmarkId, embedding: embeddingResult.embedding.values },
+          { onConflict: "bookmark_id" }
+        );
     }
   } catch (e) {
     console.error("[Pipeline] 임베딩 오류:", e);

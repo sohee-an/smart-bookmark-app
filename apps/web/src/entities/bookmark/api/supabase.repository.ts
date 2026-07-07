@@ -149,6 +149,7 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
     if (data.summary !== undefined) updateFields.summary = data.summary;
     if (data.aiStatus !== undefined) updateFields.ai_status = data.aiStatus;
     if (data.status !== undefined) updateFields.status = data.status;
+    if (data.thumbnailUrl !== undefined) updateFields.thumbnail_url = data.thumbnailUrl;
 
     // user_id 필터로 타인 소유 북마크 수정(IDOR) 차단.
     // .select()로 실제 갱신된 행을 받아, 소유하지 않으면(0행) 태그 교체까지 막는다.
@@ -204,9 +205,11 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
    * @description 임베딩 벡터를 embeddings 테이블에 저장합니다
    */
   async saveEmbedding(bookmarkId: string, embedding: number[]): Promise<void> {
+    // onConflict를 bookmark_id(unique)로 명시 — 기본값(PK id)은 매번 새 id로 insert를 시도해
+    // 재저장 시 충돌이 해소되지 않는다. 갱신 경로는 소유자 한정 UPDATE 정책(migration 006) 필요.
     const { error } = await supabase
       .from("embeddings")
-      .upsert({ bookmark_id: bookmarkId, embedding });
+      .upsert({ bookmark_id: bookmarkId, embedding }, { onConflict: "bookmark_id" });
 
     if (error) {
       throw new BookmarkError(
@@ -218,25 +221,49 @@ export class SupabaseBookmarkRepository implements BookmarkRepository {
   }
 
   /**
-   * @description 태그 이름 목록을 tags 테이블에 upsert하고 bookmark_tags에 연결합니다
+   * @description 태그 이름 목록을 tags 테이블에 생성(없는 것만)하고 bookmark_tags에 연결합니다.
+   * 충돌 시 DO NOTHING(ignoreDuplicates) — DO UPDATE 경로는 tags에 UPDATE RLS 정책이 없어
+   * "row-level security policy (USING expression)" 위반으로 저장 전체가 실패한다.
    */
   async insertTags(bookmarkId: string, tagNames: string[]): Promise<void> {
-    for (const name of tagNames) {
-      const { data: tag, error: upsertError } = await supabase
-        .from("tags")
-        .upsert({ name }, { onConflict: "name" })
-        .select("id")
-        .single();
+    const { error: upsertError } = await supabase.from("tags").upsert(
+      tagNames.map((name) => ({ name })),
+      { onConflict: "name", ignoreDuplicates: true }
+    );
 
-      if (upsertError || !tag) {
-        throw new BookmarkError(
-          BookmarkErrorCode.TAG_INSERT_FAILED,
-          `태그 추가 실패: ${upsertError?.message ?? "태그 생성 결과가 없습니다."}`,
-          upsertError
-        );
-      }
+    if (upsertError) {
+      throw new BookmarkError(
+        BookmarkErrorCode.TAG_INSERT_FAILED,
+        `태그 추가 실패: ${upsertError.message}`,
+        upsertError
+      );
+    }
 
-      await supabase.from("bookmark_tags").upsert({ bookmark_id: bookmarkId, tag_id: tag.id });
+    // DO NOTHING은 기존 행을 반환하지 않으므로 이름으로 id를 일괄 조회
+    const { data: tagRows, error: selectError } = await supabase
+      .from("tags")
+      .select("id")
+      .in("name", tagNames);
+
+    if (selectError || !tagRows || tagRows.length === 0) {
+      throw new BookmarkError(
+        BookmarkErrorCode.TAG_INSERT_FAILED,
+        `태그 조회 실패: ${selectError?.message ?? "태그 조회 결과가 없습니다."}`,
+        selectError
+      );
+    }
+
+    const { error: linkError } = await supabase.from("bookmark_tags").upsert(
+      tagRows.map((t) => ({ bookmark_id: bookmarkId, tag_id: t.id })),
+      { ignoreDuplicates: true }
+    );
+
+    if (linkError) {
+      throw new BookmarkError(
+        BookmarkErrorCode.TAG_INSERT_FAILED,
+        `태그 연결 실패: ${linkError.message}`,
+        linkError
+      );
     }
   }
 

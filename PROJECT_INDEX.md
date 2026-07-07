@@ -67,6 +67,11 @@
 - `AddBookmarkOverlay` (URL + 메모 입력 모달) → `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx`
 - `RecentBookmarkSlider` → `apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx`
 - `HomeContent` (메인 페이지 전체 콘텐츠) → `apps/web/src/widgets/home/ui/HomeContent.tsx`
+- `BookmarkList` (48개 초과 시 가상 스크롤 전환) → `apps/web/src/features/bookmark/ui/BookmarkList.tsx`
+- `VirtualBookmarkGrid` (window 가상 스크롤·반응형 그리드·동적 측정) → `apps/web/src/features/bookmark/ui/VirtualBookmarkGrid.tsx`
+- `makeFakeBookmarks` (성능 데모용 가짜 데이터 팩토리) → `apps/web/src/features/bookmark/lib/fakeBookmarks.ts`
+- 공개 성능 데모 라우트 (`/demo?count=N&virtual=off`) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
+  - **결정 문서**: `docs/decisions/025-리스트-가상화-렌더성능.md`
 
 ## 컬렉션 (북마크 폴더, 공유)
 
@@ -190,10 +195,11 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 
 ### 구현 결정 기록 (docs/decisions/)
 
-| 문서                                                  | 내용                                                                                       |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `docs/decisions/2026-06-07-ios-input-auto-zoom.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                       |
-| `docs/decisions/2026-06-07-webfont-dynamic-subset.md` | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함 |
+| 문서                                             | 내용                                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `docs/decisions/026-iOS-input-자동줌-대응.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                                  |
+| `docs/decisions/027-웹폰트-동적-서브셋-실측.md`  | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함            |
+| `docs/decisions/028-RLS-스키마-드리프트-추적.md` | RLS 드리프트 포스트모템 — upsert×RLS 회귀, pg_policies 실측, update 타입 필드 누락까지 전체 체인 추적 |
 
 ### 개인 학습/포폴 (docs/personal/)
 
