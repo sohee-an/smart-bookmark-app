@@ -200,6 +200,7 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 | `docs/decisions/026-iOS-input-자동줌-대응.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                                  |
 | `docs/decisions/027-웹폰트-동적-서브셋-실측.md`  | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함            |
 | `docs/decisions/028-RLS-스키마-드리프트-추적.md` | RLS 드리프트 포스트모템 — upsert×RLS 회귀, pg_policies 실측, update 타입 필드 누락까지 전체 체인 추적 |
+| `docs/decisions/030-vercel-함수-리전-정렬.md`    | Vercel 함수 리전 iad1→icn1 정렬 — x-vercel-id 진단, TTFB 300ms→130ms 실측                             |
 
 ### 개인 학습/포폴 (docs/personal/)
 
