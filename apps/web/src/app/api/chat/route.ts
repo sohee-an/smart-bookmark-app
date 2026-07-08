@@ -2,6 +2,7 @@ import { GoogleGenerativeAI, TaskType } from "@google/generative-ai";
 import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "@/shared/api/supabase/server";
 import { rateLimit, getClientIp } from "@/shared/lib/rateLimit";
+import { GUEST_COOKIE } from "@/shared/lib/guestCookie";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   const cookieStore = await cookies();
-  const isGuest = cookieStore.get("is_guest")?.value === "true";
+  const isGuest = cookieStore.get(GUEST_COOKIE)?.value === "true";
 
   if (!user && !isGuest) {
     return Response.json({ success: false, message: "로그인이 필요합니다." }, { status: 401 });

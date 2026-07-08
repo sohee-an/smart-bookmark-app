@@ -15,7 +15,6 @@ import {
 } from "@/features/bookmark/model/queries";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
-import storage from "@/shared/lib/storage";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { toast } from "@/shared/lib/toast";
 import type { Bookmark } from "@/entities/bookmark/model/types";
@@ -33,7 +32,8 @@ function buildBookmarksUrl(tags: string[], q?: string): string {
   return `/bookmarks${qs ? `?${qs}` : ""}`;
 }
 
-export function BookmarksContent() {
+// isGuest는 서버(page)에서 판정해 내려받는다 — 클라이언트 재판정 금지
+export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
@@ -44,25 +44,12 @@ export function BookmarksContent() {
   const [semanticExact, setSemanticExact] = useState<SemanticBookmark[]>([]);
   const [semanticRelated, setSemanticRelated] = useState<SemanticBookmark[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [showGuestBanner, setShowGuestBanner] = useState(false);
+  const [showGuestBanner, setShowGuestBanner] = useState(isGuest);
 
   const query = searchParams.get("q") ?? "";
   const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
-
-  useEffect(() => {
-    const check = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const guest = !user && storage.cookie.get("is_guest") === "true";
-      setIsGuest(guest);
-      if (guest) setShowGuestBanner(true);
-    };
-    check();
-  }, []);
 
   useEffect(() => {
     if (!query.trim()) return;

@@ -1,6 +1,7 @@
 ---
-description: 구조 기획 및 코드 설계를 공격적 비평가 시점으로 리뷰한다. FSD 레이어, 타입 안전성, 보안, UX 완성도를 분석한다.
-allowed-tools: Read, Grep, Glob, Bash
+name: code-review
+description: 구조 기획 및 코드 설계를 공격적 비평가 시점으로 리뷰한다. FSD 레이어, 타입 안전성, 보안, UX 완성도를 분석한다. "리뷰해줘", "코드리뷰" 요청 시 자동 호출.
+tools: Read, Grep, Glob, Bash, Write
 ---
 
 ## 페르소나
