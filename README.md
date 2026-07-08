@@ -465,13 +465,36 @@ gitGraph
 
 **흐름**: `feature/*` → `dev` (개발 통합·검증) → `main` (배포)
 
-`main`, `dev` PR 시 GitHub Actions CI가 자동 실행된다.
+`main`, `dev` PR 시 GitHub Actions CI가 자동 실행된다. 아래 체크는 병렬 실행되며, branch protection의 required status check로 지정돼 **전부 통과해야 머지 버튼이 활성화**된다.
 
-- **Lint** (`pnpm lint`) — ESLint 규칙 검사
-- **Typecheck** (`pnpm typecheck`) — TypeScript strict 모드 검사
+- **Lint & Typecheck** — ESLint 규칙 + TypeScript strict 검사
+- **Unit & Integration Tests** — Vitest 단위/통합 테스트 + 커버리지 리포트(PR 코멘트)
+- **Build** — 프로덕션 빌드 성공 검증
+- **E2E** — Playwright, `main` 진입 PR에서만 실행(브라우저 설치 비용·속도 고려)
 
 `dev` PR 체크리스트: 레이어 의존성 준수 · 타입 에러 · 린트 · console.log 제거
 `main` PR 체크리스트: dev 충분 테스트 · CI 전부 통과 · 환경변수 · DB 마이그레이션 확인
+
+### PR 자동화 — `git ship`
+
+`dev`는 직접 push가 막혀 있어(branch protection `enforce_admins`) **관리자 계정도 PR로만 진입**한다. 혼자 개발할 때 매번 반복되는 "브랜치 생성 → push → PR → CI 대기 → 머지 → 동기화" 왕복을 한 줄로 감싼 [`git ship`](./scripts/ship.sh)으로 자동화했다.
+
+```bash
+git ship "feat: 북마크 태그 편집"      # feature 브랜치 → dev PR (기본)
+git ship "fix: 크롤링 타임아웃" main    # main PR
+SHIP_NO_MERGE=1 git ship "wip: 확인용"  # PR만 생성, 머지는 수동
+```
+
+한 줄이 자동으로 처리하는 것:
+
+```
+변경 감지 → feature 브랜치 생성(현재 dev/main이면 자동 분기)
+  → 커밋 → push → PR 생성
+  → required check(lint · typecheck · test · build) 통과 대기
+  → squash 머지 → 원격·로컬 브랜치 삭제 → base 브랜치 fast-forward 동기화
+```
+
+CI가 하나라도 실패하면 **머지하지 않고 중단**한다. 게이트를 *우회*하는 게 아니라 게이트를 *지키는 왕복*을 자동화한 것 — 깨진 코드는 여전히 `dev`에 들어갈 수 없다.
 
 ---
 
