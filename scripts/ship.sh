@@ -32,10 +32,12 @@ CUR="$(git branch --show-current)"
 # base 브랜치(dev/main) 위에서 시작했으면 변경을 새 feature 브랜치로 옮긴다.
 # (git switch -c 는 커밋 안 된 변경을 새 브랜치로 그대로 데려간다)
 if [ "$CUR" = "dev" ] || [ "$CUR" = "main" ]; then
+  # 슬러그는 ASCII만 남긴다 — 한글은 바이트 중간에서 잘리면 브랜치명이 깨지므로 제외.
+  # 전부 한글이면 SLUG가 비고, 아래 fallback으로 "change"가 된다.
   SLUG="$(printf '%s' "$MSG" \
     | tr '[:upper:]' '[:lower:]' \
-    | sed -E 's/[^a-z0-9가-힣]+/-/g; s/^-+//; s/-+$//' \
-    | cut -c1-40)"
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
+    | cut -c1-40 | sed -E 's/-+$//')"
   [ -z "$SLUG" ] && SLUG="change"
   BRANCH="ship/${SLUG}-$(date +%m%d-%H%M)"
   git switch -c "$BRANCH"
