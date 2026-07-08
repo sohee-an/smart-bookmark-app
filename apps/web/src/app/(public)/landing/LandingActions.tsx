@@ -3,13 +3,16 @@
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import storage from "@/shared/lib/storage";
+import { GUEST_COOKIE } from "@/shared/lib/guestCookie";
 
 export function LandingActions() {
   const router = useRouter();
 
   const handleStartAsGuest = () => {
-    storage.cookie.set("is_guest", "true", 7);
+    storage.cookie.set(GUEST_COOKIE, "true", 7);
     router.push("/");
+    // 쿠키 변이 후 refresh — 라우터 캐시에 남은 서버 스냅샷(게스트 판정)을 무효화
+    router.refresh();
   };
 
   return (

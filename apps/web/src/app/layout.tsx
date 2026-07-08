@@ -1,6 +1,5 @@
 import { OverlayProvider } from "@/shared/lib/overlay/OverlayProvider";
 import { QueryProvider } from "@/shared/lib/QueryProvider";
-import { AuthProvider } from "@/shared/lib/AuthProvider";
 import { Toaster } from "@/shared/ui/Toaster";
 // Pretendard 동적 서브셋: unicode-range로 쪼개진 @font-face 수백 개 —
 // 페이지에 실제 등장한 글자가 속한 조각(woff2)만 다운로드됨
@@ -54,14 +53,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ko" style={{ colorScheme: "dark light" }}>
       <body className="antialiased">
         <QueryProvider>
-          <AuthProvider>
-            <OverlayProvider>
-              {children}
-              <Toaster />
-              <Analytics />
-              <SpeedInsights />
-            </OverlayProvider>
-          </AuthProvider>
+          <OverlayProvider>
+            {children}
+            <Toaster />
+            <Analytics />
+            <SpeedInsights />
+          </OverlayProvider>
         </QueryProvider>
       </body>
     </html>

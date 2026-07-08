@@ -10,8 +10,6 @@ import {
   GUEST_CHAT_DAILY_LIMIT,
 } from "../model/guestChatLimit";
 import { useBookmarks } from "@/features/bookmark/model/queries";
-import { supabase } from "@/shared/api/supabase/client";
-import storage from "@/shared/lib/storage";
 import { toast } from "@/shared/lib/toast";
 import { Markdown } from "./Markdown";
 
@@ -22,22 +20,19 @@ const EXAMPLES = [
   "안 읽은 것 중에 뭐부터 볼까?",
 ];
 
-export function ChatContent() {
+// isGuest는 서버(page)에서 판정해 내려받는다 — 클라이언트 재판정 금지
+export function ChatContent({ isGuest }: { isGuest: boolean }) {
   const router = useRouter();
   const { messages, isStreaming, send, stop } = useBookmarkChat();
   const [input, setInput] = useState("");
 
   const { data: bookmarks = [] } = useBookmarks();
-  const [isGuest, setIsGuest] = useState(false);
   const [remaining, setRemaining] = useState(GUEST_CHAT_DAILY_LIMIT);
 
+  // localStorage는 SSR에 없으므로 남은 횟수 읽기는 effect에 남긴다 (hydration 불일치 방지)
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      const guest = !user && storage.cookie.get("is_guest") === "true";
-      setIsGuest(guest);
-      if (guest) setRemaining(getGuestChatRemaining());
-    });
-  }, []);
+    if (isGuest) setRemaining(getGuestChatRemaining());
+  }, [isGuest]);
 
   const guestBookmarks = useMemo(
     () =>

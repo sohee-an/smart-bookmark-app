@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { GUEST_COOKIE } from "@/shared/lib/guestCookie";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -59,7 +60,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isGuest = request.cookies.get("is_guest")?.value === "true";
+  const isGuest = request.cookies.get(GUEST_COOKIE)?.value === "true";
 
   const isAuth = !!user || isGuest;
   const { pathname } = request.nextUrl;

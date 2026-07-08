@@ -1,13 +1,18 @@
 name: CI
 
+# dev는 직접 push 금지(브랜치 보호 enforce_admins) → 진입은 PR로만.
+# 따라서 CI는 PR에서만 돌린다. PR은 up-to-date(strict) 병합 프리뷰를 검증하므로
+# 머지 후 재실행(on.push)은 중복이라 두지 않는다.
 on:
-  push:
-    branches:
-      - dev
   pull_request:
     branches:
       - main
       - dev
+
+# 같은 ref에 새 커밋이 push되면 진행 중인 옛 CI run은 취소한다(자원 낭비 방지).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:

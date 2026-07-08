@@ -15,7 +15,6 @@ import {
 } from "@/features/bookmark/model/queries";
 import { useBookmarkStore } from "@/entities/bookmark/model/useBookmarkStore";
 import { supabase } from "@/shared/api/supabase/client";
-import storage from "@/shared/lib/storage";
 import { ErrorState } from "@/shared/ui/ErrorState";
 import { toast } from "@/shared/lib/toast";
 import type { Bookmark } from "@/entities/bookmark/model/types";
@@ -33,7 +32,8 @@ function buildBookmarksUrl(tags: string[], q?: string): string {
   return `/bookmarks${qs ? `?${qs}` : ""}`;
 }
 
-export function BookmarksContent() {
+// isGuest는 서버(page)에서 판정해 내려받는다 — 클라이언트 재판정 금지
+export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedBookmarkId, setSelectedBookmarkId } = useBookmarkStore();
@@ -44,25 +44,12 @@ export function BookmarksContent() {
   const [semanticExact, setSemanticExact] = useState<SemanticBookmark[]>([]);
   const [semanticRelated, setSemanticRelated] = useState<SemanticBookmark[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [showGuestBanner, setShowGuestBanner] = useState(false);
+  const [showGuestBanner, setShowGuestBanner] = useState(isGuest);
 
   const query = searchParams.get("q") ?? "";
   const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
-
-  useEffect(() => {
-    const check = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      const guest = !user && storage.cookie.get("is_guest") === "true";
-      setIsGuest(guest);
-      if (guest) setShowGuestBanner(true);
-    };
-    check();
-  }, []);
 
   useEffect(() => {
     if (!query.trim()) return;
@@ -71,12 +58,15 @@ export function BookmarksContent() {
     setSemanticRelated([]);
     setSemanticLoading(true);
 
+    const controller = new AbortController();
+
     const run = async () => {
       try {
+        // 게이트 용도라 로컬 세션 확인으로 충분 (네트워크 왕복 없음) — 실제 인증은 API Route가 getUser()로 검증
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
           setSemanticLoading(false);
           return;
         }
@@ -85,24 +75,28 @@ export function BookmarksContent() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query, tags: selectedTags }),
+          signal: controller.signal,
         });
         const json = await res.json();
 
         if (json.success) {
           setSemanticExact(json.data.exact);
           setSemanticRelated(json.data.related);
-        } else {
+        } else if (res.status !== 401) {
           toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.error("[SemanticSearch] 오류:", e);
         toast.show({ message: "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요." });
       } finally {
-        setSemanticLoading(false);
+        if (!controller.signal.aborted) setSemanticLoading(false);
       }
     };
 
     run();
+
+    return () => controller.abort();
   }, [query, selectedTags]);
 
   useEffect(() => {

@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState, FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { Input } from "@/shared/ui/input/Input";
 import { supabase } from "@/shared/api/supabase/client";
 import { Avatar } from "@/shared/ui/Avatar";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import storage from "@/shared/lib/storage";
+import { GUEST_COOKIE } from "@/shared/lib/guestCookie";
 import { SearchIcon, PlusIcon, LogOutIcon } from "@smart-bookmark/ui/icons";
 import { Folder, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -15,18 +17,21 @@ import { FilterBar } from "@/features/bookmark/ui/FilterBar";
 import { SearchDropdown } from "@/features/bookmark/ui/SearchDropdown";
 import { MobileSearchOverlay } from "@/features/bookmark/ui/MobileSearchOverlay";
 import { useBookmarks } from "@/features/bookmark/model/queries";
-import { useAuthStore } from "@/shared/model/useAuthStore";
 import { useRecentSearches } from "@/shared/lib/useRecentSearches";
 import type { User } from "@supabase/supabase-js";
 
-export const Header = ({ initialUser }: { initialUser: User | null }) => {
+export const Header = ({
+  user,
+  isGuest,
+}: {
+  // 서버(layout)에서 판정한 값을 그대로 신뢰한다 — 클라이언트에서 재판정하지 않는다
+  user: User | null;
+  isGuest: boolean;
+}) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, initialized } = useAuthStore();
 
-  // 클라이언트 인증 초기화 전엔 서버에서 받은 initialUser로 표시
-  const currentUser = initialized ? user : (initialUser ?? null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -163,20 +168,22 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
   const handleLogin = () => router.push("/login");
 
   const handleGuestLogin = () => {
-    storage.cookie.remove("is_guest");
+    storage.cookie.remove(GUEST_COOKIE);
     router.push("/login");
+    // 쿠키 변이 후 refresh — 라우터 캐시에 남은 서버 스냅샷(게스트 판정)을 무효화
+    router.refresh();
   };
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
-    storage.cookie.remove("is_guest");
+    storage.cookie.remove(GUEST_COOKIE);
     await supabase.auth.signOut();
     router.push("/landing");
+    router.refresh();
   };
 
-  const isGuest = initialized && !user && storage.cookie.get("is_guest") === "true";
-  const nickname = currentUser?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
+  const nickname = user?.email?.split("@")[0] || (isGuest ? "게스트" : "사용자");
   const isOnBookmarks = pathname === "/bookmarks";
 
   return (
@@ -246,7 +253,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
             <SearchIcon size={18} />
           </button>
 
-          {currentUser && (
+          {user && (
             <Link
               href="/collections"
               className={`hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all sm:flex ${
@@ -260,7 +267,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
             </Link>
           )}
 
-          {currentUser && (
+          {user && (
             <Link
               href="/chat"
               aria-label="대화"
@@ -277,6 +284,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
 
           <button
             type="button"
+            aria-label="북마크 추가"
             onClick={() =>
               overlay.open(({ isOpen, close }) => (
                 <AddBookmarkOverlay isOpen={isOpen} onClose={close} />
@@ -290,7 +298,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
 
           <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-          {currentUser || isGuest ? (
+          {user || isGuest ? (
             <div className="flex items-center gap-3">
               <div className="hidden flex-col items-end lg:flex">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -309,7 +317,7 @@ export const Header = ({ initialUser }: { initialUser: User | null }) => {
                   aria-label="사용자 메뉴"
                   className="flex cursor-pointer items-center rounded-full"
                 >
-                  <Avatar username={nickname} src={currentUser?.user_metadata?.avatar_url} />
+                  <Avatar username={nickname} src={user?.user_metadata?.avatar_url} />
                 </button>
                 {menuOpen && (
                   <div

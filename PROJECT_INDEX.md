@@ -97,6 +97,7 @@
 - 인증 미들웨어 (비회원→랜딩, 회원→메인) → `apps/web/src/middleware.ts`
 - Supabase 브라우저 클라이언트 (`supabase`) → `apps/web/src/shared/api/supabase/client.ts`
 - Supabase 서버 클라이언트 (`createSupabaseServerClient`) → `apps/web/src/shared/api/supabase/server.ts`
+- 서버 유저/게스트 판정 단일 소유자 (`getAuthState`, React cache) → `apps/web/src/shared/api/supabase/getAuthState.ts`
 - OAuth 콜백 처리 → `apps/web/src/app/api/auth/callback/route.ts` + `apps/web/src/app/auth/callback/page.tsx`
 - 익스텐션 토큰 발급 페이지 → `apps/web/src/app/auth/extension-token/page.tsx`
 - 익스텐션 인증 후 리디렉트 → `apps/web/src/app/auth/web-redirect/page.tsx`
@@ -132,6 +133,7 @@
 - `useClientNow` (SSR hydration 방지용 클라이언트 현재 시간 훅) → `apps/web/src/shared/lib/useClientNow.ts`
 - API 응답 표준 규격 `ApiResponse`, `ApiError`, `ErrorCode` → `apps/web/src/shared/lib/api-response.ts`
 - 비회원 익명 ID → `apps/web/src/shared/lib/guest.ts`
+- 게스트 쿠키 이름 상수 `GUEST_COOKIE` → `apps/web/src/shared/lib/guestCookie.ts`
 - localStorage + cookie 관리 → `apps/web/src/shared/lib/storage.ts`
 
 ## 모달/오버레이 시스템
@@ -148,7 +150,7 @@
 - `TagGroup` (태그 목록, 편집 모드 지원) → `apps/web/src/shared/ui/tag/Tag.tsx`
 - `TagPrimitive` (Headless) → `packages/ui/src/tag/tag.primitive.tsx`
 - `Avatar` → `apps/web/src/shared/ui/Avatar.tsx`
-- `Header` → `apps/web/src/components/layout/Header.tsx`
+- `Header` → `apps/web/src/widgets/layout/Header.tsx`
 
 ---
 
@@ -200,6 +202,8 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 | `docs/decisions/026-iOS-input-자동줌-대응.md`    | iOS Safari input 자동 줌 대응 — 대안 4개 비교, 모바일 16px 하한 채택                                  |
 | `docs/decisions/027-웹폰트-동적-서브셋-실측.md`  | Pretendard 도입 — 통파일(2,058kB) vs 동적 서브셋(457kB) 실측, 미들웨어 매처 버그 수정 포함            |
 | `docs/decisions/028-RLS-스키마-드리프트-추적.md` | RLS 드리프트 포스트모템 — upsert×RLS 회귀, pg_policies 실측, update 타입 필드 누락까지 전체 체인 추적 |
+| `docs/decisions/030-vercel-함수-리전-정렬.md`    | Vercel 함수 리전 iad1→icn1 정렬 — x-vercel-id 진단, TTFB 300ms→130ms 실측                             |
+| `docs/decisions/031-dev-PR게이트-우회-차단.md`   | required check가 admin 직접 push엔 안 통함 — enforce_admins로 PR 전용 게이팅 + git ship 자동화        |
 
 ### 개인 학습/포폴 (docs/personal/)
 

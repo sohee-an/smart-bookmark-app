@@ -1,10 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { loginAsGuest, addBookmarkModalTitle, retryButton, submitBookmark } from "./helpers";
 
 test.describe("파이프라인 실패 단계별 피드백", () => {
   test.beforeEach(async ({ page }) => {
-    await page
-      .context()
-      .addCookies([{ name: "is_guest", value: "true", domain: "localhost", path: "/" }]);
+    await loginAsGuest(page);
   });
 
   test("크롤링 실패 → 에러 카드 + 재시도 버튼 표시", async ({ page }) => {
@@ -25,18 +24,16 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
     await page.goto("/");
 
     // 북마크 저장
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://fail-crawl.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://fail-crawl.example.com");
 
     // 모달 닫히고 카드 표시
-    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(addBookmarkModalTitle(page)).not.toBeVisible();
 
     // 크롤링 실패 에러 메시지 표시
     await expect(page.getByText("URL을 불러오는데 실패했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 버튼 존재
-    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible({ timeout: 10000 });
+    await expect(retryButton(page)).toBeVisible({ timeout: 10000 });
   });
 
   test("AI 분석 실패 → 에러 카드 표시 (크롤링은 성공)", async ({ page }) => {
@@ -71,18 +68,16 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
 
     await page.goto("/");
 
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://ai-fail.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://ai-fail.example.com");
 
-    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(addBookmarkModalTitle(page)).not.toBeVisible();
 
     // 크롤링 성공 후 AI 분석 중 → 실패 전환
     // "AI 분석 중..." 로딩이 잠깐 보이고 나서 실패로 전환
     await expect(page.getByText("AI 요약에 실패했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 버튼 존재
-    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible({ timeout: 10000 });
+    await expect(retryButton(page)).toBeVisible({ timeout: 10000 });
   });
 
   test("크롤링 실패 → 재시도 → 성공 시 카드 정상 표시", async ({ page }) => {
@@ -144,14 +139,12 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
     await page.goto("/");
 
     // 저장 → 크롤링 실패
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://retry-test.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://retry-test.example.com");
 
     await expect(page.getByText("URL을 불러오는데 실패했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 클릭
-    await page.getByRole("button", { name: /다시 시도/i }).click();
+    await retryButton(page).click();
 
     // 재시도 성공 → AI 완료 → 요약 표시
     await expect(page.getByText("재시도 후 AI가 분석한 요약")).toBeVisible({ timeout: 10000 });
@@ -175,18 +168,15 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
     await page.goto("/");
 
     // 저장
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://always-fail.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://always-fail.example.com");
 
     // 크롤링 실패 대기
     await expect(page.getByText("URL을 불러오는데 실패했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 3회
     for (let i = 0; i < 3; i++) {
-      const retryButton = page.getByRole("button", { name: /다시 시도/i });
-      await expect(retryButton).toBeVisible({ timeout: 10000 });
-      await retryButton.click();
+      await expect(retryButton(page)).toBeVisible({ timeout: 10000 });
+      await retryButton(page).click();
       await expect(page.getByText("URL을 불러오는데 실패했어요.")).toBeVisible({ timeout: 10000 });
     }
 
@@ -194,7 +184,7 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
     await expect(page.getByText("재시도 횟수를 초과했어요.")).toBeVisible({ timeout: 10000 });
 
     // 재시도 버튼 사라짐
-    await expect(page.getByRole("button", { name: /다시 시도/i })).not.toBeVisible();
+    await expect(retryButton(page)).not.toBeVisible();
   });
 
   test("네트워크 에러 (fetch 실패) → 에러 카드 표시", async ({ page }) => {
@@ -203,15 +193,13 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
 
     await page.goto("/");
 
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://network-error.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://network-error.example.com");
 
-    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(addBookmarkModalTitle(page)).not.toBeVisible();
 
     // 네트워크 에러는 catch 블록 → aiStatus: "failed"
     await expect(page.getByText("AI 요약에 실패했어요.")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: /다시 시도/i })).toBeVisible({ timeout: 10000 });
+    await expect(retryButton(page)).toBeVisible({ timeout: 10000 });
   });
 
   test("진행중/실패 카드 클릭 시 상세 패널 열리지 않음", async ({ page }) => {
@@ -222,9 +210,7 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
 
     await page.goto("/");
 
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://pending.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://pending.example.com");
 
     // 크롤링 중 카드 표시
     await expect(page.getByText("크롤링 중...")).toBeVisible({ timeout: 10000 });
@@ -242,9 +228,7 @@ test.describe("파이프라인 실패 단계별 피드백", () => {
 
 test.describe("비회원 저장 한도", () => {
   test("비회원 저장 한도(20개) 초과 → 한도 초과 UI 표시", async ({ page }) => {
-    await page
-      .context()
-      .addCookies([{ name: "is_guest", value: "true", domain: "localhost", path: "/" }]);
+    await loginAsGuest(page);
 
     // localStorage에 한도(GUEST_BOOKMARK_LIMIT=20)만큼 미리 채우기
     await page.goto("/");
@@ -268,9 +252,7 @@ test.describe("비회원 저장 한도", () => {
     await page.reload();
 
     // 북마크 추가 시도
-    await page.getByRole("button", { name: /북마크 추가/i }).click();
-    await page.getByPlaceholder("https://example.com").fill("https://over-limit.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://over-limit.example.com");
 
     // 한도 초과 UI 표시
     await expect(page.getByText("무료 체험 한도 도달")).toBeVisible({ timeout: 10000 });

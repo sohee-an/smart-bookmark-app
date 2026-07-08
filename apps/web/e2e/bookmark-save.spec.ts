@@ -1,11 +1,17 @@
 import { test, expect } from "@playwright/test";
+import {
+  loginAsGuest,
+  addBookmarkButton,
+  bookmarkUrlInput,
+  saveBookmarkButton,
+  addBookmarkModalTitle,
+  submitBookmark,
+} from "./helpers";
 
 test.describe("북마크 저장 크리티컬 플로우", () => {
   test.beforeEach(async ({ page }) => {
     // 게스트로 메인 페이지 접근
-    await page
-      .context()
-      .addCookies([{ name: "is_guest", value: "true", domain: "localhost", path: "/" }]);
+    await loginAsGuest(page);
     await page.goto("/");
   });
 
@@ -45,51 +51,39 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     );
 
     // 1. 추가 버튼 클릭
-    const addButton = page.getByRole("button", { name: /북마크 추가/i });
-    await addButton.click();
+    await addBookmarkButton(page).click();
 
     // 2. 모달 열림 확인
-    await expect(page.getByText("새 북마크 추가")).toBeVisible();
+    await expect(addBookmarkModalTitle(page)).toBeVisible();
 
     // 3. URL 입력
-    const urlInput = page.getByPlaceholder("https://example.com");
-    await urlInput.fill("https://react.dev");
+    await bookmarkUrlInput(page).fill("https://react.dev");
 
     // 4. 저장 클릭
-    const saveButton = page.getByRole("button", { name: /북마크 저장/i });
-    await saveButton.click();
+    await saveBookmarkButton(page).click();
 
     // 5. 모달 닫힘
-    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(addBookmarkModalTitle(page)).not.toBeVisible();
 
     // 6. 카드 표시 (title이 표시됨)
     await expect(page.getByText("테스트 저장 페이지")).toBeVisible({ timeout: 10000 });
   });
 
   test("빈 URL 저장 시도 → 에러 메시지 표시", async ({ page }) => {
-    const addButton = page.getByRole("button", { name: /북마크 추가/i });
-    await addButton.click();
+    await addBookmarkButton(page).click();
 
     // URL 비운 채로 저장 시도
-    const saveButton = page.getByRole("button", { name: /북마크 저장/i });
-    await saveButton.click();
+    await saveBookmarkButton(page).click();
 
     // 모달이 닫히지 않고 에러 표시
-    await expect(page.getByText("새 북마크 추가")).toBeVisible();
+    await expect(addBookmarkModalTitle(page)).toBeVisible();
   });
 
   test("잘못된 URL 입력 → 에러 메시지 표시", async ({ page }) => {
-    const addButton = page.getByRole("button", { name: /북마크 추가/i });
-    await addButton.click();
-
-    const urlInput = page.getByPlaceholder("https://example.com");
-    await urlInput.fill("not-a-valid-url");
-
-    const saveButton = page.getByRole("button", { name: /북마크 저장/i });
-    await saveButton.click();
+    await submitBookmark(page, "not-a-valid-url");
 
     // 모달이 닫히지 않음 (에러 상태)
-    await expect(page.getByText("새 북마크 추가")).toBeVisible();
+    await expect(addBookmarkModalTitle(page)).toBeVisible();
   });
 
   test("저장 → 크롤링 중 → AI 분석 중 → 완료 (title/summary/tags 표시)", async ({ page }) => {
@@ -138,13 +132,10 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
     );
 
     // 1. 저장
-    const addButton = page.getByRole("button", { name: /북마크 추가/i });
-    await addButton.click();
-    await page.getByPlaceholder("https://example.com").fill("https://pipeline-test.example.com");
-    await page.getByRole("button", { name: /북마크 저장/i }).click();
+    await submitBookmark(page, "https://pipeline-test.example.com");
 
     // 2. 모달 닫히고 "크롤링 중..." 표시
-    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(addBookmarkModalTitle(page)).not.toBeVisible();
     await expect(page.getByText("크롤링 중...")).toBeVisible();
 
     // 3. 크롤링 완료 후 "AI 분석 중..." 전환
@@ -157,13 +148,12 @@ test.describe("북마크 저장 크리티컬 플로우", () => {
   });
 
   test("모달 ESC로 닫기", async ({ page }) => {
-    const addButton = page.getByRole("button", { name: /북마크 추가/i });
-    await addButton.click();
+    await addBookmarkButton(page).click();
 
-    await expect(page.getByText("새 북마크 추가")).toBeVisible();
+    await expect(addBookmarkModalTitle(page)).toBeVisible();
 
     await page.keyboard.press("Escape");
 
-    await expect(page.getByText("새 북마크 추가")).not.toBeVisible();
+    await expect(addBookmarkModalTitle(page)).not.toBeVisible();
   });
 });

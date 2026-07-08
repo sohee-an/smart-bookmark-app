@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getErrorMessage } from "@/shared/lib/error";
 import { analyzeBookmark } from "@/server/services/ai-analysis.service";
 import { rateLimit, getClientIp } from "@/shared/lib/rateLimit";
+import { GUEST_COOKIE } from "@/shared/lib/guestCookie";
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     const cookieStore = await cookies();
-    const isGuest = cookieStore.get("is_guest")?.value === "true";
+    const isGuest = cookieStore.get(GUEST_COOKIE)?.value === "true";
 
     if (!user && !isGuest) {
       return NextResponse.json({ success: false, message: "인증이 필요합니다." }, { status: 401 });
