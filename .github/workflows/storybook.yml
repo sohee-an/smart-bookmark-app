@@ -1,0 +1,58 @@
+name: Deploy Storybook
+
+# main에 컴포넌트/스토리 변경이 들어오면 Storybook을 빌드해 GitHub Pages에 게시한다.
+# 빌드 단계가 곧 "스토리 깨짐" CI 검증을 겸한다(빌드 실패 시 배포도 중단).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/src/**"
+      - "apps/web/.storybook/**"
+      - "apps/web/package.json"
+      - ".github/workflows/storybook.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Pages 배포는 동시에 하나만 — 새 배포가 진행 중 배포를 취소하지 않고 큐잉
+concurrency:
+  group: storybook-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Storybook
+    runs-on: ubuntu-latest
+    # 스토리가 컴포넌트를 통해 env를 읽는 모듈을 transitive import해도 죽지 않도록 placeholder 주입
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: placeholder-anon-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build Storybook
+        run: pnpm --filter @smart-bookmark/web build-storybook
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/storybook-static
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
