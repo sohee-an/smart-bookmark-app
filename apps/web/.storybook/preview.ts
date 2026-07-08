@@ -3,7 +3,7 @@ import "../src/styles/globals.css";
 
 const preview: Preview = {
   parameters: {
-    nextjs: { appDirectory: false }, // Pages Router
+    nextjs: { appDirectory: true }, // App Router (프로젝트 실제 라우터에 정렬)
     backgrounds: {
       default: "light",
       values: [
