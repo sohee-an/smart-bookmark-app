@@ -204,6 +204,7 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 | `docs/decisions/028-RLS-스키마-드리프트-추적.md` | RLS 드리프트 포스트모템 — upsert×RLS 회귀, pg_policies 실측, update 타입 필드 누락까지 전체 체인 추적 |
 | `docs/decisions/030-vercel-함수-리전-정렬.md`    | Vercel 함수 리전 iad1→icn1 정렬 — x-vercel-id 진단, TTFB 300ms→130ms 실측                             |
 | `docs/decisions/031-dev-PR게이트-우회-차단.md`   | required check가 admin 직접 push엔 안 통함 — enforce_admins로 PR 전용 게이팅 + git ship 자동화        |
+| `docs/decisions/032-Storybook-Pages-게시.md`     | Storybook을 GitHub Pages로 자동 게시 — GH Pages vs Chromatic/Vercel 비교, 빌드가 스토리 검증 겸함     |
 
 ### 개인 학습/포폴 (docs/personal/)
 
