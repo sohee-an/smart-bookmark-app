@@ -8,7 +8,7 @@
 
 | 기능              | 상태 | 비고                           |
 | ----------------- | ---- | ------------------------------ |
-| URL 저장 (비회원) | ✅   | localStorage, 5개 제한         |
+| URL 저장 (비회원) | ✅   | localStorage, 20개 제한        |
 | URL 저장 (회원)   | ✅   | Supabase                       |
 | 자동 크롤링       | ✅   | Cheerio, 3회 재시도            |
 | AI 요약           | ✅   | Gemini 2.5-flash               |
@@ -55,7 +55,7 @@ URL 입력
   → aiStatus: "completed"
 ```
 
-- 비회원: localStorage 저장 (5개 초과 시 차단)
+- 비회원: localStorage 저장 (20개 초과 시 차단)
 - 회원: Supabase 저장
 - 크롤링 실패는 `aiStatus: "crawl_failed"`, AI 분석 실패는 `aiStatus: "failed"`로 분리
 
