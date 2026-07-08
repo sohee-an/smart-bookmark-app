@@ -107,7 +107,7 @@ graph TD
 graph LR
   SVC["BookmarkService\n(Factory)"]
   IFACE["BookmarkRepository\n인터페이스"]
-  LOCAL["LocalRepository\nlocalStorage\n비회원 · 5개 제한"]
+  LOCAL["LocalRepository\nlocalStorage\n비회원 · 저장 20개 제한"]
   SUPA["SupabaseRepository\nSupabase · PostgreSQL\n회원"]
 
   SVC -->|"세션 없음"| LOCAL

@@ -39,14 +39,14 @@
 
 - `BookmarkService` (Factory, Local/Supabase 동적 선택) → `apps/web/src/features/bookmark/model/bookmark.service.ts`
 - `BookmarkRepository` 인터페이스 → `apps/web/src/entities/bookmark/api/bookmark.repository.ts`
-- `LocalRepository` (localStorage, 비회원 5개 제한) → `apps/web/src/entities/bookmark/api/local.repository.ts`
+- `LocalRepository` (localStorage, 비회원 20개 제한) → `apps/web/src/entities/bookmark/api/local.repository.ts`
 - `SupabaseBookmarkRepository` (회원) → `apps/web/src/entities/bookmark/api/supabase.repository.ts`
 - `BookmarkMapper` (DB ↔ 앱 타입 변환) → `apps/web/src/entities/bookmark/lib/bookmark.mapper.ts`
 
 **테스트**:
 
 - `bookmark.mapper.test.ts` ✅ → `apps/web/src/entities/bookmark/lib/bookmark.mapper.test.ts`
-- `local.repository.test.ts` ✅ (게스트 5개 제한 등 핵심 경로) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
+- `local.repository.test.ts` ✅ (게스트 20개 제한 등 핵심 경로) → `apps/web/src/entities/bookmark/api/local.repository.test.ts`
 - `supabase.repository.test.ts` (작성 예정) → `apps/web/src/entities/bookmark/api/supabase.repository.test.ts`
 
 ## 북마크 상태 관리
@@ -70,7 +70,7 @@
 - `BookmarkList` (48개 초과 시 가상 스크롤 전환) → `apps/web/src/features/bookmark/ui/BookmarkList.tsx`
 - `VirtualBookmarkGrid` (window 가상 스크롤·반응형 그리드·동적 측정) → `apps/web/src/features/bookmark/ui/VirtualBookmarkGrid.tsx`
 - `makeFakeBookmarks` (성능 데모용 가짜 데이터 팩토리) → `apps/web/src/features/bookmark/lib/fakeBookmarks.ts`
-- 공개 성능 데모 라우트 (`/demo?count=N&virtual=off`) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
+- 성능 데모 라우트 (`/demo?count=N&virtual=off`, **로컬 전용** — 프로덕션 404) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
   - **결정 문서**: `docs/decisions/025-리스트-가상화-렌더성능.md`
 
 ## 컬렉션 (북마크 폴더, 공유)

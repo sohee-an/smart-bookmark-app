@@ -1,5 +1,6 @@
+import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { TagGroup } from "@/shared/ui/tag/Tag";
 import { useClientNow } from "@/shared/lib/useClientNow";
 import type { Bookmark } from "../model/types";
@@ -69,20 +70,7 @@ export const BookmarkCard = ({
             className={`object-cover transition-transform duration-700 ${isProcessing ? "blur-md grayscale" : "group-hover:scale-110"}`}
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900">
-            <div className="mb-2 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-zinc-100 dark:bg-zinc-800 dark:ring-zinc-700">
-              <ExternalLink size={32} strokeWidth={1.5} className="text-zinc-400" />
-            </div>
-            <span className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase dark:text-zinc-500">
-              {(() => {
-                try {
-                  return new URL(url).hostname;
-                } catch {
-                  return url;
-                }
-              })()}
-            </span>
-          </div>
+          <ThumbnailFallback url={url} />
         )}
 
         {isProcessing && (
@@ -222,3 +210,53 @@ export const BookmarkCard = ({
     </div>
   );
 };
+
+/**
+ * og:image가 없을 때의 썸네일 폴백 — 도메인 해시 기반 고유 색 + 파비콘(실패 시 이니셜).
+ * 폴백 카드들이 똑같은 회색으로 나열되면 목록 스캔이 어려워지므로 도메인마다 색·글자를 다르게 한다.
+ */
+function domainHue(host: string): number {
+  let h = 0;
+  for (let i = 0; i < host.length; i++) h = (h * 31 + host.charCodeAt(i)) % 360;
+  return h;
+}
+
+function ThumbnailFallback({ url }: { url: string }) {
+  const [faviconFailed, setFaviconFailed] = useState(false);
+
+  let hostname = "";
+  try {
+    hostname = new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    hostname = url;
+  }
+  const hue = domainHue(hostname);
+
+  return (
+    <div
+      className="flex h-full w-full flex-col items-center justify-center gap-2.5 px-4"
+      style={{ backgroundColor: `hsl(${hue} 70% 50% / 0.13)` }}
+    >
+      {hostname && !faviconFailed ? (
+        <div className="rounded-2xl bg-white/85 p-2.5 shadow-sm dark:bg-zinc-900/70">
+          <Image
+            src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=64`}
+            alt=""
+            width={36}
+            height={36}
+            unoptimized
+            className="rounded-lg"
+            onError={() => setFaviconFailed(true)}
+          />
+        </div>
+      ) : (
+        <span className="text-4xl font-black" style={{ color: `hsl(${hue} 55% 45%)` }}>
+          {(hostname.charAt(0) || "?").toUpperCase()}
+        </span>
+      )}
+      <span className="max-w-full truncate text-xs font-bold tracking-wide text-zinc-500 dark:text-zinc-400">
+        {hostname}
+      </span>
+    </div>
+  );
+}
