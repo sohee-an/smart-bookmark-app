@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/shared/api/supabase/client";
 import { Input } from "@/shared/ui/input/Input";
 import { MailIcon, LockIcon } from "@smart-bookmark/ui/icons";
-import { authSchema, AuthFormData } from "@/features/auth/model/auth-schema";
+import { authSchema, type AuthFormData } from "@/features/auth/model/auth-schema";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -66,6 +66,9 @@ export default function LoginClient() {
         }
       }
       router.push("/");
+      // 세션 쿠키 변이 후 refresh — 서버(layout)가 새 세션으로 헤더를 다시 판정하도록
+      // 라우터 캐시의 미인증 스냅샷을 무효화한다 (게스트 전환 지점들과 동일 패턴)
+      router.refresh();
     } catch (err: unknown) {
       setServerError(err instanceof Error ? err.message : "인증에 실패했습니다.");
     }
