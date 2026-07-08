@@ -494,7 +494,19 @@ SHIP_NO_MERGE=1 git ship "wip: 확인용"  # PR만 생성, 머지는 수동
   → squash 머지 → 원격·로컬 브랜치 삭제 → base 브랜치 fast-forward 동기화
 ```
 
-CI가 하나라도 실패하면 **머지하지 않고 중단**한다. 게이트를 *우회*하는 게 아니라 게이트를 *지키는 왕복*을 자동화한 것 — 깨진 코드는 여전히 `dev`에 들어갈 수 없다.
+CI가 하나라도 실패하면 **머지하지 않고 중단**한다. 게이트를 *우회*하는 게 아니라 게이트를 *지키는 왕복*을 자동화한 것 — 깨진 코드는 여전히 `dev`에 들어갈 수 없다. 설계 배경과 "왜 `enforce_admins`가 핵심인지"는 [결정 문서 031](./docs/decisions/031-dev-PR게이트-우회-차단.md)에 정리했다.
+
+**설치** — `git ship`은 로컬 alias다. 클론 후 한 번만 등록하면 된다.
+
+```bash
+# 어느 하위 폴더에서든 저장소 루트의 scripts/ship.sh를 실행하는 alias
+git config alias.ship '!bash "$(git rev-parse --show-toplevel)/scripts/ship.sh"'
+
+# (Windows) git push 시 SSL 인증서 오류가 나면 OS 인증서 저장소 사용
+git config --global http.sslBackend schannel
+```
+
+`gh`([GitHub CLI](https://cli.github.com/))가 설치·인증돼 있어야 한다(`gh auth login`).
 
 ---
 
