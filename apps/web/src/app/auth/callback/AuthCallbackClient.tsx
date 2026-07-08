@@ -16,6 +16,9 @@ export default function AuthCallbackClient() {
         return;
       }
       router.replace(fromExtension ? "/auth/extension-token" : "/");
+      // 새 세션으로 서버 컴포넌트(layout/Header)를 재판정하도록 라우터 캐시 무효화
+      // (이메일 로그인·게스트 전환 지점들과 동일하게 인증 변이 후 refresh)
+      router.refresh();
     };
 
     const {
