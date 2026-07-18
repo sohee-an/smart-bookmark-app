@@ -30,6 +30,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Lint 검사
         run: pnpm lint
+      # FSD 레이어 경계는 결정론적 아키텍처 규칙이라 warn이 아닌 error로 강제 게이트.
+      # (일반 lint는 only-warn이라 통과되므로 별도 config로 분리해 막는다.)
+      - name: FSD 레이어 경계 검사
+        run: pnpm --filter @smart-bookmark/web lint:fsd
       - name: 타입 검사
         run: pnpm typecheck
 

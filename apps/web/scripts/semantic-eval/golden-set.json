@@ -1,0 +1,29 @@
+{
+  "$schema": "./golden-set.schema.md",
+  "description": "시맨틱 서치 품질 측정용 golden set. query별로 '정답'으로 취급할 북마크 URL을 사람이 라벨링한다. 임계값(0.65/0.8)의 근거를 감이 아닌 precision/recall 곡선으로 뒷받침하기 위한 데이터셋.",
+  "evalUserId": "PUT-YOUR-TEST-USER-UUID-HERE",
+  "cases": [
+    {
+      "query": "React 상태관리",
+      "relevantUrls": [
+        "https://react.dev/learn/managing-state",
+        "https://zustand.docs.pmnd.rs/",
+        "https://tanstack.com/query/latest"
+      ]
+    },
+    {
+      "query": "Next.js 렌더링 최적화",
+      "relevantUrls": [
+        "https://nextjs.org/docs/app/building-your-application/rendering",
+        "https://nextjs.org/docs/app/api-reference/functions/use-router"
+      ]
+    },
+    {
+      "query": "데이터베이스 벡터 검색",
+      "relevantUrls": [
+        "https://github.com/pgvector/pgvector",
+        "https://supabase.com/docs/guides/ai/semantic-search"
+      ]
+    }
+  ]
+}
