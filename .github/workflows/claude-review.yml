@@ -1,0 +1,52 @@
+name: Claude PR Review
+
+# 온디맨드 AI 코드리뷰 — 결정론 경계 원칙에 따라 "자동 강제"가 아니라 사람이 부를 때만 돈다.
+# AI 리뷰는 느리고 비결정적이라 모든 PR에 강제하면 마찰이 크다. 필요할 때만 트리거:
+#   1) PR에 `ai-review` 라벨을 달거나
+#   2) PR 코멘트/리뷰에 @claude 를 멘션
+#
+# 사전 준비: 레포 Settings > Secrets 에 ANTHROPIC_API_KEY 등록.
+on:
+  pull_request:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  review:
+    # 라벨 'ai-review' 이거나 본문에 @claude 멘션이 있을 때만 실행
+    # 코멘트 트리거는 발신자 권한을 게이트한다 — 없으면 코멘트 가능한 누구나(공개 레포면
+    # 외부인 포함) @claude 한 줄로 ANTHROPIC_API_KEY와 Actions 분을 소모시킬 수 있다.
+    # 라벨 경로는 라벨 부착에 write 권한이 필요해 이미 사실상 게이트됨.
+    if: >
+      (github.event_name == 'pull_request' && github.event.label.name == 'ai-review') ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request != null &&
+        contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Claude 코드리뷰
+        # 공급망 보안: @v1은 이동 태그다. 시크릿에 접근하는 서드파티 액션이므로
+        # 운영 전 커밋 SHA로 핀 고정 권장 (uses: anthropics/claude-code-action@<sha> # v1.x).
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # 로컬과 동일한 리뷰 기준(.claude/agents/code-review.md, CLAUDE.md)을 CI가 공유한다.
+          prompt: |
+            이 PR의 변경분을 리뷰하라. 레포의 CLAUDE.md와 .claude/agents/code-review.md의
+            기준(FSD 레이어 위반, 타입 안전성, 상태관리 역할 분리, 성능, Next.js 렌더링 전략)을
+            그대로 적용한다. 치명적/설계/개선 3단계로 나누고, 각 지적은 파일:줄과 수정 방법을
+            함께 제시하라. 치명적 문제가 없으면 "치명적 문제 없음"으로 명시하라.
