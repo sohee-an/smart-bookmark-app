@@ -12,7 +12,7 @@
 
 ## AI 분석
 
-- `AIAnalysisResult`, `AIService` → `apps/web/src/server/services/ai.service.ts`
+- `analyzeBookmark`, `AnalyzeBookmarkResult`, `parseAiAnalysisResponse` → `apps/web/src/server/services/ai-analysis.service.ts`
 - AI 분석 전용 API Route → `apps/web/src/app/api/ai-analyze/route.ts`
 - 시맨틱 서치 임베딩 API Route → `apps/web/src/app/api/embed/route.ts`
 - 시맨틱 서치 검색 API Route → `apps/web/src/app/api/semantic-search/route.ts`
@@ -90,7 +90,7 @@
 - API: 북마크 추가/제거 → `apps/web/src/app/api/collections/[id]/bookmarks/route.ts`
 - API: 멤버 역할변경/제거 → `apps/web/src/app/api/collections/[id]/members/route.ts`
 - API: 이메일 초대 → `apps/web/src/app/api/collections/invite/route.ts`
-- DB 스키마 (컬렉션 테이블 + RLS) → `docs/collections-schema.sql`
+- DB 스키마 (컬렉션 테이블 + RLS) → `supabase/migrations/collections-schema.sql`
 
 ## 인증
 

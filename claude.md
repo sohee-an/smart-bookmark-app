@@ -12,13 +12,14 @@ smart-bookmark/
 ├── apps/
 │   └── web/          # Next.js 앱 (메인)
 │       └── src/
-│           ├── components/
-│           ├── entities/
+│           ├── app/          # Next.js App Router (라우트, 레이아웃, API Route) = FSD app 레이어
+│           ├── widgets/
 │           ├── features/
-│           ├── pages/
+│           ├── entities/
 │           ├── shared/
+│           ├── server/       # 서버 전용 서비스 (크롤러, AI). FSD 레이어 아님
 │           ├── styles/
-│           └── widgets/
+│           └── middleware.ts
 └── packages/
     ├── eslint-config/ # 공통 ESLint 설정
     ├── types/         # 공통 타입
@@ -30,7 +31,7 @@ smart-bookmark/
 
 - 전체: Turborepo 모노레포 (apps/, packages/ 레벨)
 - apps/web 내부: FSD (Feature-Sliced Design) 구조
-- FSD 레이어 순서: pages → widgets → features → entities → shared
+- FSD 레이어 순서: app → widgets → features → entities → shared (`packages/eslint-config/fsd.js`가 CI에서 강제)
 - 상위 레이어가 하위 레이어를 import, 역방향 금지
 - UI는 Headless 패턴 적용 (로직과 UI 분리)
 - 추후 React Native 앱 출시를 고려한 확장 구조
@@ -197,7 +198,7 @@ apps/web/e2e/                     ← e2e 테스트
 
 - FSD(Feature-Sliced Design) 레이어 규칙 엄수
 - `entities`가 `features`를 import 금지 (레이어 위반)
-- 레이어 순서: app → pages → widgets → features → entities → shared
+- 레이어 순서: app → widgets → features → entities → shared
 
 ## 테스트 컨벤션
 
