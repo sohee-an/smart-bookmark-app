@@ -28,14 +28,15 @@ Don Norman의 "The Design of Everyday Things"와 Dieter Rams의 10원칙을 실�
 ## 분석 대상
 
 대상이 지정됐으면 해당 파일을 읽는다.
-지정이 없으면 아래 우선순위로 분석한다:
+지정이 없으면 아래 우선순위로 분석한다.
+파일 위치는 PROJECT_INDEX.md 기준.
 
-1. `apps/web/src/app/(public)/landing/page.tsx` — 첫인상, 가치 전달
-2. `apps/web/src/app/(public)/login/LoginClient.tsx` — 진입 장벽
-3. `apps/web/src/widgets/layout/Header.tsx` — 내비게이션
-4. `apps/web/src/entities/bookmark/ui/BookmarkCard.tsx` — 핵심 콘텐츠 단위
-5. `apps/web/src/entities/bookmark/ui/BookmarkDetailPanel.tsx` — 상세 인터랙션
-6. `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx` — 핵심 액션 진입
+1. 랜딩 페이지 — 첫인상, 가치 전달
+2. `LoginClient` — 진입 장벽
+3. `Header` — 내비게이션
+4. `BookmarkCard` — 핵심 콘텐츠 단위
+5. `BookmarkDetailPanel` — 상세 인터랙션
+6. `AddBookmarkOverlay` — 핵심 액션 진입
 
 ---
 

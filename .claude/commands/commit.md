@@ -103,7 +103,6 @@ B) 현재 브랜치에 그냥 커밋
 | 경로 패턴                           | scope      |
 | ----------------------------------- | ---------- |
 | `packages/ui/**`                    | `ui`       |
-| `packages/types/**`                 | `types`    |
 | `packages/eslint-config/**`         | `eslint`   |
 | `packages/typescript-config/**`     | `tsconfig` |
 | `turbo.json`, `package.json` (루트) | `turbo`    |
