@@ -26,8 +26,8 @@ allowed-tools: Read, Write, Edit, Glob, Bash(git diff:*, git status:*)
 
 ```
 # 예시
-apps/web/src/features/bookmark/bookmarkService.ts
-→ apps/web/src/features/bookmark/bookmarkService.test.ts 존재 여부 확인
+apps/web/src/features/bookmark/model/filterBookmarks.ts
+→ apps/web/src/features/bookmark/model/filterBookmarks.test.ts 존재 여부 확인
 ```
 
 - **없으면** → 새로 생성
@@ -71,7 +71,7 @@ describe("모듈명", () => {
 | `shared/lib/` | 높음            | 유틸 함수, 헬퍼          |
 | `shared/api/` | 중간            | API 클라이언트           |
 | `widgets/`    | 낮음            | 통합 동작                |
-| `pages/`      | 낮음            | 라우팅 수준              |
+| `app/`        | 낮음            | 라우팅 수준              |
 
 ### 테스트 케이스 작성 기준
 

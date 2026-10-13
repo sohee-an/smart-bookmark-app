@@ -1,0 +1,43 @@
+name: CodeQL
+
+# 규칙 기반 정적 분석 — 같은 코드면 항상 같은 결과가 나온다(결정론).
+# XSS, SSRF, 인젝션처럼 "외부 입력이 위험한 곳까지 흘러가는" 문제를 잡는다.
+# 권한 체크 누락 같은 로직 문제는 못 잡으므로 보안 리뷰 에이전트가 맡는다.
+#
+# main뿐 아니라 dev도 대상이다. GitHub 기본 설정(default setup) 대신 이 파일로 둔 이유는
+# 대상 브랜치를 코드로 명시하고 리뷰할 수 있게 하기 위해서다.
+# 결과는 PR 변경 줄 경고와 저장소 Security 탭(Code scanning)에 쌓인다. 머지를 막지는 않는다.
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    - cron: "17 3 * * 1" # 매주 월요일 12:17 KST. 코드 변경이 없어도 새 규칙으로 다시 본다
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"

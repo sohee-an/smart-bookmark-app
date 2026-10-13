@@ -4,17 +4,19 @@
 
 ---
 
-## 🏗️ 1. 프로젝트 아키텍처 표준 (FSD + Pages Router)
+## 🏗️ 1. 프로젝트 아키텍처 표준 (FSD + App Router)
 
 우리 프로젝트는 **Feature-Sliced Design (FSD)** 과 **Atomic Design** 패턴을 엄격히 준수합니다.
 
 ### 📂 Layer 지침
 
-- **shared**: 공통 UI(Atoms), 유틸리티, 전역 Hooks (예: `src/shared/ui/Button.tsx`)
-- **entities**: 데이터 도메인 핵심 엔티티 (예: `src/entities/bookmark`)
-- **features**: 사용자 상호작용 및 비즈니스 로직 단위 (예: `src/features/add-bookmark`)
-- **widgets**: 여러 기능을 조합한 큰 UI 조각 (예: `src/widgets/BookmarkList`)
-- **pages**: 라우팅 전용 레이어. 비즈니스 로직을 여기에 작성하면 안 됩니다.
+레이어 순서는 CLAUDE.md '아키텍처' 섹션 기준. 예시 컴포넌트의 위치는 PROJECT_INDEX.md 기준.
+
+- **shared**: 공통 UI(Atoms), 유틸리티, 전역 Hooks (예: `Avatar`, `Input`)
+- **entities**: 데이터 도메인 핵심 엔티티 (예: bookmark 슬라이스의 `BookmarkCard`, `BookmarkRepository`)
+- **features**: 사용자 상호작용 및 비즈니스 로직 단위 (예: `AddBookmarkOverlay`, `useBookmarks`)
+- **widgets**: 여러 기능을 조합한 큰 UI 조각 (예: `HomeContent`, `Header`)
+- **app**: Next.js App Router의 라우트, 레이아웃, API Route. 라우팅과 조합만 하고 비즈니스 로직을 여기에 작성하면 안 됩니다.
 
 ### ⚛️ Atomic Design
 
@@ -137,7 +139,7 @@ const [user, posts] = await Promise.all([fetchUser(), fetchPosts()]);
 
 ### 아키텍처
 
-- [ ] FSD 레이어 규칙 준수 (pages에 비즈니스 로직 없음)
+- [ ] FSD 레이어 규칙 준수 (app에 비즈니스 로직 없음)
 - [ ] Atomic Design 분류 적절함
 
 ### 코드 품질

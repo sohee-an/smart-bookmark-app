@@ -12,16 +12,16 @@ smart-bookmark/
 ├── apps/
 │   └── web/          # Next.js 앱 (메인)
 │       └── src/
-│           ├── components/
-│           ├── entities/
+│           ├── app/          # Next.js App Router (라우트, 레이아웃, API Route) = FSD app 레이어
+│           ├── widgets/
 │           ├── features/
-│           ├── pages/
+│           ├── entities/
 │           ├── shared/
+│           ├── server/       # 서버 전용 서비스 (크롤러, AI). FSD 레이어 아님
 │           ├── styles/
-│           └── widgets/
+│           └── middleware.ts
 └── packages/
     ├── eslint-config/ # 공통 ESLint 설정
-    ├── types/         # 공통 타입
     ├── typescript-config/ # 공통 TS 설정
     └── ui/            # 공통 UI 컴포넌트
 ```
@@ -30,7 +30,7 @@ smart-bookmark/
 
 - 전체: Turborepo 모노레포 (apps/, packages/ 레벨)
 - apps/web 내부: FSD (Feature-Sliced Design) 구조
-- FSD 레이어 순서: pages → widgets → features → entities → shared
+- FSD 레이어 순서: app → widgets → features → entities → shared (`packages/eslint-config/fsd.js`가 CI에서 강제)
 - 상위 레이어가 하위 레이어를 import, 역방향 금지
 - UI는 Headless 패턴 적용 (로직과 UI 분리)
 - 추후 React Native 앱 출시를 고려한 확장 구조
@@ -95,6 +95,8 @@ pnpm test       # 테스트 실행
 ## 탐색 규칙
 
 - 파일을 찾을 때는 반드시 PROJECT_INDEX.md를 먼저 본다
+- 파일 경로의 기준은 PROJECT_INDEX.md 한 곳이다. 에이전트, 스킬, 명령 문서에는 경로 대신 이름을 쓴다
+- 파일을 옮기거나 이름을 바꾸면 PROJECT_INDEX.md를 같이 고친다. 안 고치면 CI의 문서 경로 검사가 PR을 막는다
 - INDEX에서 찾지 못한 경우 → Glob/Grep 절대 금지, 사용자에게 이렇게 말한다:
   > "PROJECT_INDEX.md에 해당 키워드가 없어서 충분한 자료를 찾지 못했습니다."
 - 사용자가 "전체코드 봐줘" 라고 하면 → 그때만 Glob/Grep으로 탐색하고, 찾은 파일을 PROJECT_INDEX.md에 즉시 추가
@@ -197,7 +199,7 @@ apps/web/e2e/                     ← e2e 테스트
 
 - FSD(Feature-Sliced Design) 레이어 규칙 엄수
 - `entities`가 `features`를 import 금지 (레이어 위반)
-- 레이어 순서: app → pages → widgets → features → entities → shared
+- 레이어 순서는 위 '아키텍처' 섹션 기준
 
 ## 테스트 컨벤션
 
@@ -237,25 +239,42 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - `새 할일 등록해줘 [내용]` → /project:new-task 실행
 - `노션 댓글 확인해줘` → /project:review 실행
 - `리뷰해줘 [대상]` → /project:code-review 실행 (백그라운드)
-- `보안 검토해줘 [대상]` → /project:security-review 실행 (백그라운드)
+- `보안 검토해줘 [대상]` → /project:security-review 실행 (백그라운드, 기본 리뷰)
+- `심층 보안 검토해줘 [대상]` → /project:security-deep-review 실행 (기본 + 공격자 관점을 따로 동시에)
+- `보안 리뷰 종합해줘` → /project:security-summary 실행 (개발 세션에서, 요청할 때만)
 - `QA 해줘 [대상]` → /project:qa-review 실행 (백그라운드)
 
 ## 리뷰 결과 보관소
 
 `.claude/project/reviews/` — 모든 리뷰 결과가 날짜별로 저장됨
 
-| 파일 패턴                       | 내용                    |
-| ------------------------------- | ----------------------- |
-| `code-review-YYYY-MM-DD.md`     | 아키텍처/타입 설계 리뷰 |
-| `security-review-YYYY-MM-DD.md` | 보안 취약점 분석        |
-| `ux-review-YYYY-MM-DD.md`       | UX/인터랙션 리뷰        |
-| `qa-review-YYYY-MM-DD.md`       | QA/완성도 리뷰          |
+| 파일 패턴                        | 내용                    |
+| -------------------------------- | ----------------------- |
+| `code-review-YYYY-MM-DD.md`      | 아키텍처/타입 설계 리뷰 |
+| `security-review-YYYY-MM-DD.md`  | 보안 취약점 분석        |
+| `security-deep-YYYY-MM-DD.md`    | 공격자 관점 보안 분석   |
+| `security-summary-YYYY-MM-DD.md` | 보안 리뷰 종합          |
+| `ux-review-YYYY-MM-DD.md`        | UX/인터랙션 리뷰        |
+| `qa-review-YYYY-MM-DD.md`        | QA/완성도 리뷰          |
 
 **에이전트 참조 규칙:**
 
-- 개발 에이전트: 구현 시작 전 관련 리뷰 파일 읽고 이슈 인지 후 반영
-- 기획 에이전트: 방향성 수립 시 레퍼런스로 참조
+- 리뷰 결과는 개발 세션(메인)만 읽는다. 리뷰 에이전트끼리는 서로의 결과를 보지 않는다. 에이전트가 공유하는 기준은 CLAUDE.md와 PROJECT_PLAN.md뿐이다
+- 리뷰는 사람이 부를 때만 실행한다. 구현 전에 리뷰 파일을 자동으로 전부 읽지 않는다
+- 사람이 반영할 항목을 지정하면 그 리뷰 파일만 읽는다. 리뷰 전체를 미리 알고 시작하면 작업 범위가 리뷰에 끌려가는 문제가 있었다
 - Critical/High 항목은 새 태스크 등록 전 먼저 해소 여부 확인
+
+**보안 검사 구조:**
+
+| 언제              | 무엇이                                                                                      | 성격              |
+| ----------------- | ------------------------------------------------------------------------------------------- | ----------------- |
+| push 전 (로컬)    | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고)   | 결정론            |
+| PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트                                                 | 결정론, 막지 않음 |
+| 매주 월요일       | CodeQL, 의존성 audit. critical/high가 있으면 이슈 하나를 만들거나 갱신하고, 해소되면 닫는다 | 결정론, 막지 않음 |
+| 사람이 부를 때    | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary)                    | 판단              |
+| 사람이 부를 때    | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림                                 | 판단              |
+
+보안 민감 경로는 `.github/security-sensitive-paths.json` 하나로 관리한다.
 
 ## 참고 스킬
 
