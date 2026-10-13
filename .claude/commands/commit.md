@@ -103,7 +103,6 @@ B) 현재 브랜치에 그냥 커밋
 | 경로 패턴                           | scope      |
 | ----------------------------------- | ---------- |
 | `packages/ui/**`                    | `ui`       |
-| `packages/types/**`                 | `types`    |
 | `packages/eslint-config/**`         | `eslint`   |
 | `packages/typescript-config/**`     | `tsconfig` |
 | `turbo.json`, `package.json` (루트) | `turbo`    |
@@ -112,8 +111,8 @@ B) 현재 브랜치에 그냥 커밋
 
 | 경로 패턴                                | scope        |
 | ---------------------------------------- | ------------ |
-| `apps/web/src/pages/api/**`              | `api`        |
-| `apps/web/src/pages/**`                  | `pages`      |
+| `apps/web/src/app/api/**`                | `api`        |
+| `apps/web/src/app/**`                    | `app`        |
 | `apps/web/src/widgets/**`                | `widgets`    |
 | `apps/web/src/features/auth/**`          | `auth`       |
 | `apps/web/src/features/bookmark/**`      | `bookmark`   |
@@ -123,7 +122,7 @@ B) 현재 브랜치에 그냥 커밋
 | `apps/web/src/shared/lib/**`             | `shared`     |
 | `apps/web/src/shared/ui/**`              | `shared`     |
 | `apps/web/src/middleware.ts`             | `middleware` |
-| `apps/web/src/docs/**`                   | `docs`       |
+| `docs/**`                                | `docs`       |
 | `.husky/**`, `commitlint*`, `.eslintrc*` | `config`     |
 | `.github/**`                             | `github`     |
 | `.claude/**`                             | `claude`     |
@@ -131,7 +130,7 @@ B) 현재 브랜치에 그냥 커밋
 ### 도메인별 세분화 우선순위
 
 - **bookmark 도메인**: entities/bookmark + features/bookmark가 같이 바뀌면 → `bookmark`
-- **AI/크롤러**: `pages/api/services/ai.service.ts` → `ai`, `crawler.service.ts` → `crawler`
+- **AI/크롤러**: `server/services/ai-analysis.service.ts` → `ai`, `server/services/crawler.service.ts` → `crawler`
 - **인증**: features/auth, middleware.ts → `auth`
 - **여러 레이어 동시 변경**: 가장 핵심적인 레이어 scope 사용
 

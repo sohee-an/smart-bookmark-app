@@ -157,9 +157,9 @@ Component.displayName = "Component";
 ### packages/ui에 새 컴포넌트 추가 시
 
 ```
-packages/ui/src/components/<name>/
+packages/ui/src/<name>/
 ├── <name>.primitive.tsx
-└── index.tsx
+└── index.ts
 ```
 
 ### apps/web/src/shared/ui에 새 컴포넌트 추가 시
@@ -184,8 +184,7 @@ apps/web/src/shared/ui/<name>/
 
 ## 레퍼런스
 
-작업 전 반드시 읽기:
+작업 전 반드시 읽기. 파일 위치는 PROJECT_INDEX.md 기준.
 
-- `packages/ui/src/components/input/input.primitive.tsx`
-- `packages/ui/src/components/input/index.tsx`
-- `apps/web/src/shared/ui/input/Input.tsx`
+- `InputPrimitive` (같은 폴더의 `index.ts`까지)
+- `Input`

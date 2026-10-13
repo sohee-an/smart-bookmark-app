@@ -18,6 +18,9 @@ jobs:
   quality:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # 문서 경로 검사 결과를 PR 코멘트로 남긴다
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -36,6 +39,60 @@ jobs:
         run: pnpm --filter @smart-bookmark/web lint:fsd
       - name: 타입 검사
         run: pnpm typecheck
+      # 문서(CLAUDE.md, PROJECT_INDEX.md, .claude/)에 적힌 경로가 실제로 있는지 검사한다.
+      # 코드는 lint/typecheck가 지키지만 문서는 파일을 옮겨도 아무 검사에 안 걸려 계속 썩었다.
+      # 결과는 PR 코멘트 하나로 유지하고(고치면 "해결됨"으로 갱신), 틀린 경로가 있으면 이 job을 실패시켜 머지를 막는다.
+      - name: 문서 경로 검사
+        id: docpaths
+        continue-on-error: true
+        run: node scripts/check-doc-paths.mjs --json doc-paths.json
+      - name: 문서 경로 검사 결과 PR 코멘트
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        continue-on-error: true # 외부 fork PR처럼 코멘트 권한이 없을 때도 판정은 아래 단계가 한다
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            if (!fs.existsSync("doc-paths.json")) return;
+            const { problems } = JSON.parse(fs.readFileSync("doc-paths.json", "utf8"));
+            const MARKER = "<!-- doc-paths-check -->";
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find((c) => c.body?.includes(MARKER));
+
+            if (problems.length === 0) {
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id,
+                  body: `${MARKER}\n**문서 경로 검사**: 해결됨. 문서에 적힌 경로가 모두 저장소에 있습니다.`,
+                });
+              }
+              return;
+            }
+
+            const rows = problems.map((p) => `| \`${p.file}:${p.line}\` | \`${p.path}\` |`).join("\n");
+            const body = [
+              MARKER,
+              `**문서 경로 검사**: 문서에 적힌 경로 ${problems.length}개가 저장소에 없습니다. 이 PR은 고치기 전까지 머지할 수 없습니다.`,
+              "",
+              "| 문서:줄 | 없는 경로 |",
+              "| --- | --- |",
+              rows,
+              "",
+              "파일을 옮기거나 이름을 바꿨다면 경로 기준인 `PROJECT_INDEX.md`와 위 문서를 같이 고쳐 주세요.",
+              "로컬 확인: `node scripts/check-doc-paths.mjs`",
+            ].join("\n");
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+      - name: 문서 경로 검사 결과 판정
+        if: ${{ steps.docpaths.outcome == 'failure' }}
+        run: |
+          echo "::error::문서에 적힌 경로가 저장소에 없습니다. PR 코멘트를 확인하세요."
+          exit 1
 
   test:
     name: Unit & Integration Tests
