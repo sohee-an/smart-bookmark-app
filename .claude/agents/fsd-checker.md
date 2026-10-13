@@ -11,7 +11,8 @@ model: sonnet
 >
 > - 레이어 방향 위반(entities → features 등): `pnpm --filter @smart-bookmark/web lint:fsd`가 CI에서 매번 막는다 (`packages/eslint-config/fsd.js`)
 > - 같은 레이어 슬라이스 간 참조, 상대경로 import: 아직 lint가 못 잡는다. eslint-plugin-boundaries로 옮겨 ESLint에서 잡을 예정이다
-> - 이 에이전트는 "에이전트로 찾던 것을 패턴이 보이면 결정론(lint)으로 내린다"는 발표 시연용으로 남겨 뒀다. 아래 레이어 목록(`pages`)은 예전 구조라 실제(`app > widgets > features > entities > shared`)와 다르다
+> - 이 에이전트는 "에이전트로 찾던 것을 패턴이 보이면 결정론(lint)으로 내린다"는 발표 시연용으로 남겨 뒀다
+> - 2026-10에 레이어 목록을 실제 구조(`app > widgets > features > entities > shared`)로 고쳤다. 그전에는 FSD 이전의 `pages` 레이어 기준이었다
 >
 > 이 에이전트가 호출되면 아래 기준대로 분석한다.
 
@@ -19,43 +20,62 @@ smart-bookmark 프로젝트의 FSD 레이어 의존성 위반을 분석해줘.
 
 ## FSD 레이어 규칙
 
+`packages/eslint-config/fsd.js`(lint:fsd)와 같은 순서다.
+
 ```
-pages       ← 최상위 (아무 레이어나 import 가능)
-widgets     ← pages만 import 불가
-features    ← pages, widgets import 불가
-entities    ← pages, widgets, features import 불가
-shared      ← 최하위 (다른 레이어 import 불가)
+app       ← 최상위. Next.js App Router(라우트, 레이아웃, API Route). 아래 레이어 모두 import 가능
+widgets   ← app import 불가
+features  ← app, widgets import 불가
+entities  ← app, widgets, features import 불가
+shared    ← 최하위. 다른 레이어 import 불가
 ```
 
 상위 레이어가 하위 레이어를 import하는 건 OK.
 하위 레이어가 상위 레이어를 import하는 건 위반.
 
+FSD 레이어가 아닌 것:
+
+- `apps/web/src/server/` (크롤러, AI 서비스): 서버 전용 모듈. 레이어 규칙에서 제외한다. 다만 클라이언트 레이어(widgets, features, entities, shared)가 `@/server`를 import하면 서버 코드가 번들에 섞일 수 있으니 따로 보고한다
+- `apps/web/src/middleware.ts`, `apps/web/src/styles/`, `apps/web/src/__tests__/`: 분석 대상 아님
+
 ## 분석 대상 경로
 
 ```
-apps/web/src/pages/**
+apps/web/src/app/**
 apps/web/src/widgets/**
 apps/web/src/features/**
 apps/web/src/entities/**
 apps/web/src/shared/**
 ```
 
+슬라이스 (2026-10 기준):
+
+- widgets: `bookmark`, `home`, `layout`
+- features: `auth`, `bookmark`, `chat`, `collection`
+- entities: `bookmark`, `collection`
+
 ## 체크 항목
 
 ### 레이어 간 의존성 방향
 
-- [ ] shared에서 features, entities, widgets, pages import 하는 곳
-- [ ] entities에서 features, widgets, pages import 하는 곳
-- [ ] features에서 widgets, pages import 하는 곳
-- [ ] widgets에서 pages import 하는 곳
+lint:fsd가 `@/` 경로는 이미 CI에서 막는다. 이 에이전트는 lint가 못 보는 경우까지 본다.
+
+- [ ] shared에서 entities, features, widgets, app import 하는 곳
+- [ ] entities에서 features, widgets, app import 하는 곳
+- [ ] features에서 widgets, app import 하는 곳
+- [ ] widgets에서 app import 하는 곳
+- [ ] 위 경우 중 **상대경로**(`../../features/...`)로 import 하는 곳 (lint:fsd가 못 잡음)
 
 ### 같은 레이어 간 import (슬라이스 간 참조)
 
-- [ ] features/A에서 features/B를 직접 import 하는 곳
+lint:fsd가 아직 못 잡는다(eslint-plugin-boundaries로 옮길 예정).
+
+- [ ] features/A에서 features/B를 직접 import 하는 곳 (예: `features/collection` → `features/bookmark`)
 - [ ] entities/A에서 entities/B를 직접 import 하는 곳
+- [ ] widgets/A에서 widgets/B를 직접 import 하는 곳
 
 같은 레이어 간 참조는 원칙적으로 금지.
-공유가 필요하면 shared로 내려야 함.
+공유가 필요하면 아래 레이어(entities나 shared)로 내리거나, 위 레이어(widgets, app)에서 조합한다.
 
 ### import 경로 패턴
 
@@ -74,6 +94,9 @@ import { cn } from "@/shared/lib/utils";
 ```typescript
 // shared에서 features import (위반)
 import { BookmarkService } from "@/features/bookmark";
+
+// features에서 app import (위반)
+import { something } from "@/app/(main)/bookmarks/BookmarksContent";
 
 // entities에서 features import (위반)
 import { useBookmark } from "@/features/bookmark";
