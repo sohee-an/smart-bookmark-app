@@ -268,6 +268,7 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 | ---- | ------ | ---- |
 | push 전 (로컬) | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고) | 결정론 |
 | PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트 | 결정론, 막지 않음 |
+| 매주 월요일 | CodeQL, 의존성 audit. critical/high가 있으면 이슈 하나를 만들거나 갱신하고, 해소되면 닫는다 | 결정론, 막지 않음 |
 | 사람이 부를 때 | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary) | 판단 |
 | 사람이 부를 때 | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림 | 판단 |
 
