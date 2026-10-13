@@ -1,0 +1,9 @@
+// [DEMO] 포맷 훅 시연용 — 일부러 엉망으로 둔 파일. demo/harness-talk 전용.
+type   DemoItem={title:string,tags:string[]}
+export   function   formatDemoTitle( item:DemoItem,maxLength:number=20 ){
+        const title=item.title.trim()
+  if(title.length<=maxLength){ return title }
+            return title.slice( 0,maxLength )+'...'
+}
+
+export const formatDemoTags=(tags:string[])=>tags.map(t=>'#'+t).join(', ')
