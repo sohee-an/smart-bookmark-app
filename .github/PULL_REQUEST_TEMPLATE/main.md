@@ -20,3 +20,5 @@
 - [ ] CI (lint / typecheck / test) 전부 통과
 - [ ] 환경변수 변경사항 없음 (있으면 Vercel에 반영 완료)
 - [ ] 마이그레이션 없음 (있으면 Supabase에 적용 완료)
+- [ ] 보안 리뷰 알림 코멘트가 달렸다면: 심층 보안 리뷰와 `보안 리뷰 종합해줘`를 확인했다
+- [ ] Security 탭의 CodeQL, Dependabot 알림에 새 critical/high가 없다 (있으면 이유를 적는다)

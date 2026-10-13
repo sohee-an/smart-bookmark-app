@@ -1,0 +1,2 @@
+# 외부에서 들여온 스킬은 원본 그대로 둔다 (SOURCE.md의 고정 커밋과 diff가 맞아야 함)
+.claude/skills/owasp-security/
