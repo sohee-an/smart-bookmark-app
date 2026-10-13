@@ -15,13 +15,18 @@ model: sonnet
 
 ## 분석 대상 (App Router 기준)
 
+> `.github/workflows/security-review-nudge.yml`의 `SENSITIVE`와 같은 목록이다. 한쪽을 바꾸면 같이 바꾼다.
+
 1. `apps/web/src/app/api/**` — API 엔드포인트 (실제 라우트)
 2. `apps/web/src/middleware.ts` — 인증 게이트
-3. `apps/web/src/shared/lib/validateSsrf.ts` — SSRF 방어 로직
-4. `apps/web/src/entities/bookmark/api/` — Repository 레이어
-5. `apps/web/src/shared/api/supabase/` — Supabase 클라이언트
-6. `apps/web/src/features/auth/` — 인증 로직
-7. `apps/web/src/server/services/` — 서버 서비스
+3. `apps/web/src/app/auth/` — OAuth 콜백, 익스텐션 토큰 페이지
+4. `apps/web/src/features/auth/` — 인증 로직
+5. `apps/web/src/shared/api/supabase/` — Supabase 클라이언트, 세션 판정
+6. `apps/web/src/entities/*/api/*supabase*.ts` — Supabase Repository (bookmark, collection)
+7. `apps/web/src/shared/lib/` 중 `validateSsrf`, `validateUrl`, `rateLimit`, `guest`, `guestCookie` — 입력 검증, SSRF, rate limit, 게스트 쿠키
+8. `apps/web/src/server/` — 서버 서비스 (크롤러: 외부 URL fetch)
+9. `supabase/migrations/` — DB 스키마, RLS 정책
+10. `apps/web/next.config.ts` — 보안 헤더, 이미지 도메인
 
 ---
 

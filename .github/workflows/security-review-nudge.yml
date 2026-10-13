@@ -8,6 +8,7 @@ name: Security Review Nudge
 #
 # 패턴 목록은 아래 SENSITIVE 한 곳에서만 관리한다(on.paths와 이중 관리하지 않으려고
 # 모든 PR에서 돌린다. checkout 없이 API 호출만 해서 수 초 안에 끝난다).
+# .claude/agents/security-reviewer.md의 "분석 대상"과 같은 목록이다. 한쪽을 바꾸면 같이 바꾼다.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -33,6 +34,7 @@ jobs:
               { re: /^apps\/web\/src\/app\/api\//, why: "API 라우트 (인증 누락, IDOR)" },
               { re: /^apps\/web\/src\/middleware\.ts$/, why: "인증 미들웨어 (우회 경로)" },
               { re: /^apps\/web\/src\/app\/auth\//, why: "OAuth 콜백, 익스텐션 토큰 페이지" },
+              { re: /^apps\/web\/src\/features\/auth\//, why: "인증 로직 (로그인/회원가입 검증)" },
               { re: /^apps\/web\/src\/shared\/api\/supabase\//, why: "Supabase 클라이언트, 세션 판정" },
               { re: /^apps\/web\/src\/entities\/[^/]+\/api\/.*supabase.*\.ts$/, why: "Supabase repository (user_id 필터, IDOR)" },
               { re: /^apps\/web\/src\/shared\/lib\/(validateSsrf|validateUrl|rateLimit|guest|guestCookie)\.ts$/, why: "입력 검증, SSRF, rate limit, 게스트 쿠키" },
