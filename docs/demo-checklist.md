@@ -3,6 +3,7 @@
 > `demo/harness-talk` 브랜치 전용 문서. main/dev에 머지하지 않는다.
 > 기준 커밋: `origin/main` 4865a36 (= dev와 내용 동일). 점검일 2026-10-13.
 > 화면별 대본은 [demo-script.md](demo-script.md). 대본에서는 ⑤(FSD)를 ③(포맷 훅) 바로 뒤로 옮겼다.
+> 다른 컴퓨터에서 발표할 때 준비 목록은 [demo-other-pc.md](demo-other-pc.md).
 
 ## 0. 발표 직전 체크 (5분)
 
