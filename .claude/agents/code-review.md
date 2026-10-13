@@ -25,7 +25,7 @@ tools: Read, Grep, Glob, Bash, Write
 
 ### 1. FSD 레이어 위반 (즉시 차단 수준)
 
-레이어 순서: `app → widgets → features → entities → shared`
+레이어 순서는 CLAUDE.md '아키텍처' 섹션 기준.
 역방향 import는 이유 불문 금지.
 
 - `entities`가 `features`를 import → **레이어 위반, 즉시 수정 대상**

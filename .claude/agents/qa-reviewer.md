@@ -25,13 +25,14 @@ model: sonnet
 ## 분석 대상
 
 대상이 지정됐으면 해당 파일을 읽는다.
-지정이 없으면 아래 우선순위로 분석한다:
+지정이 없으면 아래 우선순위로 분석한다.
+파일 위치는 PROJECT_INDEX.md 기준.
 
-1. `apps/web/src/widgets/layout/Header.tsx`
-2. `apps/web/src/entities/bookmark/ui/BookmarkCard.tsx`
-3. `apps/web/src/entities/bookmark/ui/BookmarkDetailPanel.tsx`
-4. `apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx`
-5. `apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx`
+1. `Header`
+2. `BookmarkCard`
+3. `BookmarkDetailPanel`
+4. `AddBookmarkOverlay`
+5. `RecentBookmarkSlider`
 
 ---
 

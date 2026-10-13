@@ -149,6 +149,7 @@
 - `Input` (레이블/에러/아이콘) → `apps/web/src/shared/ui/input/Input.tsx`
 - `TagGroup` (태그 목록, 편집 모드 지원) → `apps/web/src/shared/ui/tag/Tag.tsx`
 - `TagPrimitive` (Headless) → `packages/ui/src/tag/tag.primitive.tsx`
+- `InputPrimitive` (Headless, 같은 폴더 `index.ts`에서 re-export) → `packages/ui/src/input/input.primitive.tsx`
 - `Avatar` → `apps/web/src/shared/ui/Avatar.tsx`
 - `Header` → `apps/web/src/widgets/layout/Header.tsx`
 

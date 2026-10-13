@@ -4,7 +4,7 @@
 
 - FSD(Feature-Sliced Design) 레이어 규칙 엄수
 - `entities`가 `features`를 import 금지 (레이어 위반)
-- 레이어 순서: app → widgets → features → entities → shared
+- 레이어 순서는 CLAUDE.md '아키텍처' 섹션 기준
 
 ## 테스트 컨벤션
 
