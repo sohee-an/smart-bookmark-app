@@ -237,7 +237,9 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - `새 할일 등록해줘 [내용]` → /project:new-task 실행
 - `노션 댓글 확인해줘` → /project:review 실행
 - `리뷰해줘 [대상]` → /project:code-review 실행 (백그라운드)
-- `보안 검토해줘 [대상]` → /project:security-review 실행 (백그라운드)
+- `보안 검토해줘 [대상]` → /project:security-review 실행 (백그라운드, 기본 리뷰)
+- `심층 보안 검토해줘 [대상]` → /project:security-deep-review 실행 (기본 + 공격자 관점을 따로 동시에)
+- `보안 리뷰 종합해줘` → /project:security-summary 실행 (개발 세션에서, 요청할 때만)
 - `QA 해줘 [대상]` → /project:qa-review 실행 (백그라운드)
 
 ## 리뷰 결과 보관소
@@ -248,6 +250,8 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 | ------------------------------- | ----------------------- |
 | `code-review-YYYY-MM-DD.md`     | 아키텍처/타입 설계 리뷰 |
 | `security-review-YYYY-MM-DD.md` | 보안 취약점 분석        |
+| `security-deep-YYYY-MM-DD.md`   | 공격자 관점 보안 분석   |
+| `security-summary-YYYY-MM-DD.md` | 보안 리뷰 종합         |
 | `ux-review-YYYY-MM-DD.md`       | UX/인터랙션 리뷰        |
 | `qa-review-YYYY-MM-DD.md`       | QA/완성도 리뷰          |
 
@@ -257,6 +261,17 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - 리뷰는 사람이 부를 때만 실행한다. 구현 전에 리뷰 파일을 자동으로 전부 읽지 않는다
 - 사람이 반영할 항목을 지정하면 그 리뷰 파일만 읽는다. 리뷰 전체를 미리 알고 시작하면 작업 범위가 리뷰에 끌려가는 문제가 있었다
 - Critical/High 항목은 새 태스크 등록 전 먼저 해소 여부 확인
+
+**보안 검사 구조:**
+
+| 언제 | 무엇이 | 성격 |
+| ---- | ------ | ---- |
+| push 전 (로컬) | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고) | 결정론 |
+| PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트 | 결정론, 막지 않음 |
+| 사람이 부를 때 | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary) | 판단 |
+| 사람이 부를 때 | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림 | 판단 |
+
+보안 민감 경로는 `.github/security-sensitive-paths.json` 하나로 관리한다.
 
 ## 참고 스킬
 

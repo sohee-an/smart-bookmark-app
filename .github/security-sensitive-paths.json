@@ -1,0 +1,23 @@
+{
+  "$comment": "보안 민감 경로 단일 소스. security-review-nudge.yml(PR 코멘트), scripts/security/pre-push.mjs(push 전 경고), security-reviewer/security-adversary 에이전트(분석 대상)가 모두 이 파일을 읽는다. pattern은 저장소 루트 기준 경로에 대한 JavaScript 정규식이다.",
+  "exclude": ["\\.test\\.tsx?$"],
+  "paths": [
+    { "pattern": "^apps/web/src/app/api/", "why": "API 라우트 (인증 누락, IDOR)" },
+    { "pattern": "^apps/web/src/middleware\\.ts$", "why": "인증 미들웨어 (우회 경로)" },
+    { "pattern": "^apps/web/src/app/auth/", "why": "OAuth 콜백, 익스텐션 토큰 페이지" },
+    { "pattern": "^apps/web/src/features/auth/", "why": "인증 로직 (로그인/회원가입 검증)" },
+    { "pattern": "^apps/web/src/shared/api/supabase/", "why": "Supabase 클라이언트, 세션 판정" },
+    {
+      "pattern": "^apps/web/src/entities/[^/]+/api/.*supabase.*\\.ts$",
+      "why": "Supabase repository (user_id 필터, IDOR)"
+    },
+    {
+      "pattern": "^apps/web/src/shared/lib/(validateSsrf|validateUrl|rateLimit|guest|guestCookie)\\.ts$",
+      "why": "입력 검증, SSRF, rate limit, 게스트 쿠키"
+    },
+    { "pattern": "^apps/web/src/server/", "why": "서버 서비스 (크롤러: 외부 URL fetch, AI 호출)" },
+    { "pattern": "^supabase/migrations/", "why": "DB 스키마, RLS 정책" },
+    { "pattern": "^apps/web/next\\.config\\.ts$", "why": "보안 헤더, 이미지 도메인" },
+    { "pattern": "^\\.github/workflows/", "why": "CI 워크플로우 (권한, 시크릿 노출, 외부 PR 실행)" }
+  ]
+}

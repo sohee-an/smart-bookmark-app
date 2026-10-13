@@ -6,9 +6,8 @@ name: Security Review Nudge
 # 언제 보안 리뷰를 돌려야 하는지를 사람 기억에 맡기면 까먹는다(3월·7월 두 번만 돌렸음).
 # 그래서 감지만 자동화하고, 실행 여부는 PR 작성자가 정한다. CI를 막지 않는다.
 #
-# 패턴 목록은 아래 SENSITIVE 한 곳에서만 관리한다(on.paths와 이중 관리하지 않으려고
-# 모든 PR에서 돌린다. checkout 없이 API 호출만 해서 수 초 안에 끝난다).
-# .claude/agents/security-reviewer.md의 "분석 대상"과 같은 목록이다. 한쪽을 바꾸면 같이 바꾼다.
+# 패턴 목록은 .github/security-sensitive-paths.json 한 곳에서 관리한다. pre-push 훅과
+# 보안 에이전트도 같은 파일을 읽는다. 그 파일만 sparse checkout해서 수 초 안에 끝난다.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -24,25 +23,21 @@ jobs:
   nudge:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/security-sensitive-paths.json
+          sparse-checkout-cone-mode: false
       - name: 보안 민감 파일 변경 감지 → PR 코멘트
         uses: actions/github-script@v7
         with:
           script: |
-            const SENSITIVE = [
-              { re: /^apps\/web\/src\/app\/api\//, why: "API 라우트 (인증 누락, IDOR)" },
-              { re: /^apps\/web\/src\/middleware\.ts$/, why: "인증 미들웨어 (우회 경로)" },
-              { re: /^apps\/web\/src\/app\/auth\//, why: "OAuth 콜백, 익스텐션 토큰 페이지" },
-              { re: /^apps\/web\/src\/features\/auth\//, why: "인증 로직 (로그인/회원가입 검증)" },
-              { re: /^apps\/web\/src\/shared\/api\/supabase\//, why: "Supabase 클라이언트, 세션 판정" },
-              { re: /^apps\/web\/src\/entities\/[^/]+\/api\/.*supabase.*\.ts$/, why: "Supabase repository (user_id 필터, IDOR)" },
-              { re: /^apps\/web\/src\/shared\/lib\/(validateSsrf|validateUrl|rateLimit|guest|guestCookie)\.ts$/, why: "입력 검증, SSRF, rate limit, 게스트 쿠키" },
-              { re: /^apps\/web\/src\/server\//, why: "서버 서비스 (크롤러: 외부 URL fetch)" },
-              { re: /^supabase\/migrations\//, why: "DB 스키마, RLS 정책" },
-              { re: /^apps\/web\/next\.config\.ts$/, why: "보안 헤더, 이미지 도메인" },
-            ];
-            const isTest = (f) => /\.test\.tsx?$/.test(f);
+            const cfg = require(`${process.env.GITHUB_WORKSPACE}/.github/security-sensitive-paths.json`);
+            const SENSITIVE = cfg.paths.map((p) => ({ re: new RegExp(p.pattern), why: p.why }));
+            const EXCLUDE = cfg.exclude.map((p) => new RegExp(p));
+            const isTest = (f) => EXCLUDE.some((re) => re.test(f));
             const MARKER = "<!-- security-review-nudge -->";
             const { owner, repo } = context.repo;
             const issue_number = context.payload.pull_request.number;
@@ -83,9 +78,13 @@ jobs:
               "| --- | --- |",
               rows,
               "",
-              "로컬 Claude Code에서 (security-reviewer 에이전트):",
+              "로컬 Claude Code에서:",
               "```",
               `보안 검토해줘 ${targets}`,
+              "```",
+              "인증, RLS, 토큰처럼 위험한 변경이면 공격자 관점 리뷰까지 같이 돌린다:",
+              "```",
+              `심층 보안 검토해줘 ${targets}`,
               "```",
             ].join("\n");
 

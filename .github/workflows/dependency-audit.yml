@@ -1,0 +1,66 @@
+name: Dependency Audit
+
+# 운영 의존성(prod)의 알려진 취약점을 lockfile 기준으로 검사한다.
+# Dependabot 알림은 기본 브랜치(main)만 보기 때문에, dev까지 같은 기준으로 보려고 따로 둔다.
+#
+# 지금은 리포트만 한다(CI를 막지 않음). 2026-10 기준 next 16.1.6에 critical/high가 있어서
+# 막으면 모든 PR이 멈춘다. next를 올린 뒤 FAIL_ON을 critical로 바꿔 게이트로 전환한다.
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - "pnpm-lock.yaml"
+      - "**/package.json"
+      - ".github/workflows/dependency-audit.yml"
+  schedule:
+    - cron: "37 3 * * 1" # 매주 월요일. 코드가 그대로여도 새 취약점이 공개되면 잡힌다
+
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FAIL_ON: "none" # none | critical | high
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: pnpm audit (prod)
+        run: |
+          pnpm audit --prod --json > audit.json || true
+          node -e '
+            const fs = require("fs");
+            const d = JSON.parse(fs.readFileSync("audit.json", "utf8"));
+            const m = d.metadata?.vulnerabilities ?? {};
+            const adv = Object.values(d.advisories ?? {});
+            const rows = adv
+              .filter((a) => ["critical", "high"].includes(a.severity))
+              .sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "critical" ? -1 : 1))
+              .map((a) => `| ${a.severity} | \`${a.module_name}\` | ${a.patched_versions} | ${a.title.replace(/\|/g, "/")} |`);
+            const out = [
+              "## 의존성 취약점 (prod)",
+              "",
+              `critical ${m.critical ?? 0} · high ${m.high ?? 0} · moderate ${m.moderate ?? 0} · low ${m.low ?? 0}`,
+              "",
+              rows.length ? "| 심각도 | 패키지 | 패치 버전 | 내용 |\n| --- | --- | --- | --- |\n" + rows.join("\n") : "critical/high 없음",
+            ].join("\n");
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, out + "\n");
+            const fail = process.env.FAIL_ON;
+            const n = fail === "critical" ? (m.critical ?? 0) : fail === "high" ? (m.critical ?? 0) + (m.high ?? 0) : 0;
+            if ((m.critical ?? 0) + (m.high ?? 0) > 0) {
+              console.log(`::warning::prod 의존성에 critical ${m.critical ?? 0}, high ${m.high ?? 0}건. 실행 요약(Summary)을 확인하세요.`);
+            }
+            if (n > 0) { console.log(`::error::FAIL_ON=${fail} 기준 ${n}건`); process.exit(1); }
+          '
