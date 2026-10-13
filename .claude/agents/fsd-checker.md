@@ -5,6 +5,16 @@ tools: Read, Grep, Glob
 model: sonnet
 ---
 
+> **현재 상태 (2026-10, 사람이 읽는 메모)**
+>
+> 평소 개발에서는 이 에이전트를 쓰지 않는다. FSD 검사는 ESLint가 맡는다.
+>
+> - 레이어 방향 위반(entities → features 등): `pnpm --filter @smart-bookmark/web lint:fsd`가 CI에서 매번 막는다 (`packages/eslint-config/fsd.js`)
+> - 같은 레이어 슬라이스 간 참조, 상대경로 import: 아직 lint가 못 잡는다. eslint-plugin-boundaries로 옮겨 ESLint에서 잡을 예정이다
+> - 이 에이전트는 "에이전트로 찾던 것을 패턴이 보이면 결정론(lint)으로 내린다"는 발표 시연용으로 남겨 뒀다. 아래 레이어 목록(`pages`)은 예전 구조라 실제(`app > widgets > features > entities > shared`)와 다르다
+>
+> 이 에이전트가 호출되면 아래 기준대로 분석한다.
+
 smart-bookmark 프로젝트의 FSD 레이어 의존성 위반을 분석해줘.
 
 ## FSD 레이어 규칙
