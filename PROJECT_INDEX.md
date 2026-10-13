@@ -216,5 +216,3 @@ shared/      → 유틸, 공용 UI, API 클라이언트
 
 - 에이전트가 참조하지 않는 개인 학습 노트 및 포폴 어필용 문서
 - `docs/personal/decisions/` — 구현 결정사항 학습 기록
-
-- 테스트용 옛 경로 → `apps/web/src/server/services/ai.service.ts`
