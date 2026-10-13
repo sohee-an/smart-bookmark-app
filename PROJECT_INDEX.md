@@ -2,6 +2,9 @@
 
 > Claude가 핀포인트로 파일을 찾기 위한 인덱스.
 > 새 파일 추가/삭제 시 반드시 업데이트할 것.
+>
+> **파일 경로의 단일 기준이다.** 에이전트, 스킬, 명령은 경로 대신 이름을 쓰고 위치는 여기서 찾는다.
+> 여기와 CLAUDE.md, `.claude/` 문서에 적힌 경로가 실제로 없으면 CI(`scripts/check-doc-paths.mjs`)가 PR을 막고 코멘트로 알려 준다.
 
 ---
 
@@ -128,6 +131,8 @@
 
 - `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`
+- SSRF 방어 (`validateSsrf`, `SsrfError`: 사설 IP, 비 HTTP 프로토콜 차단) → `apps/web/src/shared/lib/validateSsrf.ts`
+  - **테스트**: `validateSsrf.test.ts` ✅ → `apps/web/src/shared/lib/validateSsrf.test.ts`
   - **테스트**: `validateUrl.test.ts` ✅ → `apps/web/src/shared/lib/validateUrl.test.ts`
 - 에러 메시지 추출 (`getErrorMessage`) → `apps/web/src/shared/lib/error.ts`
 - `useClientNow` (SSR hydration 방지용 클라이언트 현재 시간 훅) → `apps/web/src/shared/lib/useClientNow.ts`

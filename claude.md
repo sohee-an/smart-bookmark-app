@@ -22,7 +22,6 @@ smart-bookmark/
 │           └── middleware.ts
 └── packages/
     ├── eslint-config/ # 공통 ESLint 설정
-    ├── types/         # 공통 타입
     ├── typescript-config/ # 공통 TS 설정
     └── ui/            # 공통 UI 컴포넌트
 ```
@@ -96,6 +95,8 @@ pnpm test       # 테스트 실행
 ## 탐색 규칙
 
 - 파일을 찾을 때는 반드시 PROJECT_INDEX.md를 먼저 본다
+- 파일 경로의 기준은 PROJECT_INDEX.md 한 곳이다. 에이전트, 스킬, 명령 문서에는 경로 대신 이름을 쓴다
+- 파일을 옮기거나 이름을 바꾸면 PROJECT_INDEX.md를 같이 고친다. 안 고치면 CI의 문서 경로 검사가 PR을 막는다
 - INDEX에서 찾지 못한 경우 → Glob/Grep 절대 금지, 사용자에게 이렇게 말한다:
   > "PROJECT_INDEX.md에 해당 키워드가 없어서 충분한 자료를 찾지 못했습니다."
 - 사용자가 "전체코드 봐줘" 라고 하면 → 그때만 Glob/Grep으로 탐색하고, 찾은 파일을 PROJECT_INDEX.md에 즉시 추가
@@ -247,14 +248,14 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 
 `.claude/project/reviews/` — 모든 리뷰 결과가 날짜별로 저장됨
 
-| 파일 패턴                       | 내용                    |
-| ------------------------------- | ----------------------- |
-| `code-review-YYYY-MM-DD.md`     | 아키텍처/타입 설계 리뷰 |
-| `security-review-YYYY-MM-DD.md` | 보안 취약점 분석        |
-| `security-deep-YYYY-MM-DD.md`   | 공격자 관점 보안 분석   |
-| `security-summary-YYYY-MM-DD.md` | 보안 리뷰 종합         |
-| `ux-review-YYYY-MM-DD.md`       | UX/인터랙션 리뷰        |
-| `qa-review-YYYY-MM-DD.md`       | QA/완성도 리뷰          |
+| 파일 패턴                        | 내용                    |
+| -------------------------------- | ----------------------- |
+| `code-review-YYYY-MM-DD.md`      | 아키텍처/타입 설계 리뷰 |
+| `security-review-YYYY-MM-DD.md`  | 보안 취약점 분석        |
+| `security-deep-YYYY-MM-DD.md`    | 공격자 관점 보안 분석   |
+| `security-summary-YYYY-MM-DD.md` | 보안 리뷰 종합          |
+| `ux-review-YYYY-MM-DD.md`        | UX/인터랙션 리뷰        |
+| `qa-review-YYYY-MM-DD.md`        | QA/완성도 리뷰          |
 
 **에이전트 참조 규칙:**
 
@@ -265,13 +266,13 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 
 **보안 검사 구조:**
 
-| 언제 | 무엇이 | 성격 |
-| ---- | ------ | ---- |
-| push 전 (로컬) | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고) | 결정론 |
-| PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트 | 결정론, 막지 않음 |
-| 매주 월요일 | CodeQL, 의존성 audit. critical/high가 있으면 이슈 하나를 만들거나 갱신하고, 해소되면 닫는다 | 결정론, 막지 않음 |
-| 사람이 부를 때 | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary) | 판단 |
-| 사람이 부를 때 | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림 | 판단 |
+| 언제              | 무엇이                                                                                      | 성격              |
+| ----------------- | ------------------------------------------------------------------------------------------- | ----------------- |
+| push 전 (로컬)    | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고)   | 결정론            |
+| PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트                                                 | 결정론, 막지 않음 |
+| 매주 월요일       | CodeQL, 의존성 audit. critical/high가 있으면 이슈 하나를 만들거나 갱신하고, 해소되면 닫는다 | 결정론, 막지 않음 |
+| 사람이 부를 때    | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary)                    | 판단              |
+| 사람이 부를 때    | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림                                 | 판단              |
 
 보안 민감 경로는 `.github/security-sensitive-paths.json` 하나로 관리한다.
 

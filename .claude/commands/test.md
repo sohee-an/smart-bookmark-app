@@ -26,8 +26,8 @@ allowed-tools: Read, Write, Edit, Glob, Bash(git diff:*, git status:*)
 
 ```
 # 예시
-apps/web/src/features/bookmark/model/bookmark.service.ts
-→ apps/web/src/features/bookmark/model/bookmark.service.test.ts 존재 여부 확인
+apps/web/src/features/bookmark/model/filterBookmarks.ts
+→ apps/web/src/features/bookmark/model/filterBookmarks.test.ts 존재 여부 확인
 ```
 
 - **없으면** → 새로 생성
