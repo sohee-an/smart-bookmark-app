@@ -24,10 +24,12 @@
     ]
   },
   "devDependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.6",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "secretlint": "13.0.6",
     "turbo": "^2.8.13"
   },
   "dependencies": {

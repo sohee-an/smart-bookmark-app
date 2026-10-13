@@ -1,0 +1,104 @@
+name: Security Review Nudge
+
+# 보안 리뷰 "알림"만 하는 워크플로우 — 리뷰를 강제하지도, 직접 돌리지도 않는다.
+# 결정론 경계: "보안 민감 파일이 바뀌었나"는 경로 매칭이라 객관적 → 자동 감지.
+#             "실제로 취약한가"는 판단이 필요 → 사람이 security-reviewer 에이전트를 부른다.
+# 언제 보안 리뷰를 돌려야 하는지를 사람 기억에 맡기면 까먹는다(3월·7월 두 번만 돌렸음).
+# 그래서 감지만 자동화하고, 실행 여부는 PR 작성자가 정한다. CI를 막지 않는다.
+#
+# 패턴 목록은 .github/security-sensitive-paths.json 한 곳에서 관리한다. pre-push 훅과
+# 보안 에이전트도 같은 파일을 읽는다. 그 파일만 sparse checkout해서 수 초 안에 끝난다.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - main
+      - dev
+
+concurrency:
+  group: security-nudge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nudge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/security-sensitive-paths.json
+          sparse-checkout-cone-mode: false
+      - name: 보안 민감 파일 변경 감지 → PR 코멘트
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const cfg = require(`${process.env.GITHUB_WORKSPACE}/.github/security-sensitive-paths.json`);
+            const SENSITIVE = cfg.paths.map((p) => ({ re: new RegExp(p.pattern), why: p.why }));
+            const EXCLUDE = cfg.exclude.map((p) => new RegExp(p));
+            const isTest = (f) => EXCLUDE.some((re) => re.test(f));
+            const MARKER = "<!-- security-review-nudge -->";
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: issue_number, per_page: 100,
+            });
+            const hits = files
+              .map((f) => f.filename)
+              .filter((f) => !isTest(f))
+              .map((f) => ({ file: f, rule: SENSITIVE.find((s) => s.re.test(f)) }))
+              .filter((h) => h.rule);
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body?.includes(MARKER));
+
+            // 감지 0건: 새 코멘트는 달지 않는다. 이전 push에서 달린 코멘트만 갱신한다.
+            if (hits.length === 0) {
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id,
+                  body: `${MARKER}\n**보안 리뷰 알림**: 최신 커밋 기준으로 보안 민감 파일 변경이 없습니다.`,
+                });
+              }
+              core.info("보안 민감 파일 변경 없음");
+              return;
+            }
+
+            const rows = hits.map((h) => `| \`${h.file}\` | ${h.rule.why} |`).join("\n");
+            const targets = hits.map((h) => h.file).join(" ");
+            // main으로 가는 PR은 배포 직전이라 심층 리뷰와 종합까지 권한다 (E2E를 main PR에서만 돌리는 것과 같은 자리)
+            const toMain = context.payload.pull_request.base.ref === "main";
+            const body = [
+              MARKER,
+              "**보안 리뷰 알림**: 이 PR이 보안 민감 파일을 바꿨습니다. 리뷰를 강제하지 않습니다. 필요하다고 판단되면 돌려 주세요.",
+              ...(toMain
+                ? [
+                    "",
+                    "> **배포 전 PR입니다.** dev에 쌓인 보안 변경이 프로덕션으로 나갑니다. 심층 리뷰와 종합(`보안 리뷰 종합해줘`)을 권장합니다.",
+                  ]
+                : []),
+              "",
+              "| 파일 | 확인할 것 |",
+              "| --- | --- |",
+              rows,
+              "",
+              "로컬 Claude Code에서:",
+              "```",
+              `보안 검토해줘 ${targets}`,
+              "```",
+              "인증, RLS, 토큰처럼 위험한 변경이면 공격자 관점 리뷰까지 같이 돌린다:",
+              "```",
+              `심층 보안 검토해줘 ${targets}`,
+              "```",
+            ].join("\n");
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+            core.info(`보안 민감 파일 ${hits.length}개 감지`);
