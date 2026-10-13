@@ -62,14 +62,14 @@ Agent 호출:
     전체 UI 컴포넌트에 대해 QA 리뷰를 수행해줘.
 
     아래 파일들을 순서대로 직접 읽고 분석해줘:
-    1. apps/web/src/components/layout/Header.tsx
-    2. apps/web/src/app/_home-content.tsx
+    1. apps/web/src/widgets/layout/Header.tsx
+    2. apps/web/src/widgets/home/ui/HomeContent.tsx
     3. apps/web/src/widgets/bookmark/RecentBookmarkSlider.tsx
     4. apps/web/src/entities/bookmark/ui/BookmarkCard.tsx
     5. apps/web/src/entities/bookmark/ui/BookmarkDetailPanel.tsx
     6. apps/web/src/features/bookmark/ui/AddBookmarkOverlay.tsx
     7. apps/web/src/features/bookmark/ui/BookmarkList.tsx
-    8. apps/web/src/app/bookmarks/BookmarksContent.tsx
+    8. apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx
 
     각 파일을 직접 읽고, .claude/agents/qa-reviewer.md 의 체크리스트를 기준으로 아래 항목을 스스로 감지해줘:
 

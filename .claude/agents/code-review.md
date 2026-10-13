@@ -25,11 +25,11 @@ tools: Read, Grep, Glob, Bash, Write
 
 ### 1. FSD 레이어 위반 (즉시 차단 수준)
 
-레이어 순서: `app → pages → widgets → features → entities → shared`
+레이어 순서: `app → widgets → features → entities → shared`
 역방향 import는 이유 불문 금지.
 
 - `entities`가 `features`를 import → **레이어 위반, 즉시 수정 대상**
-- `pages`에 비즈니스 로직 → **설계 오류**
+- `app`(라우트, 레이아웃)에 비즈니스 로직 → **설계 오류**
 - `shared`에 도메인 의존 코드 → **shared 오염**
 
 ### 2. 타입 설계
