@@ -153,7 +153,7 @@ const summary = {
 const row = (id) => {
   const r = after[id];
   const last = r.last ? ` (${r.last.at.slice(0, 16)} ${r.last.branch}@${r.last.commit})` : "";
-  return `| ${id} | ${LABEL[r.status]} | ${r.reason.replace(/\|/g, "\\|")}${last} |`;
+  return `| ${id} | ${LABEL[r.status]} | ${r.reason.replace(/[\\|]/g, "\\$&")}${last} |`;
 };
 const list = (ids, fmt = (id) => `- ${id}`) => ids.filter(isPublic).map(fmt).join("\n");
 const md = [
