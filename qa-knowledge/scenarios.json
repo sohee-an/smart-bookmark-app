@@ -76,7 +76,7 @@
         {
           "runner": "vitest",
           "file": "src/__tests__/bookmark-pipeline-integration.test.ts",
-          "name": "실패"
+          "name": "/크롤링 실패 → crawl_failed → 재시도 → 성공|AI 분석 실패 → failed/"
         },
         {
           "runner": "vitest",
@@ -85,7 +85,7 @@
         {
           "runner": "playwright",
           "file": "e2e/pipeline-failure.spec.ts",
-          "name": "파이프라인 실패 단계별 피드백"
+          "name": "/파이프라인 실패 단계별 피드백 › (크롤링 실패|AI 분석 실패|재시도 3회 초과|네트워크 에러)/"
         }
       ]
     },
@@ -201,7 +201,6 @@
           "file": "src/features/chat/ui/Markdown.test.tsx"
         }
       ],
-      "maxAgeDays": 7,
       "notes": "답변 품질은 모델에 달려 있어서 코드가 그대로여도 주기적으로 다시 본다"
     },
     {

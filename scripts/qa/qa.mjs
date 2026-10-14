@@ -1,13 +1,15 @@
 // QATester CLI
-//   node scripts/qa/qa.mjs status [--json]          시나리오별 상태 (fresh / stale / failing / unverified)
+//   node scripts/qa/qa.mjs status [--json]          시나리오별 상태 (fresh / partial / stale / failing / broken / unverified / hold)
 //   node scripts/qa/qa.mjs gaps                      어느 시나리오에도 연결되지 않은 소스 파일 (시나리오를 더 써야 할 곳)
 //   node scripts/qa/qa.mjs finding add <id> "<내용>" [--scenario <id>] [--status open|fixed|wontfix|observed]
 //   node scripts/qa/qa.mjs finding list
 //   node scripts/qa/qa.mjs show <시나리오 id>        연결된 파일, mock된 경계, 마지막 근거, 바뀐 파일
-//   node scripts/qa/qa.mjs recheck [--all] [--e2e] [--live] [--scenario <id>]
+//   node scripts/qa/qa.mjs recheck [--all] [--e2e] [--live] [--scenario <id>[,<id>…]]
 //                                                    재검증이 필요한 시나리오의 테스트만 돌리고 사실을 쌓는다
 //                                                    --e2e: Playwright도 돌린다 (브라우저, 개발 서버 필요)
 //                                                    --live: 외부 서비스를 부르는 스크립트 검사도 돌린다 (실제 AI 등)
+//   node scripts/qa/qa.mjs fact void <시나리오 id> --reason "<이유>" [--at <근거 시각> | --last]
+//                                                    검사 환경 탓에 생긴 근거를 지우지 않고 무효로 표시한다
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { appendFileSync, existsSync, mkdtempSync, readFileSync } from "node:fs";
@@ -17,14 +19,21 @@ import {
   KDIR,
   ROOT,
   currentFindings,
+  defHash,
   fingerprint,
   gitInfo,
   linkScenario,
   loadConfig,
   loadFacts,
   loadScenarios,
+  nameMatches,
+  needsRecheck,
+  refId,
+  sameFile,
   statusOf,
 } from "./lib.mjs";
+
+const posix = path.posix;
 
 const [cmd = "status", ...rest] = process.argv.slice(2);
 const flag = (f) => rest.includes(f);
@@ -37,6 +46,8 @@ const LABEL = {
   stale: "재검증 필요",
   failing: "실패",
   unverified: "미검증",
+  partial: "부분 검증",
+  broken: "검사 오류",
   hold: "보류",
 };
 
@@ -54,6 +65,7 @@ if (cmd === "status") {
           id: r.sc.id,
           status: r.status,
           reason: r.reason,
+          needsRun: r.needsRun ?? undefined,
           changed: r.changed ?? [],
         })),
         null,
@@ -88,9 +100,15 @@ if (cmd === "status") {
   console.log(
     `# ${sc.id}\n기능: ${sc.feature}\n주장: ${sc.claim}\n상태: ${LABEL[r.status]} — ${r.reason}`
   );
-  console.log(
-    `\n검증 테스트:\n${sc.verifiedBy.map((v) => `  - ${v.runner} ${v.file}${v.name ? ` "${v.name}"` : ""}`).join("\n") || "  (없음)"}`
-  );
+  // 검증 테스트마다 마지막으로 실제로 돈 결과를 따로 보여 준다
+  const refLine = (p) => {
+    const t = p.latest?.test;
+    if (!t) return `  - ${p.id}\n      아직 안 돎`;
+    const extra = [t.reason, t.cases ? `걸린 테스트 ${t.cases.length}개` : ""].filter(Boolean);
+    return `  - ${p.id}\n      ${t.result} (${p.latest.fact.at.slice(0, 16)})${extra.length ? ` — ${extra.join(", ")}` : ""}`;
+  };
+  const refLines = r.refs ? r.refs.map(refLine) : sc.verifiedBy.map((v) => `  - ${refId(v)}`);
+  console.log(`\n검증 테스트:\n${refLines.join("\n") || "  (없음)"}`);
   console.log(
     `\n연결된 코드 ${r.link.files.length}개:\n${r.link.files.map((f) => `  - ${f}`).join("\n")}`
   );
@@ -110,24 +128,32 @@ if (cmd === "status") {
     );
   if (sc.notes) console.log(`\n메모: ${sc.notes}`);
 } else if (cmd === "recheck") {
-  const only = opt("--scenario");
-  const rows = statusAll().filter(
-    (r) =>
-      (only ? r.sc.id === only : (flag("--all") || r.status !== "fresh") && r.status !== "hold") &&
-      r.sc.verifiedBy.length
-  );
+  // --scenario a,b 처럼 여러 개를 쉼표로 줄 수 있다 (나이틀리 재시도를 한 번에 묶는다)
+  const only = opt("--scenario") ? new Set(opt("--scenario").split(",")) : null;
+  // 이번 실행에서 실제로 돌 수 있는 검증 테스트인가 (E2E는 --e2e, 외부 서비스 스크립트는 --live가 있어야 돈다)
+  const runnable = (ref) =>
+    ref.runner === "vitest" ||
+    (ref.runner === "playwright" && flag("--e2e")) ||
+    (ref.runner === "script" && flag("--live"));
+  const rows = statusAll().filter((r) => {
+    if (!r.sc.verifiedBy.some(runnable)) return false;
+    if (only) return only.has(r.sc.id);
+    if (r.status === "hold") return false;
+    if (flag("--all")) return true;
+    if (!needsRecheck(r, r.sc)) return false;
+    // 아직 안 돈 검증만 남은 "일부 검증"은 그 검증을 이번에 돌릴 수 있을 때만 대상이다
+    if (r.status === "partial") return r.refs.some((p) => !p.latest && runnable(p.ref));
+    return true;
+  });
   if (!rows.length) {
     console.log("재검증할 시나리오가 없습니다.");
     process.exit(0);
   }
   console.log(`재검증 대상 ${rows.length}개: ${rows.map((r) => r.sc.id).join(", ")}\n`);
 
-  // vitest: 대상 시나리오의 테스트 파일을 한 번에 돌리고 JSON 결과를 테스트 단위로 나눠 쓴다
-  const vitestFiles = [
-    ...new Set(
-      rows.flatMap((r) => r.sc.verifiedBy.filter((v) => v.runner === "vitest").map((v) => v.file))
-    ),
-  ];
+  // 지문은 테스트를 돌리기 전에 찍는다. 돌린 뒤에 찍으면 실행 중에 바뀐 파일이 검증된 것처럼 기록된다
+  const before = new Map(rows.map((r) => [r.sc.id, fingerprint(linkScenario(r.sc, cfg).files)]));
+
   // 테스트 러너는 셸을 거치지 않고 node로 JS 진입점을 직접 실행한다.
   // (예전에는 Windows에서 pnpm.cmd 때문에 셸 문자열을 이어 붙였는데, 인자 이스케이프가 불완전했다. CodeQL 지적)
   const appDir = path.join(ROOT, cfg.appRoot);
@@ -144,7 +170,27 @@ if (cmd === "status") {
       maxBuffer: 64 * 1024 * 1024,
     });
 
+  // 결과: { result: pass | fail | error | skipped, ran, skipped, cases, reason }
+  //  - cases: 근거로 실제로 걸린 테스트 제목. 다음 실행에서 이 중 하나가 사라지면 오류로 멈춘다 (근거가 몰래 줄어드는 것 방지)
+  //  - error: 검사 자체가 돌지 못함 (환경, 도구, 근거 테스트 없음). 제품 실패(fail)와 따로 센다
+  //  - skip된 테스트는 통과로 세지 않는다
+  const fromCases = (cases, isSkipped, isFailed) => {
+    if (!cases.length) return { result: "error", reason: "이름에 맞는 테스트가 없음" };
+    const titles = cases.map((c) => c.title).sort();
+    const skipped = cases.filter(isSkipped).length;
+    const ran = cases.length - skipped;
+    if (cases.some(isFailed)) return { result: "fail", ran, skipped, cases: titles };
+    return { result: ran === 0 ? "skipped" : "pass", ran, skipped, cases: titles };
+  };
+
+  // vitest: 대상 시나리오의 테스트 파일을 한 번에 돌리고 JSON 결과를 테스트 단위로 나눠 쓴다
+  const vitestFiles = [
+    ...new Set(
+      rows.flatMap((r) => r.sc.verifiedBy.filter((v) => v.runner === "vitest").map((v) => v.file))
+    ),
+  ];
   let vitest = null;
+  let vitestError = "";
   if (vitestFiles.length) {
     const out = path.join(mkdtempSync(path.join(os.tmpdir(), "qa-")), "vitest.json");
     const r = run(cfg.vitest, [
@@ -154,23 +200,25 @@ if (cmd === "status") {
       ...vitestFiles,
     ]);
     vitest = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : null;
-    if (!vitest)
+    if (!vitest) {
+      vitestError = "vitest 결과를 읽지 못함";
       console.error(`vitest 결과를 읽지 못했습니다.\n${(r.stderr || r.stdout).slice(-1500)}`);
+    }
   }
-  // 결과: { result: pass | fail | error | skipped, ran, skipped }
-  // skip된 테스트는 통과로 세지 않는다. 일부만 skip이면 pass지만 skipped 수를 남기고 시나리오를 "일부"로 표시한다
   const vitestResult = (ref) => {
-    if (!vitest) return { result: "error" };
-    const fileRes = vitest.testResults.find((t) => t.name.replace(/\\/g, "/").endsWith(ref.file));
-    if (!fileRes) return { result: "error" };
-    const cases = fileRes.assertionResults.filter(
-      (a) => !ref.name || a.fullName.includes(ref.name)
+    if (!vitest) return { result: "error", reason: vitestError };
+    const fileRes = vitest.testResults.find((t) =>
+      sameFile(t.name, posix.join(cfg.appRoot, ref.file))
     );
-    if (!cases.length) return { result: "error" };
-    const skipped = cases.filter((c) => ["skipped", "pending", "todo"].includes(c.status)).length;
-    const ran = cases.length - skipped;
-    if (cases.some((c) => c.status === "failed")) return { result: "fail", ran, skipped };
-    return { result: ran === 0 ? "skipped" : "pass", ran, skipped };
+    if (!fileRes) return { result: "error", reason: "테스트 파일 결과가 없음 (수집 실패)" };
+    const cases = fileRes.assertionResults
+      .map((a) => ({ title: a.fullName, status: a.status }))
+      .filter((c) => nameMatches(ref.name, c.title));
+    return fromCases(
+      cases,
+      (c) => ["skipped", "pending", "todo"].includes(c.status),
+      (c) => c.status === "failed"
+    );
   };
 
   // Playwright: 대상 E2E 파일을 한 번에 돌린다(개발 서버를 한 번만 띄운다). 결과를 테스트 제목으로 나눠 쓴다
@@ -203,9 +251,24 @@ if (cmd === "status") {
       console.error(`Playwright 결과를 읽지 못했습니다.\n${(r.stderr || r.stdout).slice(-2000)}`);
     }
   }
-  // script 러너: 스크립트를 실행하고 마지막 줄의 JSON({ result, ran, skipped, ... })을 결과로 쓴다.
+  // Playwright 보고서의 파일 경로는 testDir 기준이다 (예: e2e/header.spec.ts → header.spec.ts)
+  const testDir = (cfg.playwright.testDir ?? "").replace(/\/$/, "");
+  const e2eRel = (file) =>
+    testDir && file.startsWith(`${testDir}/`) ? file.slice(testDir.length + 1) : file;
+  const playwrightResult = (ref) => {
+    if (!e2eCases) return { result: "error", reason: "Playwright 결과를 읽지 못함" };
+    const want = e2eRel(ref.file);
+    return fromCases(
+      e2eCases.filter((c) => c.file === want && nameMatches(ref.name, c.title)),
+      (c) => c.status === "skipped",
+      (c) => c.status === "unexpected"
+    );
+  };
+
+  // script 러너: 스크립트를 실행하고 마지막 줄의 JSON({ result, checks, ... })을 결과로 쓴다.
   // 실제 AI 점검처럼 외부 서비스를 부르는 검사는 --live를 줘야 돈다 (느리고 비용이 든다)
   // 같은 스크립트를 여러 시나리오가 쓰면 한 번만 돌리고 결과를 나눠 쓴다 (비용, 그리고 둘이 엇갈리는 일을 막는다)
+  // 그룹 "setup"(계정 생성, 서버 기동 등)은 제품 주장이 아니라 검사 준비다. 실패하면 fail이 아니라 error다
   const scriptCache = new Map();
   const runScript = (file) => {
     if (scriptCache.has(file)) return scriptCache.get(file);
@@ -215,73 +278,106 @@ if (cmd === "status") {
     return r;
   };
   const scriptResult = (ref) => {
-    if (!flag("--live")) return { result: "skipped", reason: "--live 없음" };
     const r = runScript(ref.file);
     const last = (r.stdout ?? "").trim().split(/\r?\n/).filter(Boolean).at(-1);
+    let o;
     try {
-      const o = JSON.parse(last);
-      if (o.result === "error") return { result: "error", error: o.error };
-      // ref.name이 있으면 그 그룹의 검사만 이 시나리오의 근거로 쓴다 (Playwright의 -g와 같은 역할)
-      const checks = (o.checks ?? []).filter((c) => !ref.name || c.group === ref.name);
-      if (!checks.length)
-        return { result: "error", error: `그룹 "${ref.name}"에 해당하는 검사가 없음` };
-      const failed = checks.filter((c) => !c.ok);
-      for (const c of failed) console.log(`         FAIL ${c.name}: ${c.detail ?? ""}`);
-      return {
-        result: failed.length ? "fail" : "pass",
-        ran: checks.length,
-        skipped: 0,
-        checks,
-        serverLog: failed.length ? o.serverLog : undefined,
-      };
+      o = JSON.parse(last);
     } catch {
       console.error(
         `스크립트 결과(JSON)를 읽지 못했습니다: ${ref.file}\n${(r.stderr || r.stdout || "").slice(-1500)}`
       );
-      return { result: "error" };
+      return { result: "error", reason: "스크립트 결과(JSON)를 읽지 못함" };
     }
+    const all = o.checks ?? [];
+    // "setup"은 모든 그룹의 준비, "setup:<그룹>"은 그 그룹만의 준비다 (예: setup:ai = 외부 AI 한도)
+    const setupFailed = all.filter(
+      (c) => !c.ok && (c.group === "setup" || (ref.name && c.group === `setup:${ref.name}`))
+    );
+    if (o.result === "error" || setupFailed.length) {
+      const why = o.error ?? setupFailed.map((c) => `${c.name}: ${c.detail ?? ""}`).join("; ");
+      console.log(`         검사 오류: ${why}`);
+      return { result: "error", reason: `검사 준비 실패: ${why}`.slice(0, 300) };
+    }
+    // ref.name이 있으면 그 그룹의 검사만 이 시나리오의 근거로 쓴다 (Playwright의 -g와 같은 역할)
+    const checks = all.filter((c) =>
+      ref.name ? c.group === ref.name : !c.group?.startsWith("setup")
+    );
+    if (!checks.length)
+      return { result: "error", reason: `그룹 "${ref.name}"에 해당하는 검사가 없음` };
+    const failed = checks.filter((c) => !c.ok);
+    for (const c of failed) console.log(`         FAIL ${c.name}: ${c.detail ?? ""}`);
+    return {
+      result: failed.length ? "fail" : "pass",
+      ran: checks.length,
+      skipped: 0,
+      cases: checks.map((c) => c.name).sort(),
+      checks,
+      serverLog: failed.length ? o.serverLog : undefined,
+    };
   };
 
-  const playwrightResult = (ref) => {
-    if (!e2eCases) return { result: "error" };
-    const cases = e2eCases.filter(
-      (c) =>
-        (ref.file.endsWith(c.file) || c.file.endsWith(ref.file.replace(/^e2e\//, ""))) &&
-        (!ref.name || c.title.includes(ref.name))
-    );
-    if (!cases.length) return { result: "error" };
-    const skipped = cases.filter((c) => c.status === "skipped").length;
-    const ran = cases.length - skipped;
-    if (cases.some((c) => c.status === "unexpected")) return { result: "fail", ran, skipped };
-    return { result: ran === 0 ? "skipped" : "pass", ran, skipped };
+  const resultOf = (ref) => {
+    if (!runnable(ref))
+      return {
+        result: "skipped",
+        reason: ref.runner === "playwright" ? "--e2e 없음" : "--live 없음",
+      };
+    if (ref.runner === "vitest") return vitestResult(ref);
+    if (ref.runner === "playwright") return playwrightResult(ref);
+    if (ref.runner === "script") return scriptResult(ref);
+    return { result: "error", reason: `알 수 없는 러너: ${ref.runner}` };
+  };
+
+  // 같은 정의에서 지난번에 근거로 걸린 테스트 제목. 이번에 그중 하나라도 빠지면 근거가 몰래 줄어든 것이다
+  const facts = loadFacts();
+  const prevCases = (sc, id) => {
+    const def = defHash(sc);
+    const f = facts
+      .filter((f) => f.type !== "void" && f.scenario === sc.id && f.defHash === def)
+      .map((f) => f.tests?.find((t) => t.ref === id && t.cases))
+      .filter(Boolean)
+      .at(-1);
+    return f?.cases ?? null;
   };
 
   const git = gitInfo();
   for (const row of rows) {
     const tests = row.sc.verifiedBy.map((ref) => {
-      const id = `${ref.runner}:${ref.file}${ref.name ? `::${ref.name}` : ""}`;
-      if (ref.runner === "vitest") return { ref: id, ...vitestResult(ref) };
-      if (ref.runner === "playwright")
+      const id = refId(ref);
+      const t = { ref: id, ...resultOf(ref) };
+      const prev = t.cases ? prevCases(row.sc, id) : null;
+      const lost = prev ? prev.filter((c) => !t.cases.includes(c)) : [];
+      if (lost.length && t.result !== "fail")
         return {
-          ref: id,
-          ...(flag("--e2e") ? playwrightResult(ref) : { result: "skipped", reason: "E2E 미실행" }),
+          ...t,
+          result: "error",
+          reason: `근거 테스트가 사라짐: ${lost.slice(0, 3).join(" | ")}${lost.length > 3 ? " …" : ""}`,
         };
-      if (ref.runner === "script") return { ref: id, ...scriptResult(ref) };
-      return { ref: id, result: "error" };
+      return t;
     });
+    const fp = before.get(row.sc.id);
+    const after = fingerprint(Object.keys(fp));
+    const moved = Object.keys(fp).filter((f) => fp[f] !== after[f]);
+    if (moved.length)
+      for (const t of tests)
+        if (t.result !== "skipped") {
+          t.result = "error";
+          t.reason = `실행 중 파일이 바뀜: ${moved.slice(0, 3).join(", ")}`;
+        }
     const ran = tests.filter((t) => t.result !== "skipped");
     const result = !ran.length
       ? "skipped"
-      : ran.some((t) => t.result === "error")
-        ? "error"
-        : ran.some((t) => t.result === "fail")
-          ? "fail"
+      : ran.some((t) => t.result === "fail")
+        ? "fail"
+        : ran.some((t) => t.result === "error")
+          ? "error"
           : "pass";
     const skippedCases = tests.reduce((n, t) => n + (t.skipped ?? 0), 0);
-    const link = linkScenario(row.sc, cfg);
     const fact = {
       scenario: row.sc.id,
       claim: row.sc.claim,
+      defHash: defHash(row.sc),
       result,
       partial: ran.length < tests.length || skippedCases > 0,
       skippedCases,
@@ -289,7 +385,7 @@ if (cmd === "status") {
       at: new Date().toISOString(),
       ...git,
       source: "recheck",
-      fingerprint: fingerprint(link.files),
+      fingerprint: fp,
     };
     // 아무 테스트도 돌지 않았으면 근거가 없으므로 기록하지 않는다 (근거 없는 사실은 넣지 않는다)
     if (result !== "skipped")
@@ -302,8 +398,35 @@ if (cmd === "status") {
       .join(", ");
     console.log(`${result.padEnd(7)} ${row.sc.id}${note ? ` (${note})` : ""}`);
     for (const t of tests.filter((t) => t.result !== "pass" || t.skipped))
-      console.log(`         ${t.result}${t.skipped ? ` (skip ${t.skipped})` : ""}: ${t.ref}`);
+      console.log(
+        `         ${t.result}${t.skipped ? ` (skip ${t.skipped})` : ""}: ${t.ref}${t.reason ? ` — ${t.reason}` : ""}`
+      );
   }
+} else if (cmd === "fact") {
+  // 기록된 근거는 지우지 않는다. 검사 환경 탓에 생긴 잘못된 근거는 무효 기록을 덧붙여 판정에서 뺀다
+  //   fact void <시나리오 id> --reason "<이유>" [--at <근거 시각> | --last]
+  if (rest[0] !== "void")
+    throw new Error(
+      '사용법: fact void <시나리오 id> --reason "<이유>" [--at <근거 시각> | --last]'
+    );
+  const id = rest[1];
+  const reason = opt("--reason");
+  if (!id || !reason) throw new Error("시나리오 id와 --reason이 필요합니다");
+  const facts = loadFacts().filter((f) => f.type !== "void" && f.scenario === id);
+  const target = opt("--at") ?? (flag("--last") ? facts.at(-1)?.at : null);
+  if (!target) throw new Error("--at <근거 시각> 또는 --last가 필요합니다");
+  const hit = facts.find((f) => f.at === target);
+  if (!hit) throw new Error(`그 시각의 근거가 없습니다: ${id} @ ${target}`);
+  const entry = {
+    type: "void",
+    scenario: id,
+    target,
+    reason,
+    at: new Date().toISOString(),
+    ...gitInfo(),
+  };
+  appendFileSync(path.join(KDIR, "facts.jsonl"), JSON.stringify(entry) + "\n");
+  console.log(`무효 처리: ${id} @ ${target} (${hit.result}) — ${reason}`);
 } else if (cmd === "gaps") {
   // 커버리지 대상 디렉터리의 소스 파일 중 어느 시나리오에도 연결되지 않은 것
   const linked = new Set(scenarios.flatMap((sc) => linkScenario(sc, cfg).files));

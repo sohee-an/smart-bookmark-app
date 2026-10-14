@@ -13,7 +13,8 @@
   "playwright": {
     "package": "@playwright/test",
     "bin": "playwright",
-    "args": ["test", "--config=playwright.qa.config.ts", "--project=chromium"]
+    "args": ["test", "--config=playwright.qa.config.ts", "--project=chromium"],
+    "testDir": "e2e"
   },
   "live": {
     "$comment": "실제 AI 점검(scripts/qa/live-check.mjs). 로컬 Supabase(Docker) + 앱 서버를 3200에 띄운다. urls는 안정적인 공개 페이지만",

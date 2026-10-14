@@ -7,6 +7,9 @@
 // 왜 로컬 Supabase인가: 실제 DB에 테스트 계정과 북마크가 오가지 않게. Docker + `supabase start`가 떠 있어야 한다.
 // 비용: URL 1개당 크롤링 1회, Gemini 요약 1회, 임베딩 1회.
 //
+// 검사 그룹: setup(계정, 서버, 정리 등 검사 준비), api(저장 API와 인증), ai(실제 AI 결과).
+// setup이 실패하면 제품 실패가 아니라 검사 오류다. 외부 AI 한도 초과(429)는 setup:ai로 올려서 ai 그룹만 오류가 된다
+//
 // 사용: node scripts/qa/live-check.mjs [--json]   (qa.mjs가 runner "script"로 부른다)
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -122,7 +125,7 @@ async function main() {
     const token = su.access_token;
     userId = su.user?.id ?? su.id;
     check(
-      "api",
+      "setup",
       "테스트 계정 생성과 즉시 로그인",
       token && userId,
       su.msg ?? su.error_description ?? su._raw
@@ -153,6 +156,13 @@ async function main() {
       body: JSON.stringify({ url: live.urls[0] }),
     });
     check("api", "토큰 없는 요청은 401", un.status === 401, String(un.status));
+    // 틀린 토큰도 401이어야 한다 (토큰이 있기만 하면 통과시키는 실수를 잡는다)
+    const bad = await fetch(`http://localhost:${app.port}/api/extension/save-bookmark`, {
+      method: "POST",
+      headers: { Authorization: "Bearer not-a-valid-token", "Content-Type": "application/json" },
+      body: JSON.stringify({ url: live.urls[0] }),
+    });
+    check("api", "틀린 토큰 요청은 401", bad.status === 401, String(bad.status));
 
     // 5. 파이프라인 완료 대기
     const deadline = Date.now() + live.timeoutSec * 1000;
@@ -186,7 +196,7 @@ async function main() {
       check("ai", `태그 1~8개: ${b.url}`, tags.length >= 1 && tags.length <= 8, tags.join(", "));
     }
   } catch (e) {
-    check("api", "실행 오류 없음", false, String(e.message ?? e));
+    check("setup", "실행 오류 없음", false, String(e.message ?? e));
   } finally {
     // 7. 정리. 계정을 지우면 북마크, 태그 연결, 임베딩이 cascade로 사라진다
     if (userId) {
@@ -194,23 +204,30 @@ async function main() {
         method: "DELETE",
         headers: { apikey: sb.service, Authorization: `Bearer ${sb.service}` },
       }).catch(() => null);
-      check("api", "테스트 계정 삭제", d && d.status < 300, String(d?.status));
+      check("setup", "테스트 계정 삭제", d && d.status < 300, String(d?.status));
     }
     stopApp(app);
   }
 
+  // AI 검사가 외부 한도 초과로 실패했으면 제품 실패가 아니다. 검사 준비 실패로 올려서 오류로 처리되게 한다
+  const fullLog = app?.log ? app.log() : "";
+  if (
+    checks.some((c) => c.group === "ai" && !c.ok) &&
+    /429|RESOURCE_EXHAUSTED|quota/i.test(fullLog)
+  )
+    check("setup:ai", "외부 AI 한도 안 넘음", false, "Gemini 429 (한도 초과)");
+
   const failed = checks.filter((c) => !c.ok);
   // 실패가 있으면 앱 서버 로그에서 오류 줄만 추려 근거에 남긴다 (크롤링 차단, Gemini 오류 등 원인 추적용)
   const serverLog =
-    failed.length && app?.log
-      ? app
-          .log()
+    failed.length && fullLog
+      ? fullLog
           .split(/[\r\n]+/)
           .filter((l) => /error|fail|실패|crawl|gemini|\[AI\]|429|5\d\d/i.test(l))
           .slice(-25)
       : undefined;
   const result = {
-    result: failed.length ? "fail" : "pass",
+    result: failed.some((c) => c.group === "setup") ? "error" : failed.length ? "fail" : "pass",
     ran: checks.length,
     skipped: 0,
     durationSec: Math.round((Date.now() - startedAt) / 1000),

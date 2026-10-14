@@ -68,6 +68,9 @@ node scripts/qa/qa.mjs recheck [--e2e] [--live]
 node scripts/qa/qa.mjs status
 ```
 
+"검사 오류"는 실패 판정으로 보내지 않는다. 제품이 아니라 검사 환경 문제라서 원인(로컬 Supabase, 외부 한도, 사라진 테스트 제목)을 사용자에게 보여 준다.
+환경 탓으로 확인된 실패 근거는 사용자가 정하면 `qa.mjs fact void <id> --last --reason "<이유>"`로 무효 처리한다. 에이전트가 혼자 무효 처리하지 않는다.
+
 ### 6. 실패 판정 (에이전트, 실패 하나당 하나)
 
 ```

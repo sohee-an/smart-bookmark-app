@@ -155,39 +155,80 @@ function routeToFiles(route, cfg) {
 
 // ---------- 시나리오 연결 ----------
 
-export function linkScenario(sc, cfg) {
+// ---------- 검증 테스트(ref) 하나의 연결 ----------
+
+export const refId = (ref) => `${ref.runner}:${ref.file}${ref.name ? `::${ref.name}` : ""}`;
+
+// ref 하나가 의존하는 코드. 시나리오의 연결은 ref별 연결의 합이다.
+// 신선도도 ref별로 본다: 그 ref가 마지막으로 돈 때의 해시와, 그 ref에 연결된 파일의 지금 해시를 비교한다
+export function linkRef(ref, cfg) {
   const files = new Set();
   const mocked = new Set();
   const routes = new Set();
   const mockedRoutes = new Set();
-  for (const ref of sc.verifiedBy) {
-    const file = posix.join(cfg.appRoot, ref.file);
-    if (ref.runner === "vitest") {
-      const ms = new Set(parseFile(file, cfg).mocks);
-      ms.forEach((m) => mocked.add(m));
-      walk([file], cfg, ms).forEach((f) => files.add(f));
-    } else if (ref.runner === "script") {
-      // 스크립트 검사는 스크립트 자신과 설정, 그리고 config.live.links에 적은 코드에 연결된다
-      walk(
-        [ref.file, ...(cfg.live?.links ?? []).map((p) => posix.join(cfg.appRoot, p))],
-        cfg
-      ).forEach((f) => files.add(f));
-      // config.json 전체를 연결하면 무관한 키(gapDirs 등)를 바꿔도 재검증 필요가 된다. 스크립트와 links만 연결한다
-    } else if (ref.runner === "playwright") {
-      const src = readFileSync(abs(file), "utf8");
-      for (const m of src.matchAll(/goto\(\s*["'`](\/[^"'`]*)/g)) routes.add(m[1]);
-      for (const m of src.matchAll(/route\(\s*["'`]([^"'`]+)/g)) mockedRoutes.add(m[1]);
-      const starts = [file, ...cfg.e2eAlwaysLink.map((p) => posix.join(cfg.appRoot, p))];
-      for (const r of routes) starts.push(...routeToFiles(r, cfg));
-      walk(starts, cfg).forEach((f) => files.add(f));
-    }
+  const file = posix.join(cfg.appRoot, ref.file);
+  if (ref.runner === "vitest") {
+    const ms = new Set(parseFile(file, cfg).mocks);
+    ms.forEach((m) => mocked.add(m));
+    walk([file], cfg, ms).forEach((f) => files.add(f));
+  } else if (ref.runner === "script") {
+    // 스크립트 검사는 스크립트 자신과 config.live.links에 적은 코드에 연결된다.
+    // config.json 전체를 연결하면 무관한 키(gapDirs 등)를 바꿔도 재검증 필요가 된다
+    walk(
+      [ref.file, ...(cfg.live?.links ?? []).map((p) => posix.join(cfg.appRoot, p))],
+      cfg
+    ).forEach((f) => files.add(f));
+  } else if (ref.runner === "playwright") {
+    const src = readFileSync(abs(file), "utf8");
+    for (const m of src.matchAll(/goto\(\s*["'`](\/[^"'`]*)/g)) routes.add(m[1]);
+    // fulfill/abort로 응답을 바꾸는 route만 mock이다. continue()로 통과만 시키는 것은 빼지 않는다
+    for (const m of src.matchAll(
+      /route\(\s*["'`]([^"'`]+)["'`][\s\S]{0,400}?\.(fulfill|abort|continue)\(/g
+    ))
+      if (m[2] !== "continue") mockedRoutes.add(m[1]);
+    const starts = [file, ...cfg.e2eAlwaysLink.map((p) => posix.join(cfg.appRoot, p))];
+    for (const r of routes) starts.push(...routeToFiles(r, cfg));
+    walk(starts, cfg).forEach((f) => files.add(f));
   }
-  return {
-    files: [...files].sort(),
-    mocked: [...mocked].sort(),
-    routes: [...routes].sort(),
-    mockedRoutes: [...mockedRoutes].sort(),
-  };
+  return { files, mocked, routes, mockedRoutes };
+}
+
+export function linkScenario(sc, cfg) {
+  const out = { files: new Set(), mocked: new Set(), routes: new Set(), mockedRoutes: new Set() };
+  for (const ref of sc.verifiedBy) {
+    const l = linkRef(ref, cfg);
+    for (const k of Object.keys(out)) l[k].forEach((v) => out[k].add(v));
+  }
+  return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v].sort()]));
+}
+
+// 시나리오 정의(주장, 검증 테스트, 재검증 주기)의 해시. 정의가 바뀌면 그 전의 근거는 이 주장을 증명하지 않는다
+export function defHash(sc) {
+  return createHash("sha1")
+    .update(
+      JSON.stringify({
+        claim: sc.claim,
+        verifiedBy: sc.verifiedBy,
+        maxAgeDays: sc.maxAgeDays ?? null,
+      })
+    )
+    .digest("hex")
+    .slice(0, 12);
+}
+
+// 테스트 제목이 ref.name에 맞는가. "/.../"면 정규식, 아니면 부분 문자열(예전 호환).
+// 넓게 걸리는 걸 막는 장치는 recheck가 근거에 실제 제목을 남기고, 다음 실행에서 줄면 오류로 멈추는 것이다
+export function nameMatches(name, title) {
+  if (!name) return true;
+  const m = name.match(/^\/(.+)\/([a-z]*)$/);
+  return m ? new RegExp(m[1], m[2]).test(title) : title.includes(name);
+}
+
+// 파일 경로가 ref.file과 같은 파일인가. 접미사만 비교하면 qa-header.spec.ts가 header.spec.ts로 잡힌다
+export function sameFile(reported, refFile) {
+  const r = reported.replace(/\\/g, "/");
+  const f = refFile.replace(/\\/g, "/");
+  return r === f || r.endsWith(`/${f}`);
 }
 
 export function fingerprint(files) {
@@ -215,43 +256,145 @@ export function loadFacts() {
     .map((l) => JSON.parse(l));
 }
 
-// 상태: hold(사람이 보류) | unverified(검증 수단 없음/기록 없음) | failing | stale | fresh
+// 사실 중 사람이 무효로 표시한 것 (지우지 않고 무효 기록을 덧붙인다). 키: "시나리오@사실 시각"
+function voidedKeys(facts) {
+  return new Set(facts.filter((f) => f.type === "void").map((f) => `${f.scenario}@${f.target}`));
+}
+
+// 상태
+//  hold        사람이 보류
+//  unverified  검증 테스트가 없거나, 아직 한 번도 돌지 않음
+//  failing     검증 테스트가 실제로 실패 (제품이 주장대로 동작하지 않을 수 있음)
+//  broken      검사 자체가 오류 (환경, 도구, 근거 테스트가 사라짐). 제품 실패로 세지 않는다
+//  stale       검증 뒤 연결된 코드나 시나리오 정의가 바뀌었거나, 외부 의존 주기가 지남
+//  partial     일부만 확인됨. needsRun이면 아직 안 돈 검증 테스트가 있고, 아니면 skip된 테스트가 있다
+//  fresh       전부 확인됨
+//
+// 판정은 검증 테스트(ref)마다 "마지막으로 실제로 돈 기록"을 따로 골라서 한다.
+// 그래서 E2E 없이 돌린 통과가 이전의 E2E 실패를 덮지 않는다
 export function statusOf(sc, cfg, facts, link = linkScenario(sc, cfg)) {
   if (sc.hold) return { status: "hold", reason: `보류: ${sc.hold}`, link };
   if (sc.verifiedBy.length === 0)
     return { status: "unverified", reason: "검증하는 테스트가 없음", link };
-  const last = facts.filter((f) => f.scenario === sc.id && f.result !== "skipped").at(-1);
-  if (!last) return { status: "unverified", reason: "아직 실행 기록 없음", link };
-  if (last.result !== "pass")
+
+  const voided = voidedKeys(facts);
+  const mine = facts
+    .filter((f) => f.type !== "void" && f.scenario === sc.id && !voided.has(`${sc.id}@${f.at}`))
+    .sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+  const def = defHash(sc);
+  // 정의 해시가 없는 옛 기록은 유효로 본다 (이 기능 이전 기록)
+  const valid = mine.filter((f) => !f.defHash || f.defHash === def);
+  if (mine.length && !valid.length)
+    return {
+      status: "stale",
+      reason: "시나리오 정의(주장, 검증 테스트, 주기)가 바뀌어 이전 근거가 이 주장을 증명하지 않음",
+      link,
+      last: mine.at(-1),
+    };
+
+  const perRef = sc.verifiedBy.map((ref) => {
+    const id = refId(ref);
+    let latest = null;
+    for (const f of valid) {
+      const t = f.tests?.find((t) => t.ref === id && t.result !== "skipped");
+      if (t) latest = { fact: f, test: t };
+    }
+    return { ref, id, latest };
+  });
+  const ran = perRef.filter((p) => p.latest);
+  if (!ran.length)
+    return { status: "unverified", reason: "아직 실행 기록 없음", link, refs: perRef };
+  const last = ran
+    .map((p) => p.latest.fact)
+    .sort((a, b) => (a.at < b.at ? -1 : 1))
+    .at(-1);
+  const when = (p) => p.latest.fact.at.slice(0, 16);
+
+  const failed = ran.filter((p) => p.latest.test.result === "fail");
+  if (failed.length)
     return {
       status: "failing",
-      reason: `마지막 실행 ${last.result} (${last.at.slice(0, 16)})`,
+      reason: `실패: ${failed.map((p) => `${p.id} (${when(p)})`).join(", ")}`,
       link,
       last,
+      refs: perRef,
     };
-  const now = fingerprint(link.files);
-  const changed = link.files.filter((f) => last.fingerprint[f] !== now[f]);
-  const removed = Object.keys(last.fingerprint).filter((f) => !(f in now));
-  if (changed.length || removed.length) {
-    return { status: "stale", reason: "검증 뒤 연결된 코드가 바뀜", changed, removed, link, last };
+  const errored = ran.filter((p) => p.latest.test.result === "error");
+  if (errored.length)
+    return {
+      status: "broken",
+      reason: `검사 오류 (제품 실패 아님): ${errored
+        .map((p) => `${p.id}${p.latest.test.reason ? ` — ${p.latest.test.reason}` : ""}`)
+        .join(", ")}`,
+      link,
+      last,
+      refs: perRef,
+    };
+
+  // 신선도: ref마다 그 ref가 돈 때의 해시와, 그 ref에 연결된 파일의 지금 해시를 비교한다
+  const changed = new Set();
+  for (const p of ran) {
+    const files = [...linkRef(p.ref, cfg).files];
+    const now = fingerprint(files);
+    const then = p.latest.fact.fingerprint ?? {};
+    for (const f of files) if (then[f] !== now[f]) changed.add(f);
   }
+  if (changed.size)
+    return {
+      status: "stale",
+      reason: "검증 뒤 연결된 코드가 바뀜",
+      changed: [...changed].sort(),
+      removed: [],
+      link,
+      last,
+      refs: perRef,
+    };
+
   if (sc.maxAgeDays) {
-    const days = (Date.now() - Date.parse(last.at)) / 86400000;
-    if (days > sc.maxAgeDays)
+    const oldest = ran.map((p) => Date.parse(p.latest.fact.at)).sort((a, b) => a - b)[0];
+    const days = (Date.now() - oldest) / 86400000;
+    // 매일 같은 시각에 도는 나이틀리가 몇 분 차이로 하루를 건너뛰지 않게 1시간 여유를 둔다
+    if (days > sc.maxAgeDays - 1 / 24)
       return {
         status: "stale",
-        reason: `외부 의존이라 ${sc.maxAgeDays}일마다 재검증 (${Math.floor(days)}일 지남)`,
+        reason: `외부 의존이라 ${sc.maxAgeDays}일마다 재검증 (${days.toFixed(1)}일 지남)`,
         link,
         last,
+        refs: perRef,
       };
   }
-  return {
-    status: "fresh",
-    reason: last.partial ? "통과 (일부 테스트 건너뜀)" : "통과",
-    link,
-    last,
-  };
+
+  const notRun = perRef.filter((p) => !p.latest);
+  if (notRun.length)
+    return {
+      status: "partial",
+      needsRun: true,
+      reason: `아직 안 돈 검증: ${notRun.map((p) => p.id).join(", ")}`,
+      link,
+      last,
+      refs: perRef,
+    };
+  const skipped = ran.reduce((n, p) => n + (p.latest.test.skipped ?? 0), 0);
+  if (skipped)
+    return {
+      status: "partial",
+      needsRun: false,
+      reason: `통과, 단 skip된 테스트 ${skipped}개는 확인되지 않음`,
+      link,
+      last,
+      refs: perRef,
+    };
+  return { status: "fresh", reason: "통과", link, last, refs: perRef };
 }
+
+// recheck와 나이틀리가 다시 돌릴 상태
+export const needsRecheck = (r, sc) =>
+  sc.verifiedBy.length > 0 &&
+  (r.status === "stale" ||
+    r.status === "failing" ||
+    r.status === "broken" ||
+    r.status === "unverified" ||
+    (r.status === "partial" && r.needsRun));
 
 // ---------- 발견 (findings) ----------
 // 점검 중 눈에 띈 문제를 적는다. 시나리오의 실패와 달리 "아직 검사로 고정되지 않은 관찰"이다.
