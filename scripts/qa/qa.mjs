@@ -8,6 +8,7 @@
 //                                                    재검증이 필요한 시나리오의 테스트만 돌리고 사실을 쌓는다
 //                                                    --e2e: Playwright도 돌린다 (브라우저, 개발 서버 필요)
 //                                                    --live: 외부 서비스를 부르는 스크립트 검사도 돌린다 (실제 AI 등)
+//   node scripts/qa/qa.mjs judgment list | mark <시나리오> correct|wrong   판정 에이전트의 판정과 사람 확인, 정확도
 //   node scripts/qa/qa.mjs fact void <시나리오 id> --reason "<이유>" [--at <근거 시각> | --last]
 //                                                    검사 환경 탓에 생긴 근거를 지우지 않고 무효로 표시한다
 import { spawnSync } from "node:child_process";
@@ -178,13 +179,16 @@ if (cmd === "status") {
   //  - cases: 근거로 실제로 걸린 테스트 제목. 다음 실행에서 이 중 하나가 사라지면 오류로 멈춘다 (근거가 몰래 줄어드는 것 방지)
   //  - error: 검사 자체가 돌지 못함 (환경, 도구, 근거 테스트 없음). 제품 실패(fail)와 따로 센다
   //  - skip된 테스트는 통과로 세지 않는다
-  const fromCases = (cases, isSkipped, isFailed) => {
+  //  - flaky: 재시도로 통과한 테스트 제목 (CI는 실패한 테스트를 다시 돌린다). 통과지만 숨기지 않고 남긴다
+  const fromCases = (cases, isSkipped, isFailed, isFlaky = () => false) => {
     if (!cases.length) return { result: "error", reason: "이름에 맞는 테스트가 없음" };
     const titles = cases.map((c) => c.title).sort();
     const skipped = cases.filter(isSkipped).length;
     const ran = cases.length - skipped;
-    if (cases.some(isFailed)) return { result: "fail", ran, skipped, cases: titles };
-    return { result: ran === 0 ? "skipped" : "pass", ran, skipped, cases: titles };
+    const flakyTitles = cases.filter(isFlaky).map((c) => c.title);
+    const flaky = flakyTitles.length ? { flaky: flakyTitles } : {};
+    if (cases.some(isFailed)) return { result: "fail", ran, skipped, cases: titles, ...flaky };
+    return { result: ran === 0 ? "skipped" : "pass", ran, skipped, cases: titles, ...flaky };
   };
 
   // vitest: 대상 시나리오의 테스트 파일을 한 번에 돌리고 JSON 결과를 테스트 단위로 나눠 쓴다
@@ -265,7 +269,8 @@ if (cmd === "status") {
     return fromCases(
       e2eCases.filter((c) => c.file === want && nameMatches(ref.name, c.title)),
       (c) => c.status === "skipped",
-      (c) => c.status === "unexpected"
+      (c) => c.status === "unexpected",
+      (c) => c.status === "flaky"
     );
   };
 
@@ -455,6 +460,57 @@ if (cmd === "status") {
     `어느 시나리오에도 연결되지 않은 소스 ${out.length}개 (대상 디렉터리: ${dirs.join(", ")})`
   );
   for (const f of out) console.log(`  - ${f}`);
+} else if (cmd === "judgment") {
+  // 판정 에이전트의 판정 기록. 사람이 맞았는지 표시하면 정확도가 쌓인다 (지우지 않고 표시 기록을 덧붙인다)
+  //   judgment list                                  판정과 사람 표시, 정확도
+  //   judgment mark <시나리오> correct|wrong [--at <판정 시각>] [--note "<메모>"]   (기본: 그 시나리오의 마지막 판정)
+  const file = path.join(KDIR, "judgments.jsonl");
+  const rows = existsSync(file)
+    ? readFileSync(file, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => JSON.parse(l))
+    : [];
+  const judgmentsOnly = rows.filter((r) => r.type === "judgment");
+  const marks = new Map(
+    rows.filter((r) => r.type === "mark").map((r) => [`${r.scenario}@${r.target}`, r])
+  );
+  const sub = rest[0] ?? "list";
+  if (sub === "mark") {
+    const [id, value] = [rest[1], rest[2]];
+    if (!id || !["correct", "wrong"].includes(value))
+      throw new Error("사용법: judgment mark <시나리오> correct|wrong [--at <판정 시각>]");
+    const target = opt("--at") ?? judgmentsOnly.filter((j) => j.scenario === id).at(-1)?.at ?? null;
+    if (!target || !judgmentsOnly.some((j) => j.scenario === id && j.at === target))
+      throw new Error(
+        `그 시나리오의 판정이 없습니다: ${id}${opt("--at") ? ` @ ${opt("--at")}` : ""}`
+      );
+    const entry = {
+      type: "mark",
+      scenario: id,
+      target,
+      correct: value === "correct",
+      note: opt("--note") ?? undefined,
+      at: new Date().toISOString(),
+    };
+    appendFileSync(file, JSON.stringify(entry) + "\n");
+    console.log(`표시: ${id} @ ${target} → ${value}`);
+  } else {
+    if (!judgmentsOnly.length) console.log("판정 기록 없음 (나이틀리를 --judge로 돌리면 생긴다)");
+    for (const j of judgmentsOnly) {
+      const m = marks.get(`${j.scenario}@${j.at}`);
+      const mark = m ? (m.correct ? "맞음" : "틀림") : "미확인";
+      console.log(
+        `${mark.padEnd(4)} ${j.verdict.padEnd(15)} ${(j.confidence ?? "-").padEnd(3)} ${j.scenario}  ${j.at.slice(0, 16)}  ${j.file}`
+      );
+    }
+    const checked = judgmentsOnly.filter((j) => marks.has(`${j.scenario}@${j.at}`));
+    const right = checked.filter((j) => marks.get(`${j.scenario}@${j.at}`).correct).length;
+    if (judgmentsOnly.length)
+      console.log(
+        `\n판정 ${judgmentsOnly.length}건 · 사람 확인 ${checked.length}건 · 맞음 ${right}건${checked.length ? ` (정확도 ${Math.round((right / checked.length) * 100)}%)` : ""}`
+      );
+  }
 } else if (cmd === "finding") {
   const sub = rest[0];
   const { appendFileSync } = await import("node:fs");
