@@ -18,7 +18,9 @@
 - `analyzeBookmark`, `AnalyzeBookmarkResult`, `parseAiAnalysisResponse` → `apps/web/src/server/services/ai-analysis.service.ts`
 - AI 분석 전용 API Route → `apps/web/src/app/api/ai-analyze/route.ts`
 - 시맨틱 서치 임베딩 API Route → `apps/web/src/app/api/embed/route.ts`
-- 시맨틱 서치 검색 API Route → `apps/web/src/app/api/semantic-search/route.ts`
+- 시맨틱 서치 검색 API Route (회원: pgvector 검색, 비회원: 검색어 임베딩만 반환) → `apps/web/src/app/api/semantic-search/route.ts`
+- 시맨틱 기준값(0.65, 0.8, 10개), 임베딩 인코딩, 비회원 브라우저 순위 계산 (`rankBySimilarity`) → `apps/web/src/features/bookmark/lib/semantic.ts`
+- 비회원 AI 의미 검색 하루 5회 카운터 (`GUEST_SEMANTIC_DAILY_LIMIT`) → `apps/web/src/features/bookmark/model/guestSemanticLimit.ts`
 
 ## 북마크 대화 (RAG 챗)
 
@@ -76,7 +78,7 @@
 - 성능 데모 라우트 (`/demo?count=N&virtual=off`, **로컬 전용** — 프로덕션 404) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
   - **결정 문서**: `docs/decisions/025-리스트-가상화-렌더성능.md`
 
-## 컬렉션 (북마크 폴더, 공유)
+## 컬렉션 (북마크 폴더, 공유) — 개발 중, 화면 숨김 (`FEATURES.collections`)
 
 - `Collection`, `CollectionDetail`, `CollectionMember`, `CollectionRole` → `apps/web/src/entities/collection/model/types.ts`
 - `CollectionRepository` 인터페이스 → `apps/web/src/entities/collection/api/collection.repository.ts`
@@ -128,6 +130,8 @@
 - 익스텐션 API 공용 유틸 → `apps/web/src/app/api/extension/_lib/auth.ts`, `pipeline.ts`
 
 ## 공용 유틸
+
+- 기능 플래그 `FEATURES` (개발 중 기능 숨김. 지금 `collections: false`) → `apps/web/src/shared/config/features.ts`
 
 - `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`

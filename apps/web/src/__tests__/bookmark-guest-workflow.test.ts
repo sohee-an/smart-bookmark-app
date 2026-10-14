@@ -11,9 +11,17 @@ describe(`비회원 저장 워크플로우 (${GUEST_BOOKMARK_LIMIT}개 제한)`,
     uuidCounter = 0;
     const storedBookmarks: Record<string, string>[] = [];
 
+    const otherKeys = new Map<string, unknown>();
     mockStorage = {
-      get: vi.fn(() => storedBookmarks as unknown) as StorageProvider["get"],
-      set: vi.fn((key, value) => {
+      // 저장소는 북마크(GUEST_BOOKMARK)와 임베딩(GUEST_BOOKMARK_EMBEDDING) 두 키를 쓴다. 북마크 키만 배열로 다룬다
+      get: vi.fn((key: string) =>
+        key === "GUEST_BOOKMARK" ? (storedBookmarks as unknown) : (otherKeys.get(key) ?? null)
+      ) as StorageProvider["get"],
+      set: vi.fn((key: string, value: unknown) => {
+        if (key !== "GUEST_BOOKMARK") {
+          otherKeys.set(key, value);
+          return;
+        }
         storedBookmarks.length = 0;
         storedBookmarks.push(...(value as typeof storedBookmarks));
       }) as StorageProvider["set"],

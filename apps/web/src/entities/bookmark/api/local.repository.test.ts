@@ -117,3 +117,36 @@ describe("LocalRepository — 조회/수정/삭제", () => {
     expect(await repo.count()).toBe(0);
   });
 });
+
+describe("LocalRepository — 비회원 임베딩 (AI 의미 검색용)", () => {
+  it("저장한 북마크의 임베딩을 저장하고 다시 읽는다", async () => {
+    const { repo } = makeRepo();
+    const saved = await repo.save({ url: "https://a.com" });
+
+    await repo.saveEmbedding(saved.id, "ENCODED");
+
+    expect(repo.getEmbeddings()).toEqual({ [saved.id]: "ENCODED" });
+  });
+
+  it("없는 북마크 id의 임베딩은 저장하지 않는다", async () => {
+    const { repo } = makeRepo();
+
+    await repo.saveEmbedding("missing", "ENCODED");
+
+    expect(repo.getEmbeddings()).toEqual({});
+  });
+
+  it("북마크를 지우면 그 임베딩도 지운다, 전체 삭제면 전부 지운다", async () => {
+    const { repo } = makeRepo();
+    const a = await repo.save({ url: "https://a.com" });
+    const b = await repo.save({ url: "https://b.com" });
+    await repo.saveEmbedding(a.id, "A");
+    await repo.saveEmbedding(b.id, "B");
+
+    await repo.delete(a.id);
+    expect(repo.getEmbeddings()).toEqual({ [b.id]: "B" });
+
+    await repo.removeAll();
+    expect(repo.getEmbeddings()).toEqual({});
+  });
+});
