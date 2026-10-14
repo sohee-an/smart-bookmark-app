@@ -1,7 +1,7 @@
 # 다른 컴퓨터에서 발표할 때 체크리스트
 
 발표용 컴퓨터에서 `demo/harness-talk` 브랜치로 시연하기 위한 준비 목록이다. 발표 전날 한 번, 당일 시작 전에 "당일" 항목을 한 번 더 본다.
-대본은 [demo-script.md](demo-script.md), 화면별 상세는 [demo-checklist.md](demo-checklist.md).
+대본은 [demo-script.md](demo-script.md), 화면별 상세는 [demo-checklist.md](demo-checklist.md). 발표 전체 맥락과 레포 밖 자료 목록은 [demo-context.md](demo-context.md).
 
 ## 1. 설치 (전날)
 
@@ -25,12 +25,15 @@
 
 git에 올라가지 않는 파일이라 이 컴퓨터에서 직접 가져가야 한다.
 
-| 무엇                                  | 원래 위치               | 왜 필요한가                                                                                     |
-| ------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `apps/web/.env.local`                 | 지금 컴퓨터의 같은 경로 | dev 서버와 E2E가 뜨려면 필요하다. USB나 비밀번호 관리자로 옮기고, 메신저나 메일로 보내지 않는다 |
-| `security-nudge-pr-comment.png`       | 바탕화면                | 3번 섹션에서 보여주는 PR 알림 코멘트 캡처                                                       |
-| `security-nudge-pr-page.png`          | 바탕화면                | 같은 PR 전체 화면 (예비)                                                                        |
-| `.claude/project/reviews/*.md` (선택) | 지금 컴퓨터의 같은 경로 | 리뷰 파일을 질문에서 보여줄 때만. gitignore 대상이라 clone으로는 안 온다                        |
+| 무엇                                  | 원래 위치               | 왜 필요한가                                                                                                                                   |
+| ------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/.env.local`                 | 지금 컴퓨터의 같은 경로 | dev 서버와 E2E가 뜨려면 필요하다. USB나 비밀번호 관리자로 옮기고, 메신저나 메일로 보내지 않는다                                               |
+| `security-nudge-pr-comment.png`       | 바탕화면                | 3번 섹션에서 보여주는 PR 알림 코멘트 캡처                                                                                                     |
+| `security-nudge-pr-page.png`          | 바탕화면                | 같은 PR 전체 화면 (예비)                                                                                                                      |
+| `.claude/project/reviews/*.md` (선택) | 지금 컴퓨터의 같은 경로 | 리뷰 파일을 질문에서 보여줄 때만. gitignore 대상이라 clone으로는 안 온다                                                                      |
+| `.claude/settings.json`               | 지금 컴퓨터의 같은 경로 | 포맷 훅(PostToolUse) 설정. gitignore라 clone으로 안 온다. 없으면 포맷 훅 시연이 조용히 안 돈다. 내용은 [demo-context.md](demo-context.md) 4절 |
+| `smart-bookmark-graph/` 폴더 전체     | 바탕화면                | 4부 1번 검증 지도(`qa-overlay.html`). 열 때 인터넷 필요                                                                                       |
+| `판정-에이전트-실험/` 폴더            | 바탕화면                | 4부 5번 판정 실험 결과. 없으면 demo-context.md 5절 숫자로 말로 대신한다                                                                       |
 
 - [ ] 위 파일 옮김
 - [ ] `.env.local`을 옮긴 뒤 발표 중에는 그 파일 탭을 열지 않는다
