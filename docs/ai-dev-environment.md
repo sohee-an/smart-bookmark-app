@@ -66,9 +66,9 @@ AI가 Write/Edit로 파일을 건드릴 때마다 prettier + eslint --fix를 **�
 
 ## 4. MCP 태스크 파이프라인 (Notion)
 
-세부 태스크를 Notion DB(태스크명/상태/검수)로 관리하고,
-`방향성 → 개발중 → 테스트중 → 완료` 상태 전이를 AI가 트리거받아 진행한다.
-상세: `.claude/skills/task-pipeline/`.
+세부 태스크를 Notion DB(태스크명/상태/시나리오검수/개발구현방향)로 관리하고,
+`테스트 시나리오 → 방향성 → 개발중 → 테스트중 → 완료` 상태 전이를 AI가 트리거받아 진행한다.
+상세 (유일한 기준): `.claude/skills/task-pipeline/SKILL.md`.
 
 ## 효과 (관찰 가능한 형태로)
 

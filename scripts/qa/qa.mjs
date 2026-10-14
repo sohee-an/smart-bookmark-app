@@ -8,6 +8,7 @@
 //                                                    재검증이 필요한 시나리오의 테스트만 돌리고 사실을 쌓는다
 //                                                    --e2e: Playwright도 돌린다 (브라우저, 개발 서버 필요)
 //                                                    --live: 외부 서비스를 부르는 스크립트 검사도 돌린다 (실제 AI 등)
+//   node scripts/qa/qa.mjs judgment list | mark <시나리오> correct|wrong   판정 에이전트의 판정과 사람 확인, 정확도
 //   node scripts/qa/qa.mjs fact void <시나리오 id> --reason "<이유>" [--at <근거 시각> | --last]
 //                                                    검사 환경 탓에 생긴 근거를 지우지 않고 무효로 표시한다
 import { spawnSync } from "node:child_process";
@@ -109,6 +110,14 @@ if (cmd === "status") {
   };
   const refLines = r.refs ? r.refs.map(refLine) : sc.verifiedBy.map((v) => `  - ${refId(v)}`);
   console.log(`\n검증 테스트:\n${refLines.join("\n") || "  (없음)"}`);
+  // 마지막 실행에서 실패한 검증 테스트의 오류 발췌 (짧게)
+  const failedRefs = (r.refs ?? []).filter((p) => p.latest?.test.failures?.length);
+  if (failedRefs.length) {
+    console.log("\n실패 내용 (발췌):");
+    for (const p of failedRefs)
+      for (const f of p.latest.test.failures.slice(0, 2))
+        console.log(`  - ${f.title}\n${f.message.replace(/^/gm, "      ")}`);
+  }
   console.log(
     `\n연결된 코드 ${r.link.files.length}개:\n${r.link.files.map((f) => `  - ${f}`).join("\n")}`
   );
@@ -119,6 +128,10 @@ if (cmd === "status") {
   if (r.link.mockedRoutes.length)
     console.log(
       `\nmock된 API (실제 라우트는 검증되지 않음):\n${r.link.mockedRoutes.map((f) => `  - ${f}`).join("\n")}`
+    );
+  if (r.link.mockedApi.length)
+    console.log(
+      `\n문자열로 부르는 API 중 이 시나리오로 실행되지 않는 것 (mock됐거나, 단위 테스트라 서버가 없음):\n${r.link.mockedApi.map((f) => `  - ${f}`).join("\n")}`
     );
   if (r.changed?.length)
     console.log(`\n검증 뒤 바뀐 파일:\n${r.changed.map((f) => `  - ${f}`).join("\n")}`);
@@ -170,17 +183,71 @@ if (cmd === "status") {
       maxBuffer: 64 * 1024 * 1024,
     });
 
+  // 실패 메시지 발췌. 색 코드를 지우고, 이 컴퓨터의 저장소 경로는 <repo>로 바꾼다 (근거는 공개 저장소에 커밋된다).
+  // 테스트 하나당 첫 3줄, 근거 항목 하나당 합쳐서 600자까지만 남겨 facts.jsonl 줄이 커지지 않게 한다
+  const repoRoots = [...new Set([ROOT, ROOT.replace(/\//g, "\\"), ROOT.replace(/\\/g, "/")])];
+  const cleanMessage = (msg) => {
+    // eslint-disable-next-line no-control-regex
+    let m = String(msg ?? "").replace(/\x1b\[[0-9;]*m/g, "");
+    for (const r of repoRoots) m = m.split(r).join("<repo>");
+    return m
+      .split(/\r?\n/)
+      .map((l) => l.trimEnd())
+      .filter((l) => l.trim())
+      .slice(0, 3)
+      .join("\n");
+  };
+  const failureExcerpts = (cases) => {
+    const out = [];
+    let budget = 600;
+    for (const c of cases) {
+      if (budget <= 0) break;
+      const message = cleanMessage(c.message).slice(0, budget);
+      if (!message) continue;
+      budget -= message.length;
+      out.push({ title: c.title, message });
+    }
+    return out;
+  };
+  // Playwright: 실패면 마지막 시도의 오류, 재시도로 통과(flaky)면 처음 실패한 시도의 오류
+  const playwrightError = (t) => {
+    const results = t.results ?? [];
+    const pick =
+      t.status === "flaky"
+        ? results.find((r) => r.status !== "passed")
+        : t.status === "unexpected"
+          ? results.at(-1)
+          : null;
+    if (!pick) return "";
+    const errs = pick.errors?.length ? pick.errors : pick.error ? [pick.error] : [];
+    return errs.map((e) => e.message ?? "").join("\n");
+  };
+
   // 결과: { result: pass | fail | error | skipped, ran, skipped, cases, reason }
   //  - cases: 근거로 실제로 걸린 테스트 제목. 다음 실행에서 이 중 하나가 사라지면 오류로 멈춘다 (근거가 몰래 줄어드는 것 방지)
   //  - error: 검사 자체가 돌지 못함 (환경, 도구, 근거 테스트 없음). 제품 실패(fail)와 따로 센다
   //  - skip된 테스트는 통과로 세지 않는다
-  const fromCases = (cases, isSkipped, isFailed) => {
+  //  - flaky: 재시도로 통과한 테스트 제목 (CI는 실패한 테스트를 다시 돌린다). 통과지만 숨기지 않고 남긴다
+  //  - failures: 실패(또는 재시도 전 실패)한 테스트의 오류 첫 몇 줄. 판정 에이전트가 테스트를 다시 돌리기 전에 먼저 읽는다
+  const fromCases = (cases, isSkipped, isFailed, isFlaky = () => false) => {
     if (!cases.length) return { result: "error", reason: "이름에 맞는 테스트가 없음" };
     const titles = cases.map((c) => c.title).sort();
     const skipped = cases.filter(isSkipped).length;
     const ran = cases.length - skipped;
-    if (cases.some(isFailed)) return { result: "fail", ran, skipped, cases: titles };
-    return { result: ran === 0 ? "skipped" : "pass", ran, skipped, cases: titles };
+    const flakyTitles = cases.filter(isFlaky).map((c) => c.title);
+    const flaky = flakyTitles.length ? { flaky: flakyTitles } : {};
+    const failures = failureExcerpts(cases.filter((c) => isFailed(c) || isFlaky(c)));
+    const fail = failures.length ? { failures } : {};
+    if (cases.some(isFailed))
+      return { result: "fail", ran, skipped, cases: titles, ...flaky, ...fail };
+    return {
+      result: ran === 0 ? "skipped" : "pass",
+      ran,
+      skipped,
+      cases: titles,
+      ...flaky,
+      ...fail,
+    };
   };
 
   // vitest: 대상 시나리오의 테스트 파일을 한 번에 돌리고 JSON 결과를 테스트 단위로 나눠 쓴다
@@ -212,7 +279,11 @@ if (cmd === "status") {
     );
     if (!fileRes) return { result: "error", reason: "테스트 파일 결과가 없음 (수집 실패)" };
     const cases = fileRes.assertionResults
-      .map((a) => ({ title: a.fullName, status: a.status }))
+      .map((a) => ({
+        title: a.fullName,
+        status: a.status,
+        message: (a.failureMessages ?? []).join("\n"),
+      }))
       .filter((c) => nameMatches(ref.name, c.title));
     return fromCases(
       cases,
@@ -243,6 +314,7 @@ if (cmd === "status") {
               file: (spec.file ?? suite.file ?? "").replace(/\\/g, "/"),
               title: [...titles, spec.title].join(" › "),
               status: t.status, // expected | unexpected | flaky | skipped
+              message: playwrightError(t),
             });
         for (const s of suite.suites ?? []) visit(s, [...titles, s.title]); // 중첩 suite는 describe라 제목을 붙인다 (파일 suite는 맨 위에서만)
       };
@@ -261,7 +333,8 @@ if (cmd === "status") {
     return fromCases(
       e2eCases.filter((c) => c.file === want && nameMatches(ref.name, c.title)),
       (c) => c.status === "skipped",
-      (c) => c.status === "unexpected"
+      (c) => c.status === "unexpected",
+      (c) => c.status === "flaky"
     );
   };
 
@@ -451,6 +524,64 @@ if (cmd === "status") {
     `어느 시나리오에도 연결되지 않은 소스 ${out.length}개 (대상 디렉터리: ${dirs.join(", ")})`
   );
   for (const f of out) console.log(`  - ${f}`);
+} else if (cmd === "judgment") {
+  // 판정 에이전트의 판정 기록. 사람이 맞았는지 표시하면 정확도가 쌓인다 (지우지 않고 표시 기록을 덧붙인다)
+  //   judgment list                                  판정과 사람 표시, 정확도
+  //   judgment mark <시나리오> correct|wrong [--at <판정 시각>] [--note "<메모>"]   (기본: 그 시나리오의 마지막 판정)
+  const file = path.join(KDIR, "judgments.jsonl");
+  // 있는지 먼저 확인하고 읽으면 그 사이에 파일이 바뀔 수 있다(CodeQL). 바로 읽고, 없으면 빈 기록으로 본다
+  const readRows = () => {
+    try {
+      return readFileSync(file, "utf8")
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => JSON.parse(l));
+    } catch (e) {
+      if (e.code === "ENOENT") return [];
+      throw e;
+    }
+  };
+  const rows = readRows();
+  const judgmentsOnly = rows.filter((r) => r.type === "judgment");
+  const marks = new Map(
+    rows.filter((r) => r.type === "mark").map((r) => [`${r.scenario}@${r.target}`, r])
+  );
+  const sub = rest[0] ?? "list";
+  if (sub === "mark") {
+    const [id, value] = [rest[1], rest[2]];
+    if (!id || !["correct", "wrong"].includes(value))
+      throw new Error("사용법: judgment mark <시나리오> correct|wrong [--at <판정 시각>]");
+    const target = opt("--at") ?? judgmentsOnly.filter((j) => j.scenario === id).at(-1)?.at ?? null;
+    if (!target || !judgmentsOnly.some((j) => j.scenario === id && j.at === target))
+      throw new Error(
+        `그 시나리오의 판정이 없습니다: ${id}${opt("--at") ? ` @ ${opt("--at")}` : ""}`
+      );
+    const entry = {
+      type: "mark",
+      scenario: id,
+      target,
+      correct: value === "correct",
+      note: opt("--note") ?? undefined,
+      at: new Date().toISOString(),
+    };
+    appendFileSync(file, JSON.stringify(entry) + "\n");
+    console.log(`표시: ${id} @ ${target} → ${value}`);
+  } else {
+    if (!judgmentsOnly.length) console.log("판정 기록 없음 (나이틀리를 --judge로 돌리면 생긴다)");
+    for (const j of judgmentsOnly) {
+      const m = marks.get(`${j.scenario}@${j.at}`);
+      const mark = m ? (m.correct ? "맞음" : "틀림") : "미확인";
+      console.log(
+        `${mark.padEnd(4)} ${j.verdict.padEnd(15)} ${(j.confidence ?? "-").padEnd(3)} ${j.scenario}  ${j.at.slice(0, 16)}  ${j.file}`
+      );
+    }
+    const checked = judgmentsOnly.filter((j) => marks.has(`${j.scenario}@${j.at}`));
+    const right = checked.filter((j) => marks.get(`${j.scenario}@${j.at}`).correct).length;
+    if (judgmentsOnly.length)
+      console.log(
+        `\n판정 ${judgmentsOnly.length}건 · 사람 확인 ${checked.length}건 · 맞음 ${right}건${checked.length ? ` (정확도 ${Math.round((right / checked.length) * 100)}%)` : ""}`
+      );
+  }
 } else if (cmd === "finding") {
   const sub = rest[0];
   const { appendFileSync } = await import("node:fs");

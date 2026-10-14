@@ -18,7 +18,7 @@
 - `analyzeBookmark`, `AnalyzeBookmarkResult`, `parseAiAnalysisResponse` → `apps/web/src/server/services/ai-analysis.service.ts`
 - AI 분석 전용 API Route → `apps/web/src/app/api/ai-analyze/route.ts`
 - 시맨틱 서치 임베딩 API Route → `apps/web/src/app/api/embed/route.ts`
-- 시맨틱 서치 검색 API Route (회원: pgvector 검색, 비회원: 검색어 임베딩만 반환) → `apps/web/src/app/api/semantic-search/route.ts`
+- 시맨틱 서치 검색 API Route (회원: pgvector 검색, 하루 20회. 비회원: 검색어 임베딩만 반환) → `apps/web/src/app/api/semantic-search/route.ts`
 - 시맨틱 기준값(0.65, 0.8, 10개), 임베딩 인코딩, 비회원 브라우저 순위 계산 (`rankBySimilarity`) → `apps/web/src/features/bookmark/lib/semantic.ts`
 - 비회원 AI 의미 검색 하루 5회 카운터 (`GUEST_SEMANTIC_DAILY_LIMIT`) → `apps/web/src/features/bookmark/model/guestSemanticLimit.ts`
 
@@ -140,6 +140,7 @@
   - **테스트**: `validateUrl.test.ts` ✅ → `apps/web/src/shared/lib/validateUrl.test.ts`
 - 에러 메시지 추출 (`getErrorMessage`) → `apps/web/src/shared/lib/error.ts`
 - `useClientNow` (SSR hydration 방지용 클라이언트 현재 시간 훅) → `apps/web/src/shared/lib/useClientNow.ts`
+- `kstDate`, `kstDayStart` (한국 자정 기준 날짜, "하루 N회" 제한 리셋용) → `apps/web/src/shared/lib/kstDate.ts`
 - API 응답 표준 규격 `ApiResponse`, `ApiError`, `ErrorCode` → `apps/web/src/shared/lib/api-response.ts`
 - 비회원 익명 ID → `apps/web/src/shared/lib/guest.ts`
 - 게스트 쿠키 이름 상수 `GUEST_COOKIE` → `apps/web/src/shared/lib/guestCookie.ts`

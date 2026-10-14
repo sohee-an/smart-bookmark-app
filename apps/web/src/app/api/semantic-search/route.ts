@@ -5,6 +5,7 @@ import { getErrorMessage } from "@/shared/lib/error";
 import { cookies } from "next/headers";
 import { GUEST_COOKIE } from "@/shared/lib/guestCookie";
 import { rateLimit, getClientIp } from "@/shared/lib/rateLimit";
+import { kstDayStart } from "@/shared/lib/kstDate";
 import {
   SEMANTIC_EXACT_THRESHOLD,
   SEMANTIC_MATCH_COUNT,
@@ -33,6 +34,10 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 /** 검색어 최대 길이 (임베딩 비용, 남용 방지) */
 const MAX_QUERY_LENGTH = 200;
+
+/** 회원 의미 검색 하루 횟수 (한국 자정 기준). 사용 기록은 feature_usage에 남긴다 */
+const MEMBER_SEMANTIC_DAILY_LIMIT = 20;
+const SEMANTIC_FEATURE_KEY = "semantic_search";
 
 async function embedQuery(query: string): Promise<number[]> {
   const model = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
@@ -96,6 +101,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // 회원 하루 20회 (한국 자정 기준). 임베딩을 부르기 전에 막아야 비용이 나가지 않는다.
+    // 세는 것과 기록 사이에 동시 요청이 끼면 한두 번 넘칠 수 있다. 비용 방어 목적이라 허용한다
+    const { count: usedToday } = await supabase
+      .from("feature_usage")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("feature", SEMANTIC_FEATURE_KEY)
+      .gte("used_at", kstDayStart().toISOString());
+    if ((usedToday ?? 0) >= MEMBER_SEMANTIC_DAILY_LIMIT) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "DAILY_LIMIT_EXCEEDED",
+          message: `오늘 AI 의미 검색 ${MEMBER_SEMANTIC_DAILY_LIMIT}회를 모두 썼어요. 내일 다시 쓸 수 있어요.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const embedding = await embedQuery(query);
 
     const { data, error } = await supabase.rpc("match_bookmarks", {
@@ -107,6 +131,11 @@ export async function POST(request: Request) {
     });
 
     if (error) throw error;
+
+    // 검색에 성공했을 때만 한 번 쓴 것으로 센다 (기록 실패는 검색 결과를 막지 않는다)
+    await supabase
+      .from("feature_usage")
+      .insert({ user_id: user.id, feature: SEMANTIC_FEATURE_KEY });
 
     const ids = ((data ?? []) as unknown as SearchResultRow[]).map((r) => r.id);
     let tagsMap: Record<string, string[]> = {};

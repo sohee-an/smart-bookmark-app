@@ -9,7 +9,10 @@
 //  - CI(--ci): 보고만 한다. 근거는 저장소에 남지 않으므로(브랜치 보호) 직전 비교를 하지 않고, 종료 코드는 항상 0.
 //    공개 저장소라 보고서에서 private 시나리오를 빼고 실행 로그를 넣지 않는다. 연속 실패 판정은 로컬 장부에서 한다
 //
-// 사용: node scripts/qa/nightly.mjs [--no-live] [--no-e2e] [--ci]
+// 판정(--judge, 로컬 전용): 오늘 돌려서 실패한 시나리오마다 판정 에이전트를 부르고 보고서와 판정 기록에 남긴다.
+//   판정은 사람이 확인하기 전까지 제안이다. 이슈 등록이나 수정은 하지 않는다
+//
+// 사용: node scripts/qa/nightly.mjs [--no-live] [--no-e2e] [--ci] [--judge]
 // 산출: qa-knowledge/reports/YYYY-MM-DD.md, 같은 이름 .json (같은 날 다시 돌리면 -HHMM을 붙인다),
 //       stdout 마지막 줄에 요약 JSON. --ci면 GITHUB_STEP_SUMMARY에도 쓴다
 import { spawnSync } from "node:child_process";
@@ -32,11 +35,18 @@ import {
   needsRecheck,
   statusOf,
 } from "./lib.mjs";
+import { judgeScenario, recordJudgment } from "./judge.mjs";
 
 const args = process.argv.slice(2);
 const noLive = args.includes("--no-live");
 const noE2e = args.includes("--no-e2e");
 const ci = args.includes("--ci");
+const judgeOn = args.includes("--judge");
+if (judgeOn && ci) {
+  // CI는 보고만 한다 (공개 저장소, 사용량, 사람 경계). 판정은 로컬에서만
+  console.error("--judge는 로컬 전용이다 (--ci와 같이 쓸 수 없다)");
+  process.exit(1);
+}
 const cfg = loadConfig();
 const scenarios = loadScenarios();
 const byId = Object.fromEntries(scenarios.map((sc) => [sc.id, sc]));
@@ -126,8 +136,27 @@ const prev = prevFile ? JSON.parse(readFileSync(path.join(reportsDir, prevFile),
 const prevFailed = new Set(prev?.failedToday ?? prev?.failing ?? []);
 const consecutive = ci ? [] : failedToday.filter((id) => prevFailed.has(id));
 const flaky = retried.filter((id) => after[id].status !== "failing");
+// 오늘 돌린 시나리오 중 재시도로 통과한 E2E 테스트가 있는 것 (CI는 실패한 테스트를 다시 돌려서 통과로 숨긴다)
+const flakyTests = Object.entries(after)
+  .filter(([id, r]) => ranToday.has(id) && r.flaky?.length)
+  .map(([id]) => id);
 const count = {};
 for (const r of Object.values(after)) count[r.status] = (count[r.status] ?? 0) + 1;
+
+// 판정: 오늘 실제로 돌려서 실패한 것만. 장부에 남아 있던 실패나 검사 오류는 대상이 아니다
+const judgments = [];
+if (judgeOn) {
+  const max = cfg.judge?.max ?? 3;
+  for (const id of failedToday.slice(0, max)) {
+    console.error(`[nightly] 판정 중: ${id}`);
+    const j = judgeScenario(id, cfg.judge ?? {});
+    judgments.push(recordJudgment(j, { factAt: after[id].last?.at, today }));
+  }
+  if (failedToday.length > max)
+    console.error(
+      `[nightly] 판정은 ${max}개까지만 했다. 나머지 ${failedToday.length - max}개는 사람이 본다`
+    );
+}
 
 const isPublic = (id) => !(ci && byId[id]?.private);
 const git = gitInfo();
@@ -138,10 +167,17 @@ const summary = {
   ran: toRun.filter(isPublic),
   retried: retried.filter(isPublic),
   flaky: flaky.filter(isPublic),
+  flakyTests: flakyTests.filter(isPublic),
   failedToday: failedToday.filter(isPublic),
   failing: failing.filter(isPublic),
   broken: broken.filter(isPublic),
   consecutive,
+  judgments: judgments.map(({ scenario, verdict, confidence, file }) => ({
+    scenario,
+    verdict,
+    confidence,
+    file,
+  })),
   count,
   statuses: Object.fromEntries(
     Object.entries(after)
@@ -183,7 +219,24 @@ const md = [
     ? `## 검사 오류 (제품 실패 아님, 환경이나 도구 확인)\n\n${list(broken, (id) => `- ${id}: ${after[id].reason}`)}`
     : "",
   "",
+  judgments.length
+    ? [
+        "## 판정 (판정 에이전트의 제안, 사람 확인 전)",
+        "",
+        "맞았는지 표시: `node scripts/qa/qa.mjs judgment mark <시나리오> correct|wrong`",
+        "",
+        ...judgments.map(
+          (j) =>
+            `- ${j.scenario}: ${j.verdict}${j.confidence ? ` (확신 ${j.confidence})` : ""}${j.ok ? "" : " — 판정 실행 실패"} · ${j.file}`
+        ),
+      ].join("\n")
+    : "",
+  "",
   flaky.filter(isPublic).length ? `## 흔들림 (1차 실패, 재시도 통과)\n\n${list(flaky)}` : "",
+  "",
+  flakyTests.filter(isPublic).length
+    ? `## 흔들림 (재시도로 통과한 E2E, 통과로 셌지만 확인 필요)\n\n${list(flakyTests, (id) => `- ${id}: ${after[id].flaky.join(" | ")}`)}`
+    : "",
   "",
   `## 재검증한 시나리오 ${toRun.filter(isPublic).length}개`,
   "",

@@ -21,6 +21,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { shellMetaError } from "./lib/shell.mjs";
 
 const ROOT = (() => {
   try {
@@ -100,34 +101,16 @@ function checkFileTool(tool, input) {
 
 // ---------- Bash ----------
 
+// Playwright는 QA 설정만 허용한다. 기본 설정은 3000번에 이미 떠 있는 서버(다른 브랜치일 수 있음)를 재사용해서
+// 엉뚱한 코드를 테스트할 수 있다. 포트는 QA_E2E_PORT=<숫자>로만 바꿀 수 있다 (나이틀리의 3100과 겹치지 않게)
 const BASH_ALLOWED = [
-  /^pnpm --filter @smart-bookmark\/web exec (vitest run|playwright test)( |$)/,
+  /^pnpm --filter @smart-bookmark\/web exec vitest run( |$)/,
+  /^(QA_E2E_PORT=\d{4,5} )?pnpm --filter @smart-bookmark\/web exec playwright test (?=.*--config=playwright\.qa\.config\.ts( |$))/,
   /^pnpm --filter @smart-bookmark\/web (test|test:unit)( |$)/,
   /^node scripts\/qa\/qa\.mjs (status|show|recheck|gaps)( |$)/,
   /^git (status|diff|log|show)( |$)/,
   /^(ls|pwd)( |$)/,
 ];
-
-// 따옴표 밖의 셸 메타문자를 찾는다. 작은따옴표 안은 그대로 문자열이라 괜찮다. 큰따옴표 안의 $와 `는 치환이라 막는다
-function shellMetaError(cmd) {
-  let q = null;
-  for (let i = 0; i < cmd.length; i++) {
-    const c = cmd[i];
-    if (q === "'") {
-      if (c === "'") q = null;
-      continue;
-    }
-    if (q === '"') {
-      if (c === '"') q = null;
-      else if (c === "$" || c === "`") return "큰따옴표 안의 $, ` (명령 치환)";
-      else if (c === "\\") i++;
-      continue;
-    }
-    if (c === "'" || c === '"') q = c;
-    else if (/[;|&<>`$\n\r]/.test(c)) return `셸 메타문자 ${JSON.stringify(c)}`;
-  }
-  return q ? "닫히지 않은 따옴표" : null;
-}
 
 function checkBash(cmd) {
   // "cd <저장소 안 경로> && <명령>" 형태는 한 번 허용한다 (에이전트가 자주 쓴다)
@@ -141,7 +124,7 @@ function checkBash(cmd) {
   const meta = shellMetaError(c);
   if (meta) return `${meta}는 쓸 수 없다. 리다이렉트, 파이프, 명령 연결 없이 명령 하나만 실행한다`;
   if (!BASH_ALLOWED.some((re) => re.test(c)))
-    return "허용된 명령이 아니다. 테스트 실행(pnpm --filter @smart-bookmark/web exec vitest run|playwright test), 장부(node scripts/qa/qa.mjs status|show|recheck|gaps), 읽기 전용 git(status|diff|log|show)만 쓸 수 있다. 파일은 Read, Grep, Glob으로 읽는다";
+    return "허용된 명령이 아니다. 테스트 실행(pnpm --filter @smart-bookmark/web exec vitest run, [QA_E2E_PORT=<포트>] pnpm --filter @smart-bookmark/web exec playwright test --config=playwright.qa.config.ts ...), 장부(node scripts/qa/qa.mjs status|show|recheck|gaps), 읽기 전용 git(status|diff|log|show)만 쓸 수 있다. 파일은 Read, Grep, Glob으로 읽는다";
   return null;
 }
 
