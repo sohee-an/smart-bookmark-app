@@ -76,7 +76,7 @@
 - 성능 데모 라우트 (`/demo?count=N&virtual=off`, **로컬 전용** — 프로덕션 404) → `apps/web/src/app/demo/page.tsx` + `DemoContent.tsx`
   - **결정 문서**: `docs/decisions/025-리스트-가상화-렌더성능.md`
 
-## 컬렉션 (북마크 폴더, 공유)
+## 컬렉션 (북마크 폴더, 공유) — 개발 중, 화면 숨김 (`FEATURES.collections`)
 
 - `Collection`, `CollectionDetail`, `CollectionMember`, `CollectionRole` → `apps/web/src/entities/collection/model/types.ts`
 - `CollectionRepository` 인터페이스 → `apps/web/src/entities/collection/api/collection.repository.ts`
@@ -128,6 +128,8 @@
 - 익스텐션 API 공용 유틸 → `apps/web/src/app/api/extension/_lib/auth.ts`, `pipeline.ts`
 
 ## 공용 유틸
+
+- 기능 플래그 `FEATURES` (개발 중 기능 숨김. 지금 `collections: false`) → `apps/web/src/shared/config/features.ts`
 
 - `QueryProvider` (TanStack Query 클라이언트 래퍼) → `apps/web/src/shared/lib/QueryProvider.tsx`
 - URL 유효성 검사 → `apps/web/src/shared/lib/validateUrl.ts`
