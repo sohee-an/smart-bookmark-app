@@ -12,6 +12,12 @@ interface SemanticResultSectionProps {
   related: SemanticBookmark[];
   isLoading: boolean;
   isGuest?: boolean;
+  /** 비회원 오늘 남은 AI 의미 검색 횟수 (모르면 null) */
+  guestRemaining?: number | null;
+  /** 비회원 하루 한도를 다 썼는지 */
+  guestLimitReached?: boolean;
+  /** 비회원 북마크에 검색할 임베딩이 하나도 없는지 (이 기능 전에 저장한 북마크뿐) */
+  guestNoIndex?: boolean;
   onBookmarkClick: (bookmark: Bookmark) => void;
   onTagClick: (tag: string) => void;
 }
@@ -21,12 +27,15 @@ export const SemanticResultSection = ({
   related,
   isLoading,
   isGuest,
+  guestRemaining,
+  guestLimitReached,
+  guestNoIndex,
   onBookmarkClick,
   onTagClick,
 }: SemanticResultSectionProps) => {
   const router = useRouter();
 
-  if (isGuest) {
+  if (isGuest && guestLimitReached) {
     return (
       <div className="mt-10">
         <SectionHeader />
@@ -36,10 +45,10 @@ export const SemanticResultSection = ({
           </div>
           <div>
             <p className="font-bold text-zinc-700 dark:text-zinc-300">
-              AI 의미 검색은 로그인 후 사용할 수 있어요
+              오늘 무료 AI 의미 검색을 다 썼어요
             </p>
             <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">
-              제목이 기억 안 나도 내용으로 찾아드려요
+              로그인하면 횟수 제한 없이 내용으로 찾아드려요
             </p>
           </div>
           <button
@@ -72,7 +81,26 @@ export const SemanticResultSection = ({
     );
   }
 
-  if (exact.length === 0 && related.length === 0) return null;
+  const guestNote = isGuest && guestRemaining !== null && guestRemaining !== undefined && (
+    <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+      비회원 AI 의미 검색 오늘 {guestRemaining}회 남음 · 로그인하면 무제한
+    </p>
+  );
+
+  if (exact.length === 0 && related.length === 0) {
+    if (isGuest && guestNoIndex) {
+      return (
+        <div className="mt-10">
+          <SectionHeader />
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            AI 의미 검색은 지금부터 새로 저장하는 북마크에서 쓸 수 있어요.
+          </p>
+          {guestNote}
+        </div>
+      );
+    }
+    return isGuest ? <div className="mt-10">{guestNote}</div> : null;
+  }
 
   return (
     <div className="mt-10">
@@ -113,6 +141,7 @@ export const SemanticResultSection = ({
           </div>
         </div>
       )}
+      {guestNote}
     </div>
   );
 };

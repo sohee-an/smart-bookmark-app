@@ -1,13 +1,19 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
 import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
 import { TagFilter } from "@/features/bookmark/ui/TagFilter";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { SemanticResultSection } from "@/features/bookmark/ui/SemanticResultSection";
 import { filterBookmarks } from "@/features/bookmark/model/filterBookmarks";
+import { bookmarkService } from "@/features/bookmark/model/bookmark.service";
+import { rankBySimilarity } from "@/features/bookmark/lib/semantic";
+import {
+  getGuestSemanticRemaining,
+  recordGuestSemantic,
+} from "@/features/bookmark/model/guestSemanticLimit";
 import {
   useBookmarks,
   useUpdateBookmark,
@@ -45,11 +51,25 @@ export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
   const [semanticRelated, setSemanticRelated] = useState<SemanticBookmark[]>([]);
   const [semanticLoading, setSemanticLoading] = useState(false);
   const [showGuestBanner, setShowGuestBanner] = useState(isGuest);
+  // 비회원 AI 의미 검색: 하루 남은 횟수, 한도 도달, 검색할 임베딩이 하나도 없는지(이 기능 전에 저장한 북마크뿐)
+  const [guestRemaining, setGuestRemaining] = useState<number | null>(null);
+  const [guestLimitReached, setGuestLimitReached] = useState(false);
+  const [guestNoIndex, setGuestNoIndex] = useState(false);
+  // 검색 effect가 목록 변경마다 다시 돌지 않도록 최신 목록은 ref로 읽는다
+  const bookmarksRef = useRef<Bookmark[]>([]);
 
   const query = searchParams.get("q") ?? "";
   const selectedTags = useMemo(() => searchParams.getAll("tag"), [searchParams]);
 
   const selectedBookmark = bookmarks.find((b) => b.id === selectedBookmarkId) ?? null;
+
+  useEffect(() => {
+    bookmarksRef.current = bookmarks;
+  }, [bookmarks]);
+
+  useEffect(() => {
+    if (isGuest) setGuestRemaining(getGuestSemanticRemaining());
+  }, [isGuest]);
 
   useEffect(() => {
     if (!query.trim()) return;
@@ -60,6 +80,41 @@ export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
 
     const controller = new AbortController();
 
+    // 비회원: 서버는 검색어 임베딩만 주고, 브라우저에 저장된 임베딩과 유사도를 여기서 계산한다
+    const runGuest = async () => {
+      if (getGuestSemanticRemaining() <= 0) {
+        setGuestLimitReached(true);
+        return;
+      }
+      const res = await fetch("/api/semantic-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+        signal: controller.signal,
+      });
+      const json = await res.json();
+      if (!json.success || json.data?.mode !== "guest") {
+        toast.show({
+          message:
+            res.status === 429
+              ? "AI 검색 요청이 많아요. 잠시 후 다시 시도해주세요."
+              : "AI 검색에 실패했어요. 잠시 후 다시 시도해주세요.",
+        });
+        return;
+      }
+      recordGuestSemantic();
+      setGuestRemaining(getGuestSemanticRemaining());
+      const embeddings = await bookmarkService.getGuestEmbeddings();
+      setGuestNoIndex(Object.keys(embeddings).length === 0);
+      const { exact, related } = rankBySimilarity(
+        bookmarksRef.current,
+        embeddings,
+        json.data.queryEmbedding
+      );
+      setSemanticExact(exact);
+      setSemanticRelated(related);
+    };
+
     const run = async () => {
       try {
         // 게이트 용도라 로컬 세션 확인으로 충분 (네트워크 왕복 없음) — 실제 인증은 API Route가 getUser()로 검증
@@ -67,6 +122,7 @@ export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session) {
+          if (isGuest) await runGuest();
           setSemanticLoading(false);
           return;
         }
@@ -97,7 +153,7 @@ export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
     run();
 
     return () => controller.abort();
-  }, [query, selectedTags]);
+  }, [query, selectedTags, isGuest]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -238,6 +294,9 @@ export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
                 related={deduplicatedRelated}
                 isLoading={semanticLoading}
                 isGuest={isGuest}
+                guestRemaining={guestRemaining}
+                guestLimitReached={guestLimitReached}
+                guestNoIndex={guestNoIndex}
                 onBookmarkClick={handleBookmarkClick}
                 onTagClick={handleTagClick}
               />
