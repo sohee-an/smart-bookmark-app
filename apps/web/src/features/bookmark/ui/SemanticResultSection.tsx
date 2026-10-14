@@ -1,4 +1,4 @@
-import { Sparkles, LogIn } from "lucide-react";
+import { Sparkles, LogIn, RefreshCw } from "lucide-react";
 import { BookmarkCard } from "@/entities/bookmark/ui/BookmarkCard";
 import type { Bookmark } from "@/entities/bookmark/model/types";
 import { useRouter } from "next/navigation";
@@ -16,8 +16,12 @@ interface SemanticResultSectionProps {
   guestRemaining?: number | null;
   /** 비회원 하루 한도를 다 썼는지 */
   guestLimitReached?: boolean;
-  /** 비회원 북마크에 검색할 임베딩이 하나도 없는지 (이 기능 전에 저장한 북마크뿐) */
-  guestNoIndex?: boolean;
+  /** AI 처리는 끝났지만 임베딩이 없는 비회원 북마크 수 (이 기능 전에 저장한 것) */
+  guestMissingCount?: number;
+  /** 빠진 임베딩을 채운다. 하루 검색 횟수는 쓰지 않는다 */
+  onBackfill?: () => void;
+  /** 임베딩을 채우는 중인지 */
+  backfilling?: boolean;
   onBookmarkClick: (bookmark: Bookmark) => void;
   onTagClick: (tag: string) => void;
 }
@@ -29,7 +33,9 @@ export const SemanticResultSection = ({
   isGuest,
   guestRemaining,
   guestLimitReached,
-  guestNoIndex,
+  guestMissingCount = 0,
+  onBackfill,
+  backfilling,
   onBookmarkClick,
   onTagClick,
 }: SemanticResultSectionProps) => {
@@ -48,7 +54,7 @@ export const SemanticResultSection = ({
               오늘 무료 AI 의미 검색을 다 썼어요
             </p>
             <p className="mt-1 text-sm text-zinc-400 dark:text-zinc-500">
-              로그인하면 횟수 제한 없이 내용으로 찾아드려요
+              로그인하면 하루 20회까지 내용으로 찾아드려요
             </p>
           </div>
           <button
@@ -83,18 +89,35 @@ export const SemanticResultSection = ({
 
   const guestNote = isGuest && guestRemaining !== null && guestRemaining !== undefined && (
     <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
-      비회원 AI 의미 검색 오늘 {guestRemaining}회 남음 · 로그인하면 무제한
+      비회원 AI 의미 검색 오늘 {guestRemaining}회 남음 · 로그인하면 하루 20회
     </p>
   );
 
+  // 이 기능 전에 저장한 비회원 북마크는 임베딩이 없어 의미 검색에 안 잡힌다. 버튼으로 한 번에 채운다
+  const backfillNotice = isGuest && guestMissingCount > 0 && (
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl bg-zinc-50 px-4 py-3 dark:bg-zinc-900">
+      <p className="text-sm text-zinc-600 dark:text-zinc-300">
+        북마크 {guestMissingCount}개는 아직 AI 검색에 안 잡혀요
+      </p>
+      <button
+        type="button"
+        onClick={onBackfill}
+        disabled={backfilling}
+        aria-label="AI 검색 준비하기"
+        className="bg-brand-primary hover:bg-brand-primary-hover flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white transition-all disabled:opacity-60"
+      >
+        <RefreshCw size={13} className={backfilling ? "animate-spin" : undefined} />
+        {backfilling ? "준비하는 중..." : "AI 검색 준비하기"}
+      </button>
+    </div>
+  );
+
   if (exact.length === 0 && related.length === 0) {
-    if (isGuest && guestNoIndex) {
+    if (backfillNotice) {
       return (
         <div className="mt-10">
           <SectionHeader />
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            AI 의미 검색은 지금부터 새로 저장하는 북마크에서 쓸 수 있어요.
-          </p>
+          {backfillNotice}
           {guestNote}
         </div>
       );
@@ -105,6 +128,7 @@ export const SemanticResultSection = ({
   return (
     <div className="mt-10">
       <SectionHeader />
+      {backfillNotice}
 
       {exact.length > 0 && (
         <div className="mb-8">
