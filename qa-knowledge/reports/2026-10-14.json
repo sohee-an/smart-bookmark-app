@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-14",
+  "commit": "d62d42a",
+  "branch": "feat/qa-tester",
+  "ran": ["bookmark.pipeline.real-ai", "extension.save.api"],
+  "retried": [],
+  "flaky": [],
+  "failing": [],
+  "consecutive": [],
+  "count": {
+    "fresh": 13,
+    "unverified": 4,
+    "hold": 2
+  },
+  "statuses": {
+    "bookmark.save.guest": "fresh",
+    "bookmark.save.validation": "fresh",
+    "bookmark.pipeline.success": "fresh",
+    "bookmark.pipeline.real-ai": "fresh",
+    "bookmark.pipeline.failure-retry": "fresh",
+    "bookmark.retry.slider": "unverified",
+    "bookmark.guest-limit": "fresh",
+    "bookmark.crud": "fresh",
+    "bookmark.crud.member-persist": "unverified",
+    "bookmark.filter": "fresh",
+    "header.auth-state": "fresh",
+    "landing.entry": "fresh",
+    "chat.streaming": "fresh",
+    "security.ssrf": "fresh",
+    "security.ssrf.rebinding": "unverified",
+    "search.semantic": "unverified",
+    "collection.share": "hold",
+    "extension.save.api": "fresh",
+    "extension.save.ui": "hold"
+  }
+}

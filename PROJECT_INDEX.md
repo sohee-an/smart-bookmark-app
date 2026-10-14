@@ -95,7 +95,7 @@
 - API: 북마크 추가/제거 → `apps/web/src/app/api/collections/[id]/bookmarks/route.ts`
 - API: 멤버 역할변경/제거 → `apps/web/src/app/api/collections/[id]/members/route.ts`
 - API: 이메일 초대 → `apps/web/src/app/api/collections/invite/route.ts`
-- DB 스키마 (컬렉션 테이블 + RLS) → `supabase/migrations/collections-schema.sql`
+- DB 스키마 (컬렉션 테이블 + RLS) → `supabase/migrations/20260101000008_collections-schema.sql`
 
 ## 인증
 
@@ -144,6 +144,27 @@
 - 비회원 익명 ID → `apps/web/src/shared/lib/guest.ts`
 - 게스트 쿠키 이름 상수 `GUEST_COOKIE` → `apps/web/src/shared/lib/guestCookie.ts`
 - localStorage + cookie 관리 → `apps/web/src/shared/lib/storage.ts`
+
+## QA 지식 장부 (QATester)
+
+- 엔진: 시나리오 연결(import 그래프, E2E 라우트), 신선도(파일 해시) → `scripts/qa/lib.mjs`
+- CLI: `status`, `show`, `recheck` → `scripts/qa/qa.mjs`
+- 프로젝트 설정 → `qa-knowledge/config.json`
+- 실제 AI 점검 (로컬 Supabase + 진짜 Gemini, 하루 1회) → `scripts/qa/live-check.mjs`
+- 로컬 Supabase 설정 (QA용) → `supabase/config.toml`
+- E2E 재검증용 Playwright 설정 (3100 포트, 서버 재사용 안 함) → `apps/web/playwright.qa.config.ts`
+- 시나리오 (사용자 동작 단위 주장 + 검증 테스트) → `qa-knowledge/scenarios.json`
+- 실행 근거 (지우지 않고 쌓음) → `qa-knowledge/facts.jsonl`
+- 발견 장부 (점검 중 눈에 띈 문제, 지우지 않음) → `qa-knowledge/findings.jsonl`
+- 시나리오 제안 (에이전트가 씀, 사람이 승인해 scenarios.json으로) → `qa-knowledge/proposals/`
+- 나이틀리 실행 (재검증 필요만, 외부 검사 재시도 1회, 연속 실패 판정) → `scripts/qa/nightly.mjs`
+- 나이틀리 보고서 (날짜별 md, json) → `qa-knowledge/reports/`
+- 나이틀리 워크플로우 (매일 03:00 KST, 이슈 하나로 보고) → `.github/workflows/qa-nightly.yml`
+- 에이전트: 시나리오 제안 → `.claude/agents/qa-scenario-writer.md`, 테스트 작성 → `.claude/agents/qa-test-author.md`, 실패 판정 → `.claude/agents/qa-judge.md`
+- 테스트 작성 에이전트 쓰기 제한 hook (테스트 파일만, verifiedBy 추가만, Bash 허용 목록, `--check-diff` 사후 점검) → `.claude/hooks/qa-test-author-guard.mjs`
+- 점검 한 바퀴 스킬 → `.claude/skills/qa-sweep/SKILL.md`
+- 설명과 한계 → `docs/qa-tester.md`
+- 이전 방식과 비교 (발표용) → `docs/qa-tester-before-after.md`
 
 ## 모달/오버레이 시스템
 
