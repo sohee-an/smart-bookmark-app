@@ -11,6 +11,6 @@
   },
   "playwright": {
     "cmd": "pnpm",
-    "args": ["exec", "playwright", "test", "--project=chromium"]
+    "args": ["exec", "playwright", "test", "--config=playwright.qa.config.ts", "--project=chromium"]
   }
 }

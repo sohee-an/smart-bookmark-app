@@ -155,26 +155,48 @@ if (cmd === "status") {
     return { result: ran === 0 ? "skipped" : "pass", ran, skipped };
   };
 
-  const playwrightResult = (ref) => {
-    const args = [
-      ...cfg.playwright.args,
-      "--reporter=json",
-      ref.file,
-      ...(ref.name ? ["-g", ref.name] : []),
-    ];
-    const r = run(cfg.playwright.cmd, args);
-    let stats;
+  // Playwright: 대상 E2E 파일을 한 번에 돌린다(개발 서버를 한 번만 띄운다). 결과를 테스트 제목으로 나눠 쓴다
+  let e2eCases = null;
+  const e2eFiles = [
+    ...new Set(
+      rows.flatMap((r) =>
+        r.sc.verifiedBy.filter((v) => v.runner === "playwright").map((v) => v.file)
+      )
+    ),
+  ];
+  if (flag("--e2e") && e2eFiles.length) {
+    console.log(`E2E ${e2eFiles.length}개 파일 실행 중 (개발 서버를 새로 띄워서 몇 분 걸린다)…`);
+    const r = run(cfg.playwright.cmd, [...cfg.playwright.args, "--reporter=json", ...e2eFiles]);
     try {
-      stats = JSON.parse(r.stdout.slice(r.stdout.indexOf("{"))).stats;
+      const report = JSON.parse(r.stdout.slice(r.stdout.indexOf("{")));
+      e2eCases = [];
+      const visit = (suite, titles) => {
+        for (const spec of suite.specs ?? [])
+          for (const t of spec.tests ?? [])
+            e2eCases.push({
+              file: (spec.file ?? suite.file ?? "").replace(/\\/g, "/"),
+              title: [...titles, spec.title].join(" › "),
+              status: t.status, // expected | unexpected | flaky | skipped
+            });
+        for (const s of suite.suites ?? [])
+          visit(s, s.title && !s.file ? [...titles, s.title] : titles);
+      };
+      for (const s of report.suites ?? []) visit(s, []);
     } catch {
-      console.error(
-        `Playwright 결과를 읽지 못했습니다 (${ref.file}).\n${(r.stderr || r.stdout).slice(-1500)}`
-      );
-      return { result: "error" };
+      console.error(`Playwright 결과를 읽지 못했습니다.\n${(r.stderr || r.stdout).slice(-2000)}`);
     }
-    const ran = (stats.expected ?? 0) + (stats.unexpected ?? 0) + (stats.flaky ?? 0);
-    const skipped = stats.skipped ?? 0;
-    if (stats.unexpected > 0) return { result: "fail", ran, skipped };
+  }
+  const playwrightResult = (ref) => {
+    if (!e2eCases) return { result: "error" };
+    const cases = e2eCases.filter(
+      (c) =>
+        (ref.file.endsWith(c.file) || c.file.endsWith(ref.file.replace(/^e2e\//, ""))) &&
+        (!ref.name || c.title.includes(ref.name))
+    );
+    if (!cases.length) return { result: "error" };
+    const skipped = cases.filter((c) => c.status === "skipped").length;
+    const ran = cases.length - skipped;
+    if (cases.some((c) => c.status === "unexpected")) return { result: "fail", ran, skipped };
     return { result: ran === 0 ? "skipped" : "pass", ran, skipped };
   };
 

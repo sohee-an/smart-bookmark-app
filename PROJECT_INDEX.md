@@ -146,6 +146,7 @@
 - 엔진: 시나리오 연결(import 그래프, E2E 라우트), 신선도(파일 해시) → `scripts/qa/lib.mjs`
 - CLI: `status`, `show`, `recheck` → `scripts/qa/qa.mjs`
 - 프로젝트 설정 → `qa-knowledge/config.json`
+- E2E 재검증용 Playwright 설정 (3100 포트, 서버 재사용 안 함) → `apps/web/playwright.qa.config.ts`
 - 시나리오 (사용자 동작 단위 주장 + 검증 테스트) → `qa-knowledge/scenarios.json`
 - 실행 근거 (지우지 않고 쌓음) → `qa-knowledge/facts.jsonl`
 - 설명과 한계 → `docs/qa-tester.md`
