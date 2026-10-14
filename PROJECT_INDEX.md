@@ -157,6 +157,7 @@
 - 나이틀리 보고서 (날짜별 md, json) → `qa-knowledge/reports/`
 - 나이틀리 워크플로우 (매일 03:00 KST, 이슈 하나로 보고) → `.github/workflows/qa-nightly.yml`
 - 에이전트: 시나리오 제안 → `.claude/agents/qa-scenario-writer.md`, 테스트 작성 → `.claude/agents/qa-test-author.md`, 실패 판정 → `.claude/agents/qa-judge.md`
+- 테스트 작성 에이전트 쓰기 제한 hook (테스트 파일만, verifiedBy 추가만, Bash 허용 목록, `--check-diff` 사후 점검) → `.claude/hooks/qa-test-author-guard.mjs`
 - 점검 한 바퀴 스킬 → `.claude/skills/qa-sweep/SKILL.md`
 - 설명과 한계 → `docs/qa-tester.md`
 - 이전 방식과 비교 (발표용) → `docs/qa-tester-before-after.md`

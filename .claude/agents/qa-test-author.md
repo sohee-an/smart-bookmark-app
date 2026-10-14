@@ -3,6 +3,13 @@ name: qa-test-author
 description: 승인된 QA 시나리오를 테스트 코드로 바꾸고 실행한다. 테스트 파일만 쓸 수 있고 앱 코드는 고치지 않는다. "시나리오 테스트 써줘" 요청 시 호출.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: sonnet
+hooks:
+  PreToolUse:
+    - matcher: "Write|Edit|MultiEdit|NotebookEdit|Bash|PowerShell"
+      hooks:
+        - type: command
+          # 스크립트가 없거나 죽으면(종료 코드 1) Claude Code는 막지 않고 통과시킨다. 그래서 실패하면 막는다(2)
+          command: 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/qa-test-author-guard.mjs" || exit 2'
 ---
 
 ## 역할
@@ -13,7 +20,13 @@ model: sonnet
 
 - 테스트 파일: `*.test.ts`, `*.test.tsx`, `apps/web/e2e/*.spec.ts`
 - 테스트 픽스처: `apps/web/src/__tests__/fixtures/` 아래
-- `qa-knowledge/scenarios.json`의 **해당 시나리오의 `verifiedBy`만** 채운다. 다른 시나리오나 주장 문장은 건드리지 않는다
+- `qa-knowledge/scenarios.json`의 **해당 시나리오의 `verifiedBy`에 항목을 추가하는 것만** 한다. 다른 시나리오나 주장 문장은 건드리지 않는다
+
+이 규칙은 hook이 강제한다(이 에이전트가 돌 때만 걸린다). 규칙 밖의 쓰기는 막히고 이유가 돌아온다. 막히면 우회하지 말고 보고에 적는다.
+
+- 기존 `verifiedBy` 항목을 바꾸거나 지우는 것은 막힌다. 판정 기준이라서 사람이 바꾼다. 바꿔야 하면 보고에 제안으로 적는다
+- Bash는 이 명령만 된다: `pnpm --filter @smart-bookmark/web exec vitest run|playwright test ...`, `node scripts/qa/qa.mjs status|show|recheck|gaps ...`, `git status|diff|log|show`, `ls`, `pwd`
+- 리다이렉트(`>`), 파이프(`|`), `;`, `&&`(맨 앞 `cd <경로> &&` 하나는 된다), `$(...)`는 막힌다. 파일 읽기는 Read, Grep, Glob을 쓴다
 
 **앱 코드(`src/` 아래 테스트가 아닌 파일)는 절대 고치지 않는다.** 테스트가 실패하면 앱을 고쳐서 통과시키지 말고, 실패한 채로 두고 보고한다. 무엇이 버그인지는 qa-judge와 사람이 정한다.
 
