@@ -9,6 +9,7 @@
 //                                                    --e2e: Playwright도 돌린다 (브라우저, 개발 서버 필요)
 //                                                    --live: 외부 서비스를 부르는 스크립트 검사도 돌린다 (실제 AI 등)
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { appendFileSync, existsSync, mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -127,20 +128,26 @@ if (cmd === "status") {
       rows.flatMap((r) => r.sc.verifiedBy.filter((v) => v.runner === "vitest").map((v) => v.file))
     ),
   ];
-  // Windows에서 pnpm은 .cmd라 셸이 필요하다. 인자를 따옴표로 감싼 한 줄 명령으로 넘긴다
-  const run = (cmd, args) =>
-    process.platform === "win32"
-      ? spawnSync([cmd, ...args.map((a) => `"${a.replace(/"/g, '\\"')}"`)].join(" "), {
-          cwd: path.join(ROOT, cfg.appRoot),
-          encoding: "utf8",
-          shell: true,
-        })
-      : spawnSync(cmd, args, { cwd: path.join(ROOT, cfg.appRoot), encoding: "utf8" });
+  // 테스트 러너는 셸을 거치지 않고 node로 JS 진입점을 직접 실행한다.
+  // (예전에는 Windows에서 pnpm.cmd 때문에 셸 문자열을 이어 붙였는데, 인자 이스케이프가 불완전했다. CodeQL 지적)
+  const appDir = path.join(ROOT, cfg.appRoot);
+  const appRequire = createRequire(path.join(appDir, "package.json"));
+  const binPath = (runner) => {
+    const pkgJson = appRequire.resolve(`${runner.package}/package.json`);
+    const bin = JSON.parse(readFileSync(pkgJson, "utf8")).bin;
+    return path.join(path.dirname(pkgJson), typeof bin === "string" ? bin : bin[runner.bin]);
+  };
+  const run = (runner, args) =>
+    spawnSync(process.execPath, [binPath(runner), ...args], {
+      cwd: appDir,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
 
   let vitest = null;
   if (vitestFiles.length) {
     const out = path.join(mkdtempSync(path.join(os.tmpdir(), "qa-")), "vitest.json");
-    const r = run(cfg.vitest.cmd, [
+    const r = run(cfg.vitest, [
       ...cfg.vitest.args,
       "--reporter=json",
       `--outputFile=${out}`,
@@ -177,7 +184,7 @@ if (cmd === "status") {
   ];
   if (flag("--e2e") && e2eFiles.length) {
     console.log(`E2E ${e2eFiles.length}개 파일 실행 중 (개발 서버를 새로 띄워서 몇 분 걸린다)…`);
-    const r = run(cfg.playwright.cmd, [...cfg.playwright.args, "--reporter=json", ...e2eFiles]);
+    const r = run(cfg.playwright, [...cfg.playwright.args, "--reporter=json", ...e2eFiles]);
     try {
       const report = JSON.parse(r.stdout.slice(r.stdout.indexOf("{")));
       e2eCases = [];
@@ -288,7 +295,7 @@ if (cmd === "status") {
     if (result !== "skipped")
       appendFileSync(path.join(KDIR, "facts.jsonl"), JSON.stringify(fact) + "\n");
     const note = [
-      ran.length < tests.length ? "E2E 건너뜀" : "",
+      ran.length < tests.length ? "일부 건너뜀 (--e2e, --live)" : "",
       skippedCases ? `skip된 테스트 ${skippedCases}개` : "",
     ]
       .filter(Boolean)

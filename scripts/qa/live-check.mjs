@@ -9,6 +9,7 @@
 //
 // 사용: node scripts/qa/live-check.mjs [--json]   (qa.mjs가 runner "script"로 부른다)
 import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { ROOT, loadConfig } from "./lib.mjs";
 
@@ -39,12 +40,18 @@ function supabaseEnv() {
   const service = kv.SERVICE_ROLE_KEY ?? kv.SECRET_KEY;
   if (!url || !anon || !service)
     throw new Error("로컬 Supabase가 떠 있지 않거나 키를 읽지 못했습니다 (supabase start 필요)");
-  return { url, anon, service };
+  // 이 스크립트는 관리자 키로 테스트 계정을 만들고 지운다. 실수로 실제 DB를 가리키지 않게 로컬 주소만 허용한다
+  const host = new URL(url).hostname;
+  if (!["127.0.0.1", "localhost", "::1"].includes(host))
+    throw new Error(`로컬 Supabase가 아닌 주소라 중단합니다: ${host}`);
+  return { url: `http://${host === "::1" ? "[::1]" : host}:${new URL(url).port}`, anon, service };
 }
 
 // 2. 앱 서버. 환경변수로 넘긴 값이 .env.local보다 우선한다
 async function startApp(sb) {
-  const port = live.port;
+  const port = Number(live.port);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535)
+    throw new Error(`잘못된 포트: ${live.port}`);
   const child = spawn(
     process.platform === "win32" ? "cmd" : "pnpm",
     process.platform === "win32"
@@ -104,7 +111,7 @@ async function main() {
 
     // 3. 테스트 계정. 이메일 인증이 꺼져 있어 바로 세션이 온다
     const email = `qa-${Date.now()}@example.test`;
-    const password = `Qa!${Math.random().toString(36).slice(2)}${Date.now()}`;
+    const password = `Qa!${randomBytes(24).toString("base64url")}`;
     const su = await j(
       await fetch(`${sb.url}/auth/v1/signup`, {
         method: "POST",
