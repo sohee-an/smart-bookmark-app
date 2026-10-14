@@ -62,7 +62,10 @@ export class CrawlerService {
       const html = await response.text();
       const $ = cheerio.load(html);
 
-      const title = $('meta[property="og:title"]').attr("content") || $("title").text() || "";
+      // $("title").text()는 문서의 모든 <title>을 이어 붙인다. 본문 SVG 안의 <title>(로고 이름 등)까지
+      // 섞여 "JavaScript | MDNMDNMDNMozilla"처럼 저장되는 문제가 있어 첫 번째 <title>만 쓴다.
+      const title =
+        $('meta[property="og:title"]').attr("content") || $("title").first().text() || "";
       const description =
         $('meta[property="og:description"]').attr("content") ||
         $('meta[name="description"]').attr("content") ||
