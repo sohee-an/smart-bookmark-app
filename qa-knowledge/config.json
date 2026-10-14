@@ -28,5 +28,6 @@
       "src/app/api/extension/_lib/auth.ts",
       "src/app/api/extension/_lib/pipeline.ts"
     ]
-  }
+  },
+  "gapDirs": ["src/features", "src/entities", "src/server", "src/shared/lib", "src/app/api"]
 }

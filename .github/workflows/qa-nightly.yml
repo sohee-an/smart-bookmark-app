@@ -1,0 +1,102 @@
+name: QA Nightly
+
+# QATester 나이틀리. 재검증 필요한 시나리오만 다시 돌린다 (단위 + E2E + 실제 AI).
+# 결정론 경계: 돌리는 건 자동, 결과를 보고 무엇을 고칠지는 사람이 정한다. CI를 막지 않는다.
+#
+# 실제 AI 점검(live)은 GEMINI_API_KEY 시크릿이 있을 때만 돈다. 없으면 단위 + E2E만 돌고 보고서에 그렇게 적힌다.
+# 결과는 아티팩트(보고서, 근거)와 이슈 하나("QA 나이틀리")로 남긴다. 연속 2일 실패일 때만 이슈 제목에 [확인 필요]를 붙인다.
+# 근거(facts.jsonl)는 CI에서 저장소에 커밋하지 않는다(브랜치 보호). 아티팩트에서 내려받거나, 로컬에서 돌린 결과를 커밋한다.
+on:
+  schedule:
+    - cron: "0 18 * * *" # 매일 03:00 KST
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "실제 AI 점검 포함"
+        type: boolean
+        default: true
+
+concurrency:
+  group: qa-nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      issues: write
+    env:
+      # E2E는 API를 mock하므로 자리표시 값으로 충분하다. live는 로컬 Supabase 값을 스크립트가 직접 넣는다
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      RESEND_API_KEY: re_placeholder
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Playwright 브라우저
+        run: pnpm --filter @smart-bookmark/web exec playwright install --with-deps chromium
+      - name: 실제 AI 점검 가능 여부
+        id: live
+        run: |
+          if [ -n "$GEMINI_API_KEY" ] && [ "${{ github.event_name != 'workflow_dispatch' || inputs.live }}" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GEMINI_API_KEY 시크릿이 없거나 live를 껐다. 실제 AI 점검은 건너뛴다"
+          fi
+      - name: 로컬 Supabase 시작
+        if: steps.live.outputs.enabled == 'true'
+        run: npx -y supabase@2.120.0 start -x studio,storage-api,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,realtime,postgres-meta
+      - name: 나이틀리 재검증
+        id: run
+        run: |
+          set +e
+          node scripts/qa/nightly.mjs ${{ steps.live.outputs.enabled == 'true' && '' || '--no-live' }} | tail -1 > summary.json
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          cat summary.json
+      - name: 로컬 Supabase 종료
+        if: always() && steps.live.outputs.enabled == 'true'
+        run: npx -y supabase@2.120.0 stop --no-backup || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-nightly-${{ github.run_id }}
+          path: |
+            qa-knowledge/reports/
+            qa-knowledge/facts.jsonl
+          retention-days: 90
+      - name: 이슈 갱신
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            if (!fs.existsSync("summary.json")) return;
+            const s = JSON.parse(fs.readFileSync("summary.json", "utf8"));
+            const report = fs.readFileSync(`qa-knowledge/reports/${s.date}.md`, "utf8");
+            const MARKER = "<!-- qa-nightly -->";
+            const { owner, repo } = context.repo;
+            const title = `${s.consecutive.length ? "[확인 필요] " : ""}QA 나이틀리: 통과 ${s.count.fresh ?? 0} · 실패 ${s.failing.length} · 미검증 ${s.count.unverified ?? 0}`;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = `${MARKER}\n${report.replace(/<details>[\s\S]*<\/details>/, "")}\n실행: ${runUrl} (보고서와 근거는 아티팩트)\n`;
+            const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: "open", labels: "qa-nightly", per_page: 50 });
+            const existing = open.find((i) => !i.pull_request && i.body?.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, title, body });
+            } else {
+              try { await github.rest.issues.createLabel({ owner, repo, name: "qa-nightly", color: "0e8a16", description: "QATester 나이틀리 보고" }); } catch {}
+              await github.rest.issues.create({ owner, repo, title, body, labels: ["qa-nightly"] });
+            }

@@ -243,6 +243,8 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - `심층 보안 검토해줘 [대상]` → /project:security-deep-review 실행 (기본 + 공격자 관점을 따로 동시에)
 - `보안 리뷰 종합해줘` → /project:security-summary 실행 (개발 세션에서, 요청할 때만)
 - `QA 해줘 [대상]` → /project:qa-review 실행 (백그라운드)
+- `QA 점검해줘 [기능]` → /project:qa-sweep 실행 (장부 상태 → 시나리오 제안 → 사람 승인 → 테스트 작성 → 재검증 → 실패 판정)
+- `실패 판정해줘 [시나리오 id]` → /project:qa-sweep judge 실행
 
 ## 리뷰 결과 보관소
 
@@ -263,6 +265,14 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - 리뷰는 사람이 부를 때만 실행한다. 구현 전에 리뷰 파일을 자동으로 전부 읽지 않는다
 - 사람이 반영할 항목을 지정하면 그 리뷰 파일만 읽는다. 리뷰 전체를 미리 알고 시작하면 작업 범위가 리뷰에 끌려가는 문제가 있었다
 - Critical/High 항목은 새 태스크 등록 전 먼저 해소 여부 확인
+
+**QA 지식 장부 (QATester):**
+
+- `qa-knowledge/scenarios.json`: 사용자 동작 단위 주장과 검증 테스트. 주장과 verifiedBy만 사람이 적고, 코드 연결은 기계가 뽑는다
+- `qa-knowledge/facts.jsonl`, `findings.jsonl`: 실행 근거와 발견. 지우지 않고 덧붙인다
+- 시나리오 제안(qa-scenario-writer), 테스트 작성(qa-test-author), 실패 판정(qa-judge)은 서로의 결과를 보지 않는다. 메인 세션만 전부 본다
+- 장부에 시나리오를 넣는 것, 이슈와 PR을 만드는 것은 사람이 말할 때만. 작성 에이전트는 테스트 파일만 쓴다
+- 상태 확인: `node scripts/qa/qa.mjs status`. 자세한 건 `docs/qa-tester.md`
 
 **보안 검사 구조:**
 

@@ -1,5 +1,8 @@
 // QATester CLI
 //   node scripts/qa/qa.mjs status [--json]          시나리오별 상태 (fresh / stale / failing / unverified)
+//   node scripts/qa/qa.mjs gaps                      어느 시나리오에도 연결되지 않은 소스 파일 (시나리오를 더 써야 할 곳)
+//   node scripts/qa/qa.mjs finding add <id> "<내용>" [--scenario <id>] [--status open|fixed|wontfix|observed]
+//   node scripts/qa/qa.mjs finding list
 //   node scripts/qa/qa.mjs show <시나리오 id>        연결된 파일, mock된 경계, 마지막 근거, 바뀐 파일
 //   node scripts/qa/qa.mjs recheck [--all] [--e2e] [--live] [--scenario <id>]
 //                                                    재검증이 필요한 시나리오의 테스트만 돌리고 사실을 쌓는다
@@ -12,6 +15,7 @@ import path from "node:path";
 import {
   KDIR,
   ROOT,
+  currentFindings,
   fingerprint,
   gitInfo,
   linkScenario,
@@ -70,6 +74,12 @@ if (cmd === "status") {
       .map(([k, v]) => `${LABEL[k]} ${v}`)
       .join(" · ")} (시나리오 ${rows.length}개)`
   );
+  const fs = currentFindings();
+  const openF = fs.filter((f) => f.status === "open");
+  if (fs.length)
+    console.log(
+      `발견 ${fs.length}건 (미처리 ${openF.length})${openF.length ? ": " + openF.map((f) => f.id).join(", ") : ""}`
+    );
 } else if (cmd === "show") {
   const sc = scenarios.find((s) => s.id === rest[0]);
   if (!sc) throw new Error(`시나리오 없음: ${rest[0]}`);
@@ -286,6 +296,57 @@ if (cmd === "status") {
     console.log(`${result.padEnd(7)} ${row.sc.id}${note ? ` (${note})` : ""}`);
     for (const t of tests.filter((t) => t.result !== "pass" || t.skipped))
       console.log(`         ${t.result}${t.skipped ? ` (skip ${t.skipped})` : ""}: ${t.ref}`);
+  }
+} else if (cmd === "gaps") {
+  // 커버리지 대상 디렉터리의 소스 파일 중 어느 시나리오에도 연결되지 않은 것
+  const linked = new Set(scenarios.flatMap((sc) => linkScenario(sc, cfg).files));
+  const dirs = cfg.gapDirs ?? [];
+  const { readdirSync, statSync } = await import("node:fs");
+  const out = [];
+  const walkDir = (d) => {
+    for (const e of readdirSync(path.join(ROOT, d))) {
+      const rel = `${d}/${e}`;
+      const abs = path.join(ROOT, rel);
+      if (statSync(abs).isDirectory()) walkDir(rel);
+      else if (
+        /\.(ts|tsx)$/.test(e) &&
+        !/\.(test|spec|stories)\.|test-setup/.test(e) &&
+        !linked.has(rel)
+      )
+        out.push(rel);
+    }
+  };
+  for (const d of dirs) walkDir(`${cfg.appRoot}/${d}`);
+  console.log(
+    `어느 시나리오에도 연결되지 않은 소스 ${out.length}개 (대상 디렉터리: ${dirs.join(", ")})`
+  );
+  for (const f of out) console.log(`  - ${f}`);
+} else if (cmd === "finding") {
+  const sub = rest[0];
+  const { appendFileSync } = await import("node:fs");
+  if (sub === "add") {
+    const [id, text] = [rest[1], rest[2]];
+    if (!id || !text)
+      throw new Error(
+        '사용법: finding add <id> "<내용>" [--scenario <id>] [--status open|fixed|wontfix|observed]'
+      );
+    const entry = {
+      id,
+      text,
+      status: opt("--status") ?? "open",
+      scenario: opt("--scenario") ?? undefined,
+      at: new Date().toISOString(),
+      ...gitInfo(),
+    };
+    appendFileSync(path.join(KDIR, "findings.jsonl"), JSON.stringify(entry) + "\n");
+    console.log(`기록: ${id} [${entry.status}]`);
+  } else {
+    const fs = currentFindings();
+    if (!fs.length) console.log("발견 없음");
+    for (const f of fs)
+      console.log(
+        `${f.status.padEnd(8)} ${f.id.padEnd(28)} ${f.text}${f.scenario ? `  (시나리오 ${f.scenario})` : ""}  ${f.at.slice(0, 10)}`
+      );
   }
 } else {
   console.error(`알 수 없는 명령: ${cmd}`);

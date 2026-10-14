@@ -172,7 +172,7 @@ export function linkScenario(sc, cfg) {
         [ref.file, ...(cfg.live?.links ?? []).map((p) => posix.join(cfg.appRoot, p))],
         cfg
       ).forEach((f) => files.add(f));
-      files.add("qa-knowledge/config.json");
+      // config.json 전체를 연결하면 무관한 키(gapDirs 등)를 바꿔도 재검증 필요가 된다. 스크립트와 links만 연결한다
     } else if (ref.runner === "playwright") {
       const src = readFileSync(abs(file), "utf8");
       for (const m of src.matchAll(/goto\(\s*["'`](\/[^"'`]*)/g)) routes.add(m[1]);
@@ -251,6 +251,25 @@ export function statusOf(sc, cfg, facts, link = linkScenario(sc, cfg)) {
     link,
     last,
   };
+}
+
+// ---------- 발견 (findings) ----------
+// 점검 중 눈에 띈 문제를 적는다. 시나리오의 실패와 달리 "아직 검사로 고정되지 않은 관찰"이다.
+// 상태: open(미처리) | fixed(고침, 가능하면 검사로 고정됨) | wontfix(안 고침, 이유 기록) | observed(고칠 게 없는 관찰)
+export function loadFindings() {
+  const p = posix.join(KDIR, "findings.jsonl");
+  if (!existsSync(p)) return [];
+  return readFileSync(p, "utf8")
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
+}
+
+// 같은 id의 최신 항목이 현재 상태다 (지우지 않고 덧붙인다)
+export function currentFindings() {
+  const by = new Map();
+  for (const f of loadFindings()) by.set(f.id, { ...(by.get(f.id) ?? {}), ...f });
+  return [...by.values()];
 }
 
 export function gitInfo() {

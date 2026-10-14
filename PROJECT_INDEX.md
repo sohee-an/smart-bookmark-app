@@ -151,6 +151,13 @@
 - E2E 재검증용 Playwright 설정 (3100 포트, 서버 재사용 안 함) → `apps/web/playwright.qa.config.ts`
 - 시나리오 (사용자 동작 단위 주장 + 검증 테스트) → `qa-knowledge/scenarios.json`
 - 실행 근거 (지우지 않고 쌓음) → `qa-knowledge/facts.jsonl`
+- 발견 장부 (점검 중 눈에 띈 문제, 지우지 않음) → `qa-knowledge/findings.jsonl`
+- 시나리오 제안 (에이전트가 씀, 사람이 승인해 scenarios.json으로) → `qa-knowledge/proposals/`
+- 나이틀리 실행 (재검증 필요만, 외부 검사 재시도 1회, 연속 실패 판정) → `scripts/qa/nightly.mjs`
+- 나이틀리 보고서 (날짜별 md, json) → `qa-knowledge/reports/`
+- 나이틀리 워크플로우 (매일 03:00 KST, 이슈 하나로 보고) → `.github/workflows/qa-nightly.yml`
+- 에이전트: 시나리오 제안 → `.claude/agents/qa-scenario-writer.md`, 테스트 작성 → `.claude/agents/qa-test-author.md`, 실패 판정 → `.claude/agents/qa-judge.md`
+- 점검 한 바퀴 스킬 → `.claude/skills/qa-sweep/SKILL.md`
 - 설명과 한계 → `docs/qa-tester.md`
 - 이전 방식과 비교 (발표용) → `docs/qa-tester-before-after.md`
 
