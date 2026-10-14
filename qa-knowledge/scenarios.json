@@ -223,11 +223,137 @@
       "private": true
     },
     {
-      "id": "search.semantic",
+      "id": "search.semantic.split.member",
       "feature": "시맨틱 서치",
-      "claim": "의미가 비슷한 북마크가 '정확한 결과'(유사도 0.8 이상)와 '연관된 결과'로 나뉘어 나온다",
-      "verifiedBy": [],
-      "notes": "검증하는 테스트가 없다. 기준값 0.65/0.8은 측정 없이 정했다 (docs/decisions/029)"
+      "claim": "회원이 검색하면 유사도 0.8 이상은 '정확한 결과', 0.8 미만은 '연관된 결과'로 나뉘어 온다 (경계값 0.8은 정확한 결과)",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "회원은 0.8 기준으로 정확한 결과와 연관된 결과로 나뉜다"
+        }
+      ]
+    },
+    {
+      "id": "search.semantic.split.guest",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 검색하면 브라우저에 저장된 임베딩과 비교해 0.8 이상은 '정확한 결과', 0.65 이상 0.8 미만은 '연관된 결과'로 나오고 0.65 미만은 나오지 않으며, 최대 10개까지 유사도 높은 순이다",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/lib/semantic.test.ts",
+          "name": "rankBySimilarity — 비회원 시맨틱 검색 분리"
+        }
+      ]
+    },
+    {
+      "id": "search.semantic.guest.limit-5",
+      "feature": "시맨틱 서치",
+      "claim": "비회원은 하루 5번까지 AI 의미 검색을 쓰고, 성공할 때마다 화면의 남은 횟수가 1씩 준다. 5번을 다 쓰면 서버를 부르지 않고 로그인 안내가 뜬다",
+      "verifiedBy": [
+        {
+          "runner": "playwright",
+          "file": "e2e/semantic-search-guest.spec.ts",
+          "name": "비회원도 의미 검색 결과를 정확한/연관된 결과로 나눠 보고, 남은 횟수가 줄어든다"
+        },
+        {
+          "runner": "playwright",
+          "file": "e2e/semantic-search-guest.spec.ts",
+          "name": "하루 5회를 다 쓰면 서버를 부르지 않고 로그인 안내가 보인다"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/model/guestSemanticLimit.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "search.semantic.guest.limit-reset-day",
+      "feature": "시맨틱 서치",
+      "claim": "비회원 AI 의미 검색 한도는 한국 시간 자정에 5회로 다시 채워진다 (한국 시간 오전 9시가 아니다)",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/model/guestSemanticLimit.test.ts",
+          "name": "날짜가 바뀌면 다시 채워진다"
+        }
+      ]
+    },
+    {
+      "id": "search.semantic.guest.cost-defense",
+      "feature": "시맨틱 서치",
+      "claim": "비회원 쿠키만 있는 요청이 한 IP에서 1분에 10번을 넘으면 429로 막히고 임베딩 API를 부르지 않는다. 화면의 5회 제한을 우회해도 마찬가지다",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "비회원이 분당 한도를 넘으면 429이고 임베딩을 부르지 않는다"
+        }
+      ]
+    },
+    {
+      "id": "search.semantic.auth-gate",
+      "feature": "시맨틱 서치",
+      "claim": "로그인도 비회원 쿠키도 없는 요청은 시맨틱 검색에서 401을 받고, 빈 검색어와 200자를 넘는 검색어는 400을 받으며 임베딩 API는 호출되지 않는다",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "로그인도 비회원 쿠키도 없으면 401이고 임베딩을 부르지 않는다"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "검색어가 비었거나 공백뿐이면 임베딩 호출 없이 400"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "검색어가 200자를 넘으면 400"
+        }
+      ]
+    },
+    {
+      "id": "search.semantic.member.limit-20",
+      "feature": "시맨틱 서치",
+      "claim": "회원은 하루(한국 시간 자정 기준) 20번까지 AI 의미 검색을 쓴다. 21번째 요청은 서버가 임베딩을 부르지 않고 429(code DAILY_LIMIT_EXCEEDED)로 막고, 화면에는 '오늘 AI 의미 검색 20회를 모두 썼어요' 안내가 뜬다",
+      "verifiedBy": []
+    },
+    {
+      "id": "search.semantic.guest.no-index-no-charge",
+      "feature": "시맨틱 서치",
+      "claim": "임베딩이 하나도 없는 비회원(이 기능 전에 저장했거나 AI 처리가 실패한 북마크뿐)이 검색하면 서버를 부르지 않고 남은 횟수도 줄지 않으며, 'AI 의미 검색은 지금부터 새로 저장하는 북마크에서 쓸 수 있어요' 안내가 뜬다",
+      "verifiedBy": []
+    },
+    {
+      "id": "search.semantic.guest.tag-change-no-charge",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 검색어는 그대로 두고 태그 필터만 바꾸면 의미 검색 서버를 다시 부르지 않고 남은 횟수도 줄지 않으며, 결과는 바뀐 태그에 맞게 다시 걸러진다",
+      "verifiedBy": []
+    },
+    {
+      "id": "search.semantic.tag-filter",
+      "feature": "시맨틱 서치",
+      "claim": "태그 필터를 켠 채 의미 검색하면 선택한 태그 중 하나라도 가진 북마크만 결과에 나온다 (회원, 비회원 모두. 회원은 서버가 태그를 검색 조건으로 넘긴다)",
+      "verifiedBy": []
+    },
+    {
+      "id": "search.semantic.guest.failure-no-charge",
+      "feature": "시맨틱 서치",
+      "claim": "비회원 의미 검색 요청이 실패(서버 오류 500, 분당 한도 429, 네트워크 오류)하면 안내 토스트가 뜨고 남은 횟수는 줄지 않는다",
+      "verifiedBy": []
+    },
+    {
+      "id": "search.semantic.stale-response",
+      "feature": "시맨틱 서치",
+      "claim": "검색어를 빠르게 바꾸면 이전 검색어의 의미 검색 결과가 아니라 마지막 검색어의 결과만 화면에 남는다",
+      "verifiedBy": []
+    },
+    {
+      "id": "search.semantic.guest.embedding-lifecycle",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 저장한 북마크는 AI 처리가 끝나면 임베딩이 브라우저에 남고, 그 북마크를 지우면 임베딩도 같이 지워진다",
+      "verifiedBy": []
     },
     {
       "id": "collection.share",
