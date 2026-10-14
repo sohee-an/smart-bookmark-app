@@ -141,6 +141,15 @@
 - 게스트 쿠키 이름 상수 `GUEST_COOKIE` → `apps/web/src/shared/lib/guestCookie.ts`
 - localStorage + cookie 관리 → `apps/web/src/shared/lib/storage.ts`
 
+## QA 지식 장부 (QATester)
+
+- 엔진: 시나리오 연결(import 그래프, E2E 라우트), 신선도(파일 해시) → `scripts/qa/lib.mjs`
+- CLI: `status`, `show`, `recheck` → `scripts/qa/qa.mjs`
+- 프로젝트 설정 → `qa-knowledge/config.json`
+- 시나리오 (사용자 동작 단위 주장 + 검증 테스트) → `qa-knowledge/scenarios.json`
+- 실행 근거 (지우지 않고 쌓음) → `qa-knowledge/facts.jsonl`
+- 설명과 한계 → `docs/qa-tester.md`
+
 ## 모달/오버레이 시스템
 
 - `overlay.open()`, `overlay.close()` → `apps/web/src/shared/lib/overlay/overlay.ts`

@@ -1,0 +1,16 @@
+{
+  "$comment": "프로젝트별 값은 이 파일에만 둔다. 다른 프로젝트로 옮길 때는 이 파일과 scenarios.json만 새로 쓴다.",
+  "appRoot": "apps/web",
+  "tsconfig": "tsconfig.json",
+  "nextAppDir": "src/app",
+  "extensions": [".ts", ".tsx", ".js", ".jsx", ".mjs"],
+  "e2eAlwaysLink": ["src/middleware.ts"],
+  "vitest": {
+    "cmd": "pnpm",
+    "args": ["exec", "vitest", "run", "--config", "vitest.unit.config.ts"]
+  },
+  "playwright": {
+    "cmd": "pnpm",
+    "args": ["exec", "playwright", "test", "--project=chromium", "--reporter=line"]
+  }
+}
