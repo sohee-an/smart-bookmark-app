@@ -11,6 +11,6 @@
   },
   "playwright": {
     "cmd": "pnpm",
-    "args": ["exec", "playwright", "test", "--project=chromium", "--reporter=line"]
+    "args": ["exec", "playwright", "test", "--project=chromium"]
   }
 }

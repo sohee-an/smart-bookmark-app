@@ -139,33 +139,55 @@ if (cmd === "status") {
     if (!vitest)
       console.error(`vitest 결과를 읽지 못했습니다.\n${(r.stderr || r.stdout).slice(-1500)}`);
   }
+  // 결과: { result: pass | fail | error | skipped, ran, skipped }
+  // skip된 테스트는 통과로 세지 않는다. 일부만 skip이면 pass지만 skipped 수를 남기고 시나리오를 "일부"로 표시한다
   const vitestResult = (ref) => {
-    if (!vitest) return "error";
+    if (!vitest) return { result: "error" };
     const fileRes = vitest.testResults.find((t) => t.name.replace(/\\/g, "/").endsWith(ref.file));
-    if (!fileRes) return "error";
+    if (!fileRes) return { result: "error" };
     const cases = fileRes.assertionResults.filter(
       (a) => !ref.name || a.fullName.includes(ref.name)
     );
-    if (!cases.length) return "error";
-    return cases.every(
-      (c) => c.status === "passed" || c.status === "skipped" || c.status === "pending"
-    )
-      ? "pass"
-      : "fail";
+    if (!cases.length) return { result: "error" };
+    const skipped = cases.filter((c) => ["skipped", "pending", "todo"].includes(c.status)).length;
+    const ran = cases.length - skipped;
+    if (cases.some((c) => c.status === "failed")) return { result: "fail", ran, skipped };
+    return { result: ran === 0 ? "skipped" : "pass", ran, skipped };
   };
 
   const playwrightResult = (ref) => {
-    const args = [...cfg.playwright.args, ref.file, ...(ref.name ? ["-g", ref.name] : [])];
-    return run(cfg.playwright.cmd, args).status === 0 ? "pass" : "fail";
+    const args = [
+      ...cfg.playwright.args,
+      "--reporter=json",
+      ref.file,
+      ...(ref.name ? ["-g", ref.name] : []),
+    ];
+    const r = run(cfg.playwright.cmd, args);
+    let stats;
+    try {
+      stats = JSON.parse(r.stdout.slice(r.stdout.indexOf("{"))).stats;
+    } catch {
+      console.error(
+        `Playwright 결과를 읽지 못했습니다 (${ref.file}).\n${(r.stderr || r.stdout).slice(-1500)}`
+      );
+      return { result: "error" };
+    }
+    const ran = (stats.expected ?? 0) + (stats.unexpected ?? 0) + (stats.flaky ?? 0);
+    const skipped = stats.skipped ?? 0;
+    if (stats.unexpected > 0) return { result: "fail", ran, skipped };
+    return { result: ran === 0 ? "skipped" : "pass", ran, skipped };
   };
 
   const git = gitInfo();
   for (const row of rows) {
     const tests = row.sc.verifiedBy.map((ref) => {
       const id = `${ref.runner}:${ref.file}${ref.name ? `::${ref.name}` : ""}`;
-      if (ref.runner === "vitest") return { ref: id, result: vitestResult(ref) };
+      if (ref.runner === "vitest") return { ref: id, ...vitestResult(ref) };
       if (ref.runner === "playwright")
-        return { ref: id, result: flag("--e2e") ? playwrightResult(ref) : "skipped" };
+        return {
+          ref: id,
+          ...(flag("--e2e") ? playwrightResult(ref) : { result: "skipped", reason: "E2E 미실행" }),
+        };
       return { ref: id, result: "error" };
     });
     const ran = tests.filter((t) => t.result !== "skipped");
@@ -176,12 +198,14 @@ if (cmd === "status") {
         : ran.some((t) => t.result === "fail")
           ? "fail"
           : "pass";
+    const skippedCases = tests.reduce((n, t) => n + (t.skipped ?? 0), 0);
     const link = linkScenario(row.sc, cfg);
     const fact = {
       scenario: row.sc.id,
       claim: row.sc.claim,
       result,
-      partial: ran.length < tests.length,
+      partial: ran.length < tests.length || skippedCases > 0,
+      skippedCases,
       tests,
       at: new Date().toISOString(),
       ...git,
@@ -191,9 +215,15 @@ if (cmd === "status") {
     // 아무 테스트도 돌지 않았으면 근거가 없으므로 기록하지 않는다 (근거 없는 사실은 넣지 않는다)
     if (result !== "skipped")
       appendFileSync(path.join(KDIR, "facts.jsonl"), JSON.stringify(fact) + "\n");
-    console.log(`${result.padEnd(7)} ${row.sc.id}${fact.partial ? " (E2E 건너뜀)" : ""}`);
-    for (const t of tests.filter((t) => t.result !== "pass"))
-      console.log(`         ${t.result}: ${t.ref}`);
+    const note = [
+      ran.length < tests.length ? "E2E 건너뜀" : "",
+      skippedCases ? `skip된 테스트 ${skippedCases}개` : "",
+    ]
+      .filter(Boolean)
+      .join(", ");
+    console.log(`${result.padEnd(7)} ${row.sc.id}${note ? ` (${note})` : ""}`);
+    for (const t of tests.filter((t) => t.result !== "pass" || t.skipped))
+      console.log(`         ${t.result}${t.skipped ? ` (skip ${t.skipped})` : ""}: ${t.ref}`);
   }
 } else {
   console.error(`알 수 없는 명령: ${cmd}`);

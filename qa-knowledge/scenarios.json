@@ -32,7 +32,7 @@
     {
       "id": "bookmark.pipeline.success",
       "feature": "AI 자동 요약/태깅",
-      "claim": "저장한 카드가 crawling → processing → completed로 바뀌고 제목, 요약, 태그가 채워진다",
+      "claim": "AI 응답(테스트용 가짜)이 오면 카드가 crawling → processing → completed로 바뀌고 제목, 요약, 태그가 채워진다",
       "verifiedBy": [
         {
           "runner": "vitest",
@@ -55,9 +55,17 @@
       ]
     },
     {
+      "id": "bookmark.pipeline.real-ai",
+      "feature": "AI 자동 요약/태깅",
+      "claim": "실제 AI(Gemini)가 저장한 페이지의 제목, 요약, 태그를 채운다",
+      "verifiedBy": [],
+      "maxAgeDays": 7,
+      "notes": "모든 테스트가 AI 응답을 가짜로 준다. 실제 모델 응답은 확인하지 않는다"
+    },
+    {
       "id": "bookmark.pipeline.failure-retry",
       "feature": "URL 저장 + 크롤링",
-      "claim": "크롤링이나 AI 분석이 실패하면 에러 카드와 재시도 버튼이 뜨고, 3회를 넘기면 재시도 버튼이 사라진다",
+      "claim": "북마크 목록의 카드는 크롤링이나 AI 분석이 실패하면 에러 카드와 재시도 버튼이 뜨고, 3회를 넘기면 재시도 버튼이 사라진다",
       "verifiedBy": [
         {
           "runner": "vitest",
@@ -74,6 +82,13 @@
           "name": "파이프라인 실패 단계별 피드백"
         }
       ]
+    },
+    {
+      "id": "bookmark.retry.slider",
+      "feature": "URL 저장 + 크롤링",
+      "claim": "최근 카드 슬라이더에서도 실패한 카드를 재시도할 수 있다",
+      "verifiedBy": [],
+      "notes": "2026-07-07 실제 버그(3238b9c)가 난 곳. 목록 카드 테스트는 이 경로를 확인하지 않는다"
     },
     {
       "id": "bookmark.guest-limit",
@@ -98,7 +113,7 @@
     {
       "id": "bookmark.crud",
       "feature": "북마크 관리",
-      "claim": "북마크를 수정하고 삭제하면 다시 조회해도 그대로 반영되어 있다",
+      "claim": "비회원(localStorage) 북마크를 수정, 삭제하면 다시 조회해도 그대로 반영되어 있다",
       "verifiedBy": [
         {
           "runner": "vitest",
@@ -113,6 +128,13 @@
           "file": "src/features/bookmark/model/queries.test.tsx"
         }
       ]
+    },
+    {
+      "id": "bookmark.crud.member-persist",
+      "feature": "회원 저장 (Supabase)",
+      "claim": "회원 북마크를 수정하면 새로고침 뒤에도 유지된다 (실제 DB와 RLS 기준)",
+      "verifiedBy": [],
+      "notes": "회원 쪽 테스트는 Supabase 클라이언트를 가짜로 바꾼다. RLS 드리프트 사고(docs/decisions/028)가 이 빈틈에서 났다"
     },
     {
       "id": "bookmark.filter",
@@ -162,7 +184,7 @@
     {
       "id": "chat.streaming",
       "feature": "북마크 대화 (RAG 챗)",
-      "claim": "챗 답변이 끊김 없이 스트리밍되고, 중단할 수 있고, 마크다운이 안전하게 렌더링된다",
+      "claim": "챗 답변이 청크가 쪼개져 와도 깨지지 않고 이어지며, 중단할 수 있고, 마크다운 링크는 http(s)만 허용된다",
       "verifiedBy": [
         {
           "runner": "vitest",
@@ -179,13 +201,20 @@
     {
       "id": "security.ssrf",
       "feature": "URL 저장 + 크롤링",
-      "claim": "사설 IP, 비 HTTP 프로토콜 URL은 서버가 가져오지 않는다",
+      "claim": "URL 검증 함수(validateSsrf)는 요청 시점에 사설 IP와 비 HTTP 프로토콜을 거부한다",
       "verifiedBy": [
         {
           "runner": "vitest",
           "file": "src/shared/lib/validateSsrf.test.ts"
         }
       ]
+    },
+    {
+      "id": "security.ssrf.rebinding",
+      "feature": "URL 저장 + 크롤링",
+      "claim": "DNS 재조회(rebinding)로 URL 검증을 우회해 내부 주소에 요청할 수 없다",
+      "verifiedBy": [],
+      "notes": "2026-10-14 심층 보안 리뷰에서 우회 가능성 지적. 검증한 IP로 연결을 고정해야 막힌다"
     },
     {
       "id": "search.semantic",
@@ -203,11 +232,18 @@
       "hold": "미완성 기능. 화면에서 숨김 (FEATURES.collections = false, PR #126). 완성되면 hold를 지우고 권한 테스트부터 쓴다"
     },
     {
-      "id": "extension.save",
+      "id": "extension.save.api",
       "feature": "원클릭 URL 저장",
-      "claim": "익스텐션에서 저장하면 로그인한 계정의 북마크로 들어가고 AI 처리가 이어진다",
+      "claim": "익스텐션 저장 API는 유효한 토큰이면 로그인한 계정으로 저장하고 AI 처리를 시작하며, 토큰이 없거나 틀리면 401을 준다",
       "verifiedBy": [],
-      "notes": "검증하는 테스트가 없다. 2026-10-14 보안 리뷰에서 rate limit 부재가 지적됐다"
+      "notes": "서버 API라 웹앱 Vitest로 검증할 수 있다. 2026-10-14 보안 리뷰에서 rate limit 부재 지적"
+    },
+    {
+      "id": "extension.save.ui",
+      "feature": "원클릭 URL 저장",
+      "claim": "익스텐션 팝업에서 저장 버튼을 누르면 현재 탭이 저장된다",
+      "verifiedBy": [],
+      "hold": "실제 익스텐션 E2E는 로그인 토큰 전달과 브라우저 프로필 준비가 필요해 비용이 크다. 서버 API부터 검증한다"
     }
   ]
 }
