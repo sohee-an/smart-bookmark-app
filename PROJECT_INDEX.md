@@ -149,6 +149,7 @@
 - 시나리오 (사용자 동작 단위 주장 + 검증 테스트) → `qa-knowledge/scenarios.json`
 - 실행 근거 (지우지 않고 쌓음) → `qa-knowledge/facts.jsonl`
 - 설명과 한계 → `docs/qa-tester.md`
+- 이전 방식과 비교 (발표용) → `docs/qa-tester-before-after.md`
 
 ## 모달/오버레이 시스템
 
