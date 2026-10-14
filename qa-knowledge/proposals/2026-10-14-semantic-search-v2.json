@@ -1,0 +1,341 @@
+{
+  "$comment": "시맨틱 검색(회원, 비회원) 시나리오 제안 v2. 사람이 승인하기 전에는 scenarios.json에 들어가지 않는다. 기존 search.semantic 시나리오(0.8 분리)는 verifiedBy가 비어 있지만 이미 있는 테스트가 확인하고 있어, 새로 만들지 않고 연결 후보로만 적었다.",
+  "scenarios": [
+    {
+      "id": "search.semantic.split.member",
+      "feature": "시맨틱 서치",
+      "claim": "회원이 검색하면 유사도 0.8 이상은 '정확한 결과', 0.8 미만은 '연관된 결과'로 나뉘어 온다 (경계값 0.8은 정확한 결과)",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "회원은 0.8 기준으로 정확한 결과와 연관된 결과로 나뉜다"
+        }
+      ],
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts:150 exact = similarity >= SEMANTIC_EXACT_THRESHOLD",
+        "apps/web/src/features/bookmark/lib/semantic.ts:8 SEMANTIC_EXACT_THRESHOLD = 0.8",
+        "PROJECT_PLAN.md 8. 시맨틱 결과 분리"
+      ],
+      "assumption": "search.semantic 시나리오의 verifiedBy를 이 테스트로 채우는 방식이면 새 시나리오 대신 기존 것에 연결해도 된다. 0.65/0.8 값이 맞는지는 측정 없이 정해졌고(docs/decisions/029) 이 시나리오는 값이 맞는지가 아니라 값대로 나뉘는지만 주장한다",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.split.guest",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 검색하면 브라우저에 저장된 임베딩과 비교해 0.8 이상은 '정확한 결과', 0.65 이상 0.8 미만은 '연관된 결과'로 나오고 0.65 미만은 나오지 않으며, 최대 10개까지 유사도 높은 순이다",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/lib/semantic.test.ts",
+          "name": "rankBySimilarity — 비회원 시맨틱 검색 분리"
+        }
+      ],
+      "evidence": [
+        "apps/web/src/features/bookmark/lib/semantic.ts:48 rankBySimilarity",
+        "apps/web/src/features/bookmark/lib/semantic.ts:6-10 0.65 / 0.8 / 10"
+      ],
+      "assumption": "회원은 서버가 임계값 0.65 미만을 DB에서 거르고 비회원은 브라우저가 거른다. 두 경로가 같은 상수를 쓰는 것만 확인하고 같은 결과를 내는지(Float32 정밀도 차이 포함)는 이 시나리오 범위 밖",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.guest.query-only",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 검색할 때 서버는 검색어 임베딩만 돌려주고 북마크 내용은 서버로 보내지 않는다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "/api/semantic-search 요청을 가로채 본문이 {query}뿐이고(북마크, 임베딩, tags 없음) 응답 data에 mode=guest와 queryEmbedding만 있는지 확인. 서버 쪽은 route.test.ts의 비회원 케이스가 이미 응답 모양을 확인한다"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:90-95 body: { query }",
+        "apps/web/src/app/api/semantic-search/route.ts:85-88 data: { mode: guest, queryEmbedding }",
+        "apps/web/src/app/api/semantic-search/route.test.ts:85 비회원은 검색어 임베딩만 받는다"
+      ],
+      "assumption": "'검색어 자체는 서버와 Gemini로 간다'는 사실은 사용자에게 고지되는지 확인하지 않았다. 이 시나리오는 북마크 데이터가 안 나간다는 부분만",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.guest.limit-5",
+      "feature": "시맨틱 서치",
+      "claim": "비회원은 하루 5번까지 AI 의미 검색을 쓰고, 성공할 때마다 화면의 남은 횟수가 1씩 준다. 5번을 다 쓰면 서버를 부르지 않고 로그인 안내가 뜬다",
+      "verifiedBy": [
+        {
+          "runner": "playwright",
+          "file": "e2e/semantic-search-guest.spec.ts",
+          "name": "비회원도 의미 검색 결과를 정확한/연관된 결과로 나눠 보고, 남은 횟수가 줄어든다"
+        },
+        {
+          "runner": "playwright",
+          "file": "e2e/semantic-search-guest.spec.ts",
+          "name": "하루 5회를 다 쓰면 서버를 부르지 않고 로그인 안내가 보인다"
+        },
+        { "runner": "vitest", "file": "src/features/bookmark/model/guestSemanticLimit.test.ts" }
+      ],
+      "evidence": [
+        "apps/web/src/features/bookmark/model/guestSemanticLimit.ts:8 GUEST_SEMANTIC_DAILY_LIMIT = 5",
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:86-89,106-107",
+        "PROJECT_PLAN.md 4-1 인증: AI 의미 검색 하루 5회"
+      ],
+      "assumption": "하루의 기준은 UTC 날짜(toISOString)라 한국 시간 오전 9시에 리셋된다. 기획서는 '하루'만 적었다. 별도 시나리오로 분리: search.semantic.guest.limit-reset-day",
+      "priority": "high"
+    },
+    {
+      "id": "search.semantic.guest.limit-reset-day",
+      "feature": "시맨틱 서치",
+      "claim": "비회원 AI 의미 검색 한도는 날짜가 바뀌면 5회로 다시 채워진다 (리셋 기준은 UTC 날짜)",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/model/guestSemanticLimit.test.ts",
+          "name": "날짜가 바뀌면 다시 채워진다"
+        }
+      ],
+      "evidence": [
+        "apps/web/src/features/bookmark/model/guestSemanticLimit.ts:10-12 today() = toISOString().slice(0,10)"
+      ],
+      "assumption": "리셋이 한국 자정이 아니라 UTC 자정(KST 09:00)인 것이 의도인지 기획서에 없다. 의도가 아니면 이 시나리오 주장을 고치고 코드도 고쳐야 한다",
+      "priority": "low"
+    },
+    {
+      "id": "search.semantic.guest.failure-no-charge",
+      "feature": "시맨틱 서치",
+      "claim": "비회원 의미 검색 요청이 실패(서버 오류, 분당 한도 429)하면 안내 토스트가 뜨고 남은 횟수는 줄지 않는다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "/api/semantic-search를 500, 429로 가로채 응답. 토스트 문구('AI 검색 요청이 많아요' / 'AI 검색에 실패했어요')와 localStorage guest_semantic_usage 카운트가 그대로인지 확인"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:97-106 실패 시 toast 후 return, recordGuestSemantic은 성공 뒤에만",
+        "apps/web/src/app/api/semantic-search/route.ts:78-84 429 Retry-After"
+      ],
+      "assumption": "fetch 자체가 네트워크 오류로 던지는 경우는 runGuest에 try/catch가 없어 바깥 run의 catch로 간다(토스트는 뜸). 이것도 같은 시나리오에서 확인할 것",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.guest.tag-change-cost",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 검색어는 그대로 두고 태그 필터만 바꾸면 의미 검색 횟수가 추가로 차감되지 않는다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "?q=zzzz로 검색해 남은 횟수 4 확인 후 태그를 클릭해 ?q=zzzz&tag=X로 바꾸고 /api/semantic-search 요청 수와 남은 횟수가 그대로인지 확인. 지금 코드는 effect 의존성에 selectedTags가 있어 실패할 가능성이 높다 (실패하면 findings 후보)"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:157 의존성 [query, selectedTags, isGuest]",
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:90-95 비회원 요청은 tags를 보내지 않는다"
+      ],
+      "assumption": "selectedTags는 useMemo([searchParams])라 태그를 바꿀 때마다 새 배열이 되어 effect가 다시 돈다. 비회원 요청에 tags를 안 보내므로 결과는 같은데 횟수만 깎인다는 것이 코드 읽기 결과이며 실행 확인은 안 했다. 기획서에 정답은 없어 사람 판단 필요(차감이 의도인지)",
+      "priority": "high"
+    },
+    {
+      "id": "search.semantic.guest.tag-filter-applies",
+      "feature": "시맨틱 서치",
+      "claim": "태그 필터를 켠 채 의미 검색하면 선택한 태그를 가진 북마크만 결과에 나온다 (회원과 비회원 모두)",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "vitest",
+        "file": "src/app/api/semantic-search/route.test.ts",
+        "approach": "회원: body에 tags를 주고 rpc가 p_tags로 받는지 확인(빈 배열이면 null). 비회원: rankBySimilarity 결과가 태그 필터를 거치는지 화면 단계에서 확인하는 playwright 케이스를 별도로 추가"
+      },
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts:106 p_tags: tags?.length > 0 ? tags : null",
+        "supabase/migrations/20260101000003_match_bookmarks_with_tags.sql 태그 OR 조건",
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:110-114 비회원은 rankBySimilarity에 selectedTags를 넘기지 않는다",
+        "PROJECT_PLAN.md 태그 필터링 (복수 선택, OR 조건)"
+      ],
+      "assumption": "비회원 경로는 코드상 태그를 무시하는 것으로 읽힌다. 기획서가 비회원도 태그 필터와 의미 검색을 함께 쓰는지 명시하지 않아, 이 주장을 회원만으로 좁힐지 사람이 정해야 한다. 회원 쪽 SQL OR 조건은 로컬 Supabase가 있어야 실제 확인 가능",
+      "priority": "high"
+    },
+    {
+      "id": "search.semantic.guest.no-index-notice",
+      "feature": "시맨틱 서치",
+      "claim": "임베딩이 하나도 없는 비회원(이 기능 전에 저장한 북마크뿐)이 검색하면 'AI 의미 검색은 지금부터 새로 저장하는 북마크에서 쓸 수 있어요' 안내가 뜬다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "localStorage에 북마크만 넣고 임베딩 키는 비운 채 /bookmarks?q=... 접근. 서버 응답은 가짜 queryEmbedding. 안내 문구와 남은 횟수 표시 확인"
+      },
+      "evidence": [
+        "apps/web/src/features/bookmark/ui/SemanticResultSection.tsx:90-100",
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:109 setGuestNoIndex",
+        "PROJECT_PLAN.md 비회원: 이 기능 이후 저장한 북마크부터"
+      ],
+      "assumption": "이 경우에도 서버 호출이 일어나 횟수가 1 차감된다 (임베딩이 없는 걸 서버 호출 전에 알 수 있는데 확인하지 않음). 차감이 맞는지는 사람 판단",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.guest.embedding-lifecycle",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 저장한 북마크는 AI 처리가 끝나면 임베딩이 브라우저에 남고, 그 북마크를 지우면 임베딩도 같이 지워진다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "vitest",
+        "file": "src/entities/bookmark/api/local.repository.test.ts",
+        "approach": "저장 후 saveEmbedding, getEmbeddings에 id가 있는지, delete 후 없는지. 없는 id로 saveEmbedding하면 저장되지 않는지(삭제 직후 늦게 도착한 임베딩)도 확인. 파이프라인 연결은 bookmark-guest-workflow 통합 테스트에서 가짜 /api/embed로 확인"
+      },
+      "evidence": [
+        "apps/web/src/entities/bookmark/api/local.repository.ts:97-104 삭제 시 임베딩 제거",
+        "apps/web/src/entities/bookmark/api/local.repository.ts:118-121 없는 id는 무시",
+        "apps/web/src/features/bookmark/model/useBookmarkPipeline.ts:69 saveEmbedding 호출",
+        "apps/web/src/features/bookmark/model/bookmark.service.ts:108-110"
+      ],
+      "assumption": "local.repository.test.ts가 임베딩을 이미 다루는지는 이름만 확인했고 본문은 안 읽음. 있으면 verifiedBy로 연결하면 된다",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.guest.storage-size",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 20개를 모두 저장해도 임베딩이 브라우저 저장 공간 한도를 넘지 않고 검색이 된다 (임베딩 20개 약 330KB)",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "vitest",
+        "file": "src/features/bookmark/lib/semantic.test.ts",
+        "approach": "3072차원 임베딩 20개를 encode해 JSON 직렬화 크기를 재고, 코드 주석의 개당 약 16KB와 맞는지, 5MB 안에 드는지 확인"
+      },
+      "evidence": [
+        "apps/web/src/features/bookmark/lib/semantic.ts:28-30 개당 약 16KB, 20개 약 330KB",
+        "apps/web/src/entities/bookmark/api/local.repository.ts 20개 제한"
+      ],
+      "assumption": "localStorage 한도 5MB는 브라우저마다 다르다는 일반 지식. 본문 JSON 등 다른 저장분과 합산한 크기는 확인 안 함",
+      "priority": "low"
+    },
+    {
+      "id": "search.semantic.guest.cost-defense",
+      "feature": "시맨틱 서치",
+      "claim": "비회원 쿠키만 있는 요청이 한 IP에서 1분에 10번을 넘으면 429로 막히고 임베딩 API를 부르지 않는다. 화면의 5회 제한을 우회해도 마찬가지다",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "비회원이 분당 한도를 넘으면 429이고 임베딩을 부르지 않는다"
+        }
+      ],
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts:78 rateLimit(semantic-guest:ip, 10, 60_000)",
+        "apps/web/src/features/bookmark/model/guestSemanticLimit.ts:1-5 서버 IP rate limit이 실제 방어라고 적혀 있음"
+      ],
+      "assumption": "서버리스에서 인스턴스마다 카운터가 분리되는 한계는 rateLimit.ts 주석에 이미 있다. 이 시나리오는 한 인스턴스 안에서의 동작만 주장한다. 분당 10회는 하루 5회 안내와 별개이고, 쿠키를 지우거나 IP를 바꾸면 일일 총량은 막지 못한다는 점은 사람이 알아야 한다",
+      "priority": "high"
+    },
+    {
+      "id": "search.semantic.auth-gate",
+      "feature": "시맨틱 서치",
+      "claim": "로그인도 비회원 쿠키도 없는 요청은 시맨틱 검색에서 401을 받고, 빈 검색어와 200자를 넘는 검색어는 400을 받으며 임베딩 API는 호출되지 않는다",
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "로그인도 비회원 쿠키도 없으면 401이고 임베딩을 부르지 않는다"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "검색어가 비었거나 공백뿐이면 임베딩 호출 없이 400"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/app/api/semantic-search/route.test.ts",
+          "name": "검색어가 200자를 넘으면 400"
+        }
+      ],
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts:54-73",
+        "apps/web/src/app/api/semantic-search/route.ts:35 MAX_QUERY_LENGTH = 200"
+      ],
+      "assumption": "200자 제한은 코드에만 있고 기획서에는 없다. 화면(검색창)이 200자를 넘는 입력을 미리 막는지, 아니면 서버 400 때문에 '검색에 실패했어요' 토스트가 뜨는지는 확인하지 않았다 (search.semantic.query-too-long로 분리 가능)",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.query-too-long",
+      "feature": "시맨틱 서치",
+      "claim": "검색어가 200자를 넘으면 사용자는 길이 때문에 검색되지 않는다는 것을 알 수 있는 안내를 본다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "?q= 에 201자를 넣어 접근하고 화면에 어떤 문구가 뜨는지 확인. 지금은 서버 400 메시지가 토스트에 쓰이지 않아 일반 실패 문구가 뜰 것으로 보임 (측정 후 주장을 확정)"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:98-104 실패 문구는 429 외에는 하나",
+        "apps/web/src/app/api/semantic-search/route.ts:68-73"
+      ],
+      "assumption": "'알 수 있는 안내'는 현재 코드로는 기준이 없다. 실행해 본 뒤 주장을 구체 문구로 좁혀야 하고, 비회원이면 400이어도 횟수는 안 깎인다는 점도 같이 확인",
+      "priority": "low"
+    },
+    {
+      "id": "search.semantic.member-unlimited",
+      "feature": "시맨틱 서치",
+      "claim": "회원은 의미 검색 횟수 제한이 없고 남은 횟수 안내도 보이지 않는다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "vitest",
+        "file": "src/app/api/semantic-search/route.test.ts",
+        "approach": "회원으로 같은 IP에서 11번 이상 연속 호출해 모두 200인지 확인. 화면 쪽 안내 비노출은 SemanticResultSection 렌더 테스트에서 isGuest=false일 때 '남음' 문구가 없는지 확인"
+      },
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts:77 rate limit은 isGuest 분기 안에만 있다",
+        "apps/web/src/features/bookmark/ui/SemanticResultSection.tsx:84 guestNote는 isGuest일 때만",
+        "PROJECT_PLAN.md 회원: 횟수 제한 없음"
+      ],
+      "assumption": "회원 경로에는 IP/유저 기준 rate limit이 전혀 없어 Gemini 비용 방어가 없다. 기획서는 '횟수 제한 없음'이라 주장과는 맞지만, 로그인 계정 하나로 무한 호출 가능한 점은 별도 보안 리뷰 대상",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.dedupe-keyword",
+      "feature": "시맨틱 서치",
+      "claim": "키워드 검색 결과에 이미 나온 북마크는 AI 의미 검색 결과(정확한/연관된)에 다시 나오지 않는다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "제목에 검색어가 들어간 북마크 1개와 임베딩만 비슷한 북마크 1개를 넣고, 앞의 것은 키워드 결과에만 한 번 보이고 뒤의 것만 의미 검색 결과에 보이는지 확인"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:199-212 deduplicatedExact/Related"
+      ],
+      "assumption": "'정확한 결과 (N)' 개수 표시는 중복 제거 후 개수다. 제거된 것까지 센 숫자를 기대하는지는 기획서에 없음",
+      "priority": "low"
+    },
+    {
+      "id": "search.semantic.stale-response",
+      "feature": "시맨틱 서치",
+      "claim": "검색어를 빠르게 바꾸면 이전 검색어의 결과가 아니라 마지막 검색어의 결과만 화면에 남는다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "첫 검색 응답을 늦게(1초), 두 번째 검색 응답을 즉시 주도록 라우트 가로채기. 최종 화면이 두 번째 검색의 결과인지, 첫 검색 결과가 덮어쓰지 않는지 확인. 비회원은 첫 요청이 취소돼도 서버 응답이 이미 왔으면 횟수가 이중 차감되는지도 같이 관찰"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:82,156 AbortController",
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx:106-116 abort 확인 없이 recordGuestSemantic과 setState"
+      ],
+      "assumption": "runGuest는 res.json() 이후 aborted 확인이 없다. abort는 fetch와 json 파싱 중에만 reject를 만들기 때문에, json 파싱이 끝난 뒤 await getGuestEmbeddings 중에 검색어가 바뀌면 이전 결과가 새 결과를 덮어쓸 수 있는지는 실행으로 확인해야 한다. 가능성은 낮지만 코드상 막혀 있지 않다",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.real-ai-quality",
+      "feature": "시맨틱 서치",
+      "claim": "실제 임베딩 모델로 '리액트 상태관리'를 검색하면 상태관리를 다룬 북마크가 무관한 북마크보다 높은 유사도로 나온다",
+      "verifiedBy": [],
+      "maxAgeDays": 7,
+      "suggestedTest": {
+        "runner": "script",
+        "file": "scripts/qa/live-check.mjs",
+        "approach": "로컬 Supabase와 실제 Gemini로 주제가 다른 북마크 5개 정도를 저장해 임베딩 생성 뒤 검색. 관련 북마크가 무관한 것보다 순위가 높은지(순서)만 확인하고 0.8 같은 절대값은 단정하지 않는다. 측정한 유사도 분포는 findings로 남겨 0.65/0.8 기준값 재검토 근거로 쓴다"
+      },
+      "evidence": [
+        "docs/decisions/029 기준값 0.65/0.8은 측정 없이 정했다고 scenarios.json의 search.semantic notes에 기록됨",
+        "apps/web/src/features/bookmark/lib/semantic.ts:3-4"
+      ],
+      "assumption": "순위 비교만 주장하는 것은 모델이 바뀌어도 대체로 유지될 것이라는 추정. 절대값 주장은 모델 버전에 따라 달라 의도적으로 뺐다. 비용이 드는 실제 AI 호출이라 하루 1회 live-check 안에서만 돌리는 것을 전제",
+      "priority": "high"
+    }
+  ]
+}
