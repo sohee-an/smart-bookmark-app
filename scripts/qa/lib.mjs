@@ -167,6 +167,9 @@ export function linkRef(ref, cfg) {
   const routes = new Set();
   const mockedRoutes = new Set();
   const file = posix.join(cfg.appRoot, ref.file);
+  // 검증 테스트 파일이 없으면(경로 오타, 삭제) 이 ref만 오류로 두고 나머지 시나리오 판정은 계속한다
+  const own = ref.runner === "script" ? ref.file : file;
+  if (!existsSync(abs(own))) return { files, mocked, routes, mockedRoutes, missing: own };
   if (ref.runner === "vitest") {
     const ms = new Set(parseFile(file, cfg).mocks);
     ms.forEach((m) => mocked.add(m));
@@ -291,6 +294,10 @@ export function statusOf(sc, cfg, facts, link = linkScenario(sc, cfg)) {
       link,
       last: mine.at(-1),
     };
+
+  const missing = sc.verifiedBy.map((ref) => linkRef(ref, cfg).missing).filter(Boolean);
+  if (missing.length)
+    return { status: "broken", reason: `검증 테스트 파일이 없음: ${missing.join(", ")}`, link };
 
   const perRef = sc.verifiedBy.map((ref) => {
     const id = refId(ref);
