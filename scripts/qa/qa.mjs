@@ -465,12 +465,19 @@ if (cmd === "status") {
   //   judgment list                                  판정과 사람 표시, 정확도
   //   judgment mark <시나리오> correct|wrong [--at <판정 시각>] [--note "<메모>"]   (기본: 그 시나리오의 마지막 판정)
   const file = path.join(KDIR, "judgments.jsonl");
-  const rows = existsSync(file)
-    ? readFileSync(file, "utf8")
+  // 있는지 먼저 확인하고 읽으면 그 사이에 파일이 바뀔 수 있다(CodeQL). 바로 읽고, 없으면 빈 기록으로 본다
+  const readRows = () => {
+    try {
+      return readFileSync(file, "utf8")
         .split("\n")
         .filter(Boolean)
-        .map((l) => JSON.parse(l))
-    : [];
+        .map((l) => JSON.parse(l));
+    } catch (e) {
+      if (e.code === "ENOENT") return [];
+      throw e;
+    }
+  };
+  const rows = readRows();
   const judgmentsOnly = rows.filter((r) => r.type === "judgment");
   const marks = new Map(
     rows.filter((r) => r.type === "mark").map((r) => [`${r.scenario}@${r.target}`, r])
