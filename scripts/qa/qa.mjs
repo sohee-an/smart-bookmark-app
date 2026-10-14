@@ -179,7 +179,7 @@ if (cmd === "status") {
               status: t.status, // expected | unexpected | flaky | skipped
             });
         for (const s of suite.suites ?? [])
-          visit(s, s.title && !s.file ? [...titles, s.title] : titles);
+          visit(s, [...titles, s.title]); // 중첩 suite는 describe라 제목을 붙인다 (파일 suite는 맨 위에서만)
       };
       for (const s of report.suites ?? []) visit(s, []);
     } catch {
