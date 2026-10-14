@@ -1,0 +1,5 @@
+{
+  "$comment": "이 파일을 .claude/project/notion.json으로 복사하고 값을 채운다 (.claude/project/는 git 제외). 비어 있으면 task-pipeline 스킬이 notion-search로 찾아 채운다.",
+  "todoManagerPageId": "",
+  "bigTaskDataSourceId": ""
+}
