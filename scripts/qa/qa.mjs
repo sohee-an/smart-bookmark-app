@@ -110,6 +110,14 @@ if (cmd === "status") {
   };
   const refLines = r.refs ? r.refs.map(refLine) : sc.verifiedBy.map((v) => `  - ${refId(v)}`);
   console.log(`\n검증 테스트:\n${refLines.join("\n") || "  (없음)"}`);
+  // 마지막 실행에서 실패한 검증 테스트의 오류 발췌 (짧게)
+  const failedRefs = (r.refs ?? []).filter((p) => p.latest?.test.failures?.length);
+  if (failedRefs.length) {
+    console.log("\n실패 내용 (발췌):");
+    for (const p of failedRefs)
+      for (const f of p.latest.test.failures.slice(0, 2))
+        console.log(`  - ${f.title}\n${f.message.replace(/^/gm, "      ")}`);
+  }
   console.log(
     `\n연결된 코드 ${r.link.files.length}개:\n${r.link.files.map((f) => `  - ${f}`).join("\n")}`
   );
@@ -175,11 +183,52 @@ if (cmd === "status") {
       maxBuffer: 64 * 1024 * 1024,
     });
 
+  // 실패 메시지 발췌. 색 코드를 지우고, 이 컴퓨터의 저장소 경로는 <repo>로 바꾼다 (근거는 공개 저장소에 커밋된다).
+  // 테스트 하나당 첫 3줄, 근거 항목 하나당 합쳐서 600자까지만 남겨 facts.jsonl 줄이 커지지 않게 한다
+  const repoRoots = [...new Set([ROOT, ROOT.replace(/\//g, "\\"), ROOT.replace(/\\/g, "/")])];
+  const cleanMessage = (msg) => {
+    // eslint-disable-next-line no-control-regex
+    let m = String(msg ?? "").replace(/\x1b\[[0-9;]*m/g, "");
+    for (const r of repoRoots) m = m.split(r).join("<repo>");
+    return m
+      .split(/\r?\n/)
+      .map((l) => l.trimEnd())
+      .filter((l) => l.trim())
+      .slice(0, 3)
+      .join("\n");
+  };
+  const failureExcerpts = (cases) => {
+    const out = [];
+    let budget = 600;
+    for (const c of cases) {
+      if (budget <= 0) break;
+      const message = cleanMessage(c.message).slice(0, budget);
+      if (!message) continue;
+      budget -= message.length;
+      out.push({ title: c.title, message });
+    }
+    return out;
+  };
+  // Playwright: 실패면 마지막 시도의 오류, 재시도로 통과(flaky)면 처음 실패한 시도의 오류
+  const playwrightError = (t) => {
+    const results = t.results ?? [];
+    const pick =
+      t.status === "flaky"
+        ? results.find((r) => r.status !== "passed")
+        : t.status === "unexpected"
+          ? results.at(-1)
+          : null;
+    if (!pick) return "";
+    const errs = pick.errors?.length ? pick.errors : pick.error ? [pick.error] : [];
+    return errs.map((e) => e.message ?? "").join("\n");
+  };
+
   // 결과: { result: pass | fail | error | skipped, ran, skipped, cases, reason }
   //  - cases: 근거로 실제로 걸린 테스트 제목. 다음 실행에서 이 중 하나가 사라지면 오류로 멈춘다 (근거가 몰래 줄어드는 것 방지)
   //  - error: 검사 자체가 돌지 못함 (환경, 도구, 근거 테스트 없음). 제품 실패(fail)와 따로 센다
   //  - skip된 테스트는 통과로 세지 않는다
   //  - flaky: 재시도로 통과한 테스트 제목 (CI는 실패한 테스트를 다시 돌린다). 통과지만 숨기지 않고 남긴다
+  //  - failures: 실패(또는 재시도 전 실패)한 테스트의 오류 첫 몇 줄. 판정 에이전트가 테스트를 다시 돌리기 전에 먼저 읽는다
   const fromCases = (cases, isSkipped, isFailed, isFlaky = () => false) => {
     if (!cases.length) return { result: "error", reason: "이름에 맞는 테스트가 없음" };
     const titles = cases.map((c) => c.title).sort();
@@ -187,8 +236,18 @@ if (cmd === "status") {
     const ran = cases.length - skipped;
     const flakyTitles = cases.filter(isFlaky).map((c) => c.title);
     const flaky = flakyTitles.length ? { flaky: flakyTitles } : {};
-    if (cases.some(isFailed)) return { result: "fail", ran, skipped, cases: titles, ...flaky };
-    return { result: ran === 0 ? "skipped" : "pass", ran, skipped, cases: titles, ...flaky };
+    const failures = failureExcerpts(cases.filter((c) => isFailed(c) || isFlaky(c)));
+    const fail = failures.length ? { failures } : {};
+    if (cases.some(isFailed))
+      return { result: "fail", ran, skipped, cases: titles, ...flaky, ...fail };
+    return {
+      result: ran === 0 ? "skipped" : "pass",
+      ran,
+      skipped,
+      cases: titles,
+      ...flaky,
+      ...fail,
+    };
   };
 
   // vitest: 대상 시나리오의 테스트 파일을 한 번에 돌리고 JSON 결과를 테스트 단위로 나눠 쓴다
@@ -220,7 +279,11 @@ if (cmd === "status") {
     );
     if (!fileRes) return { result: "error", reason: "테스트 파일 결과가 없음 (수집 실패)" };
     const cases = fileRes.assertionResults
-      .map((a) => ({ title: a.fullName, status: a.status }))
+      .map((a) => ({
+        title: a.fullName,
+        status: a.status,
+        message: (a.failureMessages ?? []).join("\n"),
+      }))
       .filter((c) => nameMatches(ref.name, c.title));
     return fromCases(
       cases,
@@ -251,6 +314,7 @@ if (cmd === "status") {
               file: (spec.file ?? suite.file ?? "").replace(/\\/g, "/"),
               title: [...titles, spec.title].join(" › "),
               status: t.status, // expected | unexpected | flaky | skipped
+              message: playwrightError(t),
             });
         for (const s of suite.suites ?? []) visit(s, [...titles, s.title]); // 중첩 suite는 describe라 제목을 붙인다 (파일 suite는 맨 위에서만)
       };

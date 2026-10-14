@@ -27,7 +27,7 @@ CLAUDE.md의 "탐색 규칙"(INDEX에 없으면 Glob/Grep 금지)은 적용하�
 ## 입력
 
 - `node scripts/qa/qa.mjs show <시나리오 id>`: 주장, 검증 테스트, 연결 코드, 마지막 근거
-- `qa-knowledge/facts.jsonl`에서 그 시나리오의 최근 기록. `checks`의 실패 항목과 `serverLog`가 있으면 거기부터
+- `qa-knowledge/facts.jsonl`에서 그 시나리오의 최근 기록. **`tests[].failures`(실패한 테스트의 오류 첫 몇 줄, 기대값과 실제값)를 먼저 읽는다.** `show` 출력의 "실패 내용 (발췌)"도 같은 내용이다. 스크립트 검사면 `checks`의 실패 항목과 `serverLog`부터. 발췌만으로 원인이 안 보일 때만 테스트를 다시 돌린다
 - 테스트 코드와 연결된 앱 코드
 - `git log`로 연결 코드의 최근 변경 (언제부터 실패했을 가능성이 있나)
 
