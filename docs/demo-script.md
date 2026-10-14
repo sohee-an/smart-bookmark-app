@@ -106,7 +106,7 @@
 
 **가져갈 한 줄**: AI한테 두 번 이상 같은 걸 부탁하고 있다면, 그건 규칙으로 내릴 후보입니다.
 
-> 참고 (질문 대비): 직접 만든 훅은 포맷 쪽뿐이고, 막는 훅은 이번 주에 처음 생겼다. 포맷 쪽은 둘이다. 커밋할 때 lint-staged로 바뀐 파일에 prettier를 돌리는 git pre-commit 훅(2026-02-28), Claude가 쓰거나 고친 파일에 prettier와 eslint --fix를 돌리는 PostToolUse 훅(2026-03-06에 넣고, 2026-07-18에 `.claude/hooks/format.mjs`로 옮기며 고침). 7월에 고친 건 두 가지다. 오타 파일과 없는 변수는 stdin JSON 파싱으로, Windows에서 `npx.cmd`를 셸 없이 띄우면 조용히 죽던 문제는 node로 prettier, eslint 바이너리를 직접 실행하는 것으로 바꿨다.
+> 참고 (질문 대비): 직접 만든 훅은 포맷 쪽뿐이고, 막는 훅은 이번 주에 처음 생겼다. 포맷 쪽은 둘이다. 커밋할 때 lint-staged로 바뀐 파일에 prettier를 돌리는 git pre-commit 훅(2026-02-28), Claude가 쓰거나 고친 파일에 prettier와 eslint --fix를 돌리는 PostToolUse 훅(2026-03-06에 넣고, 2026-07-18에 `.claude/hooks/format.mjs`로 옮기며 고침). 7월에 고친 건 셋이다. 오타 파일은 `settings.json`으로, 없는 변수는 stdin JSON 파싱으로, Windows에서 `npx.cmd`를 셸 없이 띄우면 조용히 죽던 문제는 node로 prettier, eslint 바이너리를 직접 실행하는 것으로 바꿨다.
 
 ---
 
