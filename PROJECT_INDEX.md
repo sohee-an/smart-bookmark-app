@@ -18,7 +18,9 @@
 - `analyzeBookmark`, `AnalyzeBookmarkResult`, `parseAiAnalysisResponse` → `apps/web/src/server/services/ai-analysis.service.ts`
 - AI 분석 전용 API Route → `apps/web/src/app/api/ai-analyze/route.ts`
 - 시맨틱 서치 임베딩 API Route → `apps/web/src/app/api/embed/route.ts`
-- 시맨틱 서치 검색 API Route → `apps/web/src/app/api/semantic-search/route.ts`
+- 시맨틱 서치 검색 API Route (회원: pgvector 검색, 비회원: 검색어 임베딩만 반환) → `apps/web/src/app/api/semantic-search/route.ts`
+- 시맨틱 기준값(0.65, 0.8, 10개), 임베딩 인코딩, 비회원 브라우저 순위 계산 (`rankBySimilarity`) → `apps/web/src/features/bookmark/lib/semantic.ts`
+- 비회원 AI 의미 검색 하루 5회 카운터 (`GUEST_SEMANTIC_DAILY_LIMIT`) → `apps/web/src/features/bookmark/model/guestSemanticLimit.ts`
 
 ## 북마크 대화 (RAG 챗)
 
