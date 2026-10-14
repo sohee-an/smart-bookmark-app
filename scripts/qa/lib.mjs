@@ -62,6 +62,13 @@ const IMPORT_RE =
   /(?:^|[\s;])(?:import|export)\s+(type\s+)?(?:[^'"`;]*?\s+from\s+)?["']([^"']+)["']/g;
 const DYNAMIC_RE = /import\(\s*["']([^"']+)["']\s*\)/g;
 const MOCK_RE = /vi\.mock\(\s*["']([^"']+)["']/g;
+// 문자열로 부르는 API: fetch("/api/x"), fetch(`/api/x/${id}`), axios.get("/api/x"), Playwright request.post("/api/x").
+// 인자가 "/api/"로 시작하는 리터럴일 때만 잡는다. 변수로 조립한 주소는 못 본다 (보수적으로)
+const API_CALL_RE =
+  /\b(?:fetch|axios\.(?:get|post|put|patch|delete)|request\.(?:get|post|put|patch|delete|fetch))\(\s*(["'`])(\/api\/[^"'`]*)\1/g;
+// const URL = "/api/x" ... fetch(URL) 같은 단순한 상수 한 단계만 따라간다
+const API_CONST_RE = /\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*(["'`])(\/api\/[^"'`]*)\2/g;
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function resolveSpec(fromFile, spec, cfg) {
   let base = null;
@@ -95,18 +102,101 @@ function parseFile(rel, cfg) {
     if (r) deps.push(r);
   }
   const mocks = [...src.matchAll(MOCK_RE)].map((m) => resolveSpec(rel, m[1], cfg)).filter(Boolean);
-  return { deps, mocks };
+  const apis = new Set([...src.matchAll(API_CALL_RE)].map((m) => m[2]));
+  for (const m of src.matchAll(API_CONST_RE))
+    if (new RegExp(`\\bfetch\\(\\s*${escapeRe(m[1])}\\b`).test(src)) apis.add(m[3]);
+  return { deps, mocks, apis: [...apis] };
+}
+
+// API 경로 → App Router의 route 파일. /api/a/b → src/app/api/a/b/route.ts
+// - 리터럴 세그먼트가 먼저다 (/api/collections/invite는 [id]가 아니라 invite)
+// - ${...}만으로 된 세그먼트는 그 자리에 동적 디렉터리([x])가 정확히 하나일 때만 잇는다
+// - 끝에 붙은 ${...}(쿼리 문자열 등)는 떼고 본다. 라우트 그룹 (group)은 건너뛴다
+// 못 찾으면 null. 틀리게 잇는 것보다 빠뜨리고 "못 찾음"으로 보여 주는 게 낫다
+export function apiToRouteFile(apiPath, cfg) {
+  const appDir = posix.join(cfg.appRoot, cfg.nextAppDir);
+  const clean = apiPath
+    .split("?")[0]
+    // 세그먼트 뒤에 붙은 ${...}만 뗀다 (/api/x${qs}). 세그먼트 전체가 ${id}면 동적 경로라 남긴다
+    .replace(/([^/])\$\{[^}]*\}$/, "$1")
+    .replace(/\/+$/, "");
+  const segs = clean.split("/").filter(Boolean);
+  const dirsOf = (d) =>
+    existsSync(abs(d))
+      ? readdirSync(abs(d), { withFileTypes: true })
+          .filter((e) => e.isDirectory())
+          .map((e) => e.name)
+      : [];
+  // 라우트 그룹은 URL에 나오지 않으므로 같은 높이의 그룹 안까지 후보로 본다
+  const withGroups = (d) => [
+    d,
+    ...dirsOf(d)
+      .filter((n) => /^\(.*\)$/.test(n))
+      .flatMap((n) => withGroups(posix.join(d, n))),
+  ];
+  let dirs = [appDir];
+  for (const seg of segs) {
+    const next = [];
+    for (const base of dirs.flatMap(withGroups)) {
+      const names = dirsOf(base);
+      if (!seg.includes("${")) {
+        if (names.includes(seg)) next.push(posix.join(base, seg));
+      } else if (/^\$\{[^}]*\}$/.test(seg)) {
+        const dyn = names.filter((n) => /^\[[^\]]+\]$/.test(n));
+        if (dyn.length === 1) next.push(posix.join(base, dyn[0]));
+      }
+    }
+    if (!next.length) return null;
+    dirs = next;
+  }
+  for (const d of dirs.flatMap(withGroups))
+    for (const ext of cfg.extensions) {
+      const f = posix.join(d, `route${ext}`);
+      if (existsSync(abs(f))) return f;
+    }
+  return null;
+}
+
+// Playwright route 패턴(glob)이 이 API 경로를 가리키는가. 페이지가 부르는 주소는 http://host/api/... 꼴이다
+function globHits(pattern, apiPath) {
+  const re = new RegExp(
+    "^" +
+      pattern
+        .split("**/")
+        .map((part) =>
+          part
+            .split("**")
+            .map((p) => p.split("*").map(escapeRe).join("[^/]*"))
+            .join(".*")
+        )
+        .join("(?:.*/)?") +
+      "$"
+  );
+  const p = apiPath.split("?")[0].replace(/\$\{[^}]*\}/g, "x");
+  return re.test(p) || re.test(`http://localhost${p}`);
 }
 
 // 시작 파일들에서 import를 따라간다. mock된 모듈은 실제로 실행되지 않으므로 따라가지 않고 따로 기록한다
-function walk(starts, cfg, mocked = new Set()) {
+// api 옵션: 문자열로 부르는 API를 어떻게 다룰지
+//  - follow: true면 route 파일까지 이어서 따라간다 (실제 서버가 뜨는 E2E)
+//  - mockedPatterns: 응답을 가짜로 바꾸는 패턴(page.route). 걸리면 잇지 않고 mockedApi에 남긴다
+//  - follow가 false면(단위 테스트, 서버 없음) 전부 mockedApi에 남긴다
+function walk(starts, cfg, mocked = new Set(), api = null) {
   const seen = new Set();
   const queue = [...starts];
   while (queue.length) {
     const f = queue.shift();
     if (seen.has(f) || mocked.has(f)) continue;
     seen.add(f);
-    for (const d of parseFile(f, cfg).deps) if (!seen.has(d)) queue.push(d);
+    const parsed = parseFile(f, cfg);
+    for (const d of parsed.deps) if (!seen.has(d)) queue.push(d);
+    if (!api) continue;
+    for (const a of parsed.apis) {
+      const route = apiToRouteFile(a, cfg);
+      const label = route ? `${a} → ${route}` : `${a} (route 파일 못 찾음)`;
+      if (!api.follow || api.mockedPatterns.some((p) => globHits(p, a))) api.mockedApi.add(label);
+      else if (route && !seen.has(route)) queue.push(route);
+    }
   }
   return seen;
 }
@@ -166,11 +256,16 @@ export function linkRef(ref, cfg) {
   const mocked = new Set();
   const routes = new Set();
   const mockedRoutes = new Set();
+  const mockedApi = new Set();
   const file = posix.join(cfg.appRoot, ref.file);
   if (ref.runner === "vitest") {
     const ms = new Set(parseFile(file, cfg).mocks);
     ms.forEach((m) => mocked.add(m));
-    walk([file], cfg, ms).forEach((f) => files.add(f));
+    // 단위 테스트에는 서버가 없다. fetch("/api/x")는 mock되거나 실패하므로 그 route는 이 테스트로 검증되지 않는다.
+    // (route 핸들러를 직접 import하는 테스트는 위 import 그래프로 이미 연결된다)
+    walk([file], cfg, ms, { follow: false, mockedPatterns: [], mockedApi }).forEach((f) =>
+      files.add(f)
+    );
   } else if (ref.runner === "script") {
     // 스크립트 검사는 스크립트 자신과 config.live.links에 적은 코드에 연결된다.
     // config.json 전체를 연결하면 무관한 키(gapDirs 등)를 바꿔도 재검증 필요가 된다
@@ -188,13 +283,24 @@ export function linkRef(ref, cfg) {
       if (m[2] !== "continue") mockedRoutes.add(m[1]);
     const starts = [file, ...cfg.e2eAlwaysLink.map((p) => posix.join(cfg.appRoot, p))];
     for (const r of routes) starts.push(...routeToFiles(r, cfg));
-    walk(starts, cfg).forEach((f) => files.add(f));
+    // E2E는 실제 개발 서버를 띄우므로 화면이 부르는 API의 route까지 잇는다. 단 page.route로 가짜 응답을 준 것은 뺀다
+    walk(starts, cfg, new Set(), {
+      follow: true,
+      mockedPatterns: [...mockedRoutes],
+      mockedApi,
+    }).forEach((f) => files.add(f));
   }
-  return { files, mocked, routes, mockedRoutes };
+  return { files, mocked, routes, mockedRoutes, mockedApi };
 }
 
 export function linkScenario(sc, cfg) {
-  const out = { files: new Set(), mocked: new Set(), routes: new Set(), mockedRoutes: new Set() };
+  const out = {
+    files: new Set(),
+    mocked: new Set(),
+    routes: new Set(),
+    mockedRoutes: new Set(),
+    mockedApi: new Set(),
+  };
   for (const ref of sc.verifiedBy) {
     const l = linkRef(ref, cfg);
     for (const k of Object.keys(out)) l[k].forEach((v) => out[k].add(v));
