@@ -50,6 +50,31 @@ node scripts/qa/qa.mjs recheck --live            # 실제 AI 점검처럼 외부
 
 엔진은 Node만 있으면 되고 외부 패키지를 쓰지 않는다. 현재 지원: TypeScript/JavaScript import, tsconfig paths, Vitest, Playwright, Next.js App Router 라우트, 그리고 JSON 결과를 내는 임의 스크립트(runner `script`).
 
+## 2단계: 에이전트 (사람 관문 있음)
+
+`/qa-sweep [기능]`으로 한 바퀴 돈다. 세 에이전트는 서로의 결과를 보지 않는다.
+
+| 에이전트             | 하는 일                                                                            | 쓸 수 있는 파일                                   | 모델   |
+| -------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------- | ------ |
+| `qa-scenario-writer` | 기획서, 코드, `gaps`를 보고 시나리오 후보 제안                                     | `qa-knowledge/proposals/`에 새 파일 하나          | Sonnet |
+| `qa-test-author`     | 승인된 시나리오를 테스트로 작성하고 실행                                           | 테스트 파일, 픽스처, 해당 시나리오의 `verifiedBy` | Sonnet |
+| `qa-judge`           | 실패를 app-bug / test-bug / claim-too-wide / flaky-external / env / unclear로 판정 | 없음 (읽기 전용)                                  | Opus   |
+
+사람 관문: 제안을 장부에 넣는 것, 이슈나 PR을 만드는 것. 작성 에이전트는 앱 코드를 고치지 않는다.
+
+## 3단계: 나이틀리
+
+`node scripts/qa/nightly.mjs`가 재검증 필요한 것만 돌리고 `qa-knowledge/reports/YYYY-MM-DD.md`를 남긴다.
+외부에 달린 검사(`maxAgeDays`)가 실패하면 한 번 더 돌리고, 직전 보고서에서도 실패였으면 "연속 실패"로 올린다. 종료 코드는 연속 실패가 있을 때만 1이다.
+
+GitHub Actions(`qa-nightly.yml`)는 매일 03:00 KST에 dev 기준으로 돌고, 보고서와 근거를 아티팩트로 올리고 이슈 하나(`qa-nightly` 라벨)를 갱신한다.
+실제 AI 점검은 `GEMINI_API_KEY` 시크릿이 있을 때만 돈다. CI에서는 근거를 저장소에 커밋하지 않는다(브랜치 보호). 로컬에서 돌린 근거는 사람이 커밋한다.
+
+## 발견 장부
+
+점검 중 눈에 띈 문제는 `node scripts/qa/qa.mjs finding add <id> "<내용>"`으로 `qa-knowledge/findings.jsonl`에 적는다.
+상태는 open / fixed / wontfix / observed. 같은 id로 다시 add하면 상태가 바뀐다(이전 기록은 남는다).
+
 ## 한계 (알고 쓸 것)
 
 - **mock된 경계는 검증되지 않는다.** 테스트가 `vi.mock`이나 `page.route`로 바꾼 모듈과 API는 연결에서 빠지고 `show`에 따로 표시된다. 그 코드가 바뀌어도 이 시나리오는 재검증 필요가 되지 않는다
