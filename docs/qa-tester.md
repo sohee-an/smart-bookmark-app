@@ -67,8 +67,12 @@ node scripts/qa/qa.mjs recheck --live            # 실제 AI 점검처럼 외부
 `node scripts/qa/nightly.mjs`가 재검증 필요한 것만 돌리고 `qa-knowledge/reports/YYYY-MM-DD.md`를 남긴다.
 외부에 달린 검사(`maxAgeDays`)가 실패하면 한 번 더 돌리고, 직전 보고서에서도 실패였으면 "연속 실패"로 올린다. 종료 코드는 연속 실패가 있을 때만 1이다.
 
-GitHub Actions(`qa-nightly.yml`)는 매일 03:00 KST에 dev 기준으로 돌고, 보고서와 근거를 아티팩트로 올리고 이슈 하나(`qa-nightly` 라벨)를 갱신한다.
-실제 AI 점검은 `GEMINI_API_KEY` 시크릿이 있을 때만 돈다. CI에서는 근거를 저장소에 커밋하지 않는다(브랜치 보호). 로컬에서 돌린 근거는 사람이 커밋한다.
+GitHub Actions(`qa-nightly.yml`)는 매일 03:00 KST에 dev 기준으로 돌고 **보고만** 한다.
+
+- 결과는 그 실행의 요약(Job Summary)과 보고서 아티팩트(30일)로만 남는다. **이슈를 만들지 않는다.** 공개와 이슈 등록은 사람이 정한다
+- CI에서 쌓인 근거는 올리지 않는다. 장부는 로컬에서 돌리고 사람이 커밋한 것 하나다 (두 갈래가 되지 않게)
+- 공개 저장소라 `private: true`인 시나리오(보안 미검증 등)와 실행 로그는 CI 보고서에서 뺀다
+- 연속 실패 판정과 종료 코드 1은 로컬 나이틀리에서만 한다. CI는 항상 0
 
 ## 발견 장부
 

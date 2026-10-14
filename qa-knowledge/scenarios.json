@@ -220,7 +220,8 @@
       "feature": "URL 저장 + 크롤링",
       "claim": "DNS 재조회(rebinding)로 URL 검증을 우회해 내부 주소에 요청할 수 없다",
       "verifiedBy": [],
-      "notes": "2026-10-14 심층 보안 리뷰에서 우회 가능성 지적. 검증한 IP로 연결을 고정해야 막힌다"
+      "notes": "2026-10-14 심층 보안 리뷰에서 우회 가능성 지적. 검증한 IP로 연결을 고정해야 막힌다",
+      "private": true
     },
     {
       "id": "search.semantic",
