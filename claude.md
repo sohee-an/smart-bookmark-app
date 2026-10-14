@@ -196,6 +196,7 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - `심층 보안 검토해줘 [대상]` → /project:security-deep-review 실행 (기본 + 공격자 관점을 따로 동시에)
 - `보안 리뷰 종합해줘` → /project:security-summary 실행 (개발 세션에서, 요청할 때만)
 - `QA 해줘 [대상]` → /project:qa-review 실행 (백그라운드)
+- `릴리스 해줘` → /project:release 실행 (지난 릴리스 이후 바뀐 화면만 UX 리뷰 → 리뷰 보관소 문서 → dev→main PR. 머지는 사람이)
 - `QA 점검해줘 [기능]` → /project:qa-sweep 실행 (장부 상태 → 시나리오 제안 → 사람 승인 → 테스트 작성 → 재검증 → 실패 판정)
 - `실패 판정해줘 [시나리오 id]` → /project:qa-sweep judge 실행
 
