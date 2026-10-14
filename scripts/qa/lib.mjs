@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { graphStaleFiles, graphWanted, loadGraph, narrowFiles } from "./graph.mjs";
 
 const posix = path.posix;
 
@@ -70,7 +71,7 @@ const API_CALL_RE =
 const API_CONST_RE = /\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*(["'`])(\/api\/[^"'`]*)\2/g;
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-function resolveSpec(fromFile, spec, cfg) {
+export function resolveSpec(fromFile, spec, cfg) {
   let base = null;
   if (spec.startsWith(".")) base = posix.join(posix.dirname(fromFile), spec);
   else {
@@ -158,7 +159,7 @@ export function apiToRouteFile(apiPath, cfg) {
 }
 
 // Playwright route 패턴(glob)이 이 API 경로를 가리키는가. 페이지가 부르는 주소는 http://host/api/... 꼴이다
-function globHits(pattern, apiPath) {
+export function globHits(pattern, apiPath) {
   const re = new RegExp(
     "^" +
       pattern
@@ -252,6 +253,33 @@ export const refId = (ref) => `${ref.runner}:${ref.file}${ref.name ? `::${ref.na
 // ref 하나가 의존하는 코드. 시나리오의 연결은 ref별 연결의 합이다.
 // 신선도도 ref별로 본다: 그 ref가 마지막으로 돈 때의 해시와, 그 ref에 연결된 파일의 지금 해시를 비교한다
 export function linkRef(ref, cfg) {
+  const l = linkRefWide(ref, cfg);
+  // wideFiles: 기존 방식(파일 import 추적)의 연결. 근거의 지문은 켜짐 여부와 관계없이 항상 이것으로 찍는다.
+  // 그래야 그래프를 켜고 끄거나, 그래프 없는 곳(CI)에서 판정해도 같은 근거를 그대로 쓸 수 있다
+  l.wideFiles = l.files;
+  l.graph = { used: false, reason: "꺼짐" };
+  if (l.missing || l.narrow == null || !graphWanted(cfg)) return l;
+  const graph = loadGraph(cfg);
+  if (!graph) {
+    l.graph = { used: false, reason: "그래프 없음 (qa.mjs graph build)" };
+    return l;
+  }
+  const stale = graphStaleFiles(graph, [...l.files], cfg);
+  if (stale.length) {
+    l.graph = {
+      used: false,
+      reason: `그래프를 만든 뒤 바뀐 파일 ${stale.length}개 (${stale.slice(0, 2).join(", ")}${stale.length > 2 ? " …" : ""}). qa.mjs graph build로 다시 만들 것`,
+    };
+    return l;
+  }
+  const narrowed = narrowFiles({ wide: l.files, ...l.narrow, cfg, graph });
+  l.files = new Set([...l.files].filter((f) => narrowed.has(f)));
+  l.graph = { used: true, reason: "그래프로 좁힘" };
+  return l;
+}
+
+// 기존 방식의 연결. narrow는 그래프로 좁힐 때 쓸 시작점 (script 러너는 좁히지 않는다)
+function linkRefWide(ref, cfg) {
   const files = new Set();
   const mocked = new Set();
   const routes = new Set();
@@ -260,7 +288,9 @@ export function linkRef(ref, cfg) {
   const file = posix.join(cfg.appRoot, ref.file);
   // 검증 테스트 파일이 없으면(경로 오타, 삭제) 이 ref만 오류로 두고 나머지 시나리오 판정은 계속한다
   const own = ref.runner === "script" ? ref.file : file;
-  if (!existsSync(abs(own))) return { files, mocked, routes, mockedRoutes, missing: own };
+  if (!existsSync(abs(own)))
+    return { files, mocked, routes, mockedRoutes, mockedApi, missing: own };
+  let narrow = null;
   if (ref.runner === "vitest") {
     const ms = new Set(parseFile(file, cfg).mocks);
     ms.forEach((m) => mocked.add(m));
@@ -269,6 +299,7 @@ export function linkRef(ref, cfg) {
     walk([file], cfg, ms, { follow: false, mockedPatterns: [], mockedApi }).forEach((f) =>
       files.add(f)
     );
+    narrow = { starts: [file], mocked: ms, api: null };
   } else if (ref.runner === "script") {
     // 스크립트 검사는 스크립트 자신과 config.live.links에 적은 코드에 연결된다.
     // config.json 전체를 연결하면 무관한 키(gapDirs 등)를 바꿔도 재검증 필요가 된다
@@ -292,23 +323,30 @@ export function linkRef(ref, cfg) {
       mockedPatterns: [...mockedRoutes],
       mockedApi,
     }).forEach((f) => files.add(f));
+    narrow = { starts, mocked: new Set(), api: { mockedPatterns: [...mockedRoutes] } };
   }
-  return { files, mocked, routes, mockedRoutes, mockedApi };
+  return { files, mocked, routes, mockedRoutes, mockedApi, narrow };
 }
 
 export function linkScenario(sc, cfg) {
   const out = {
     files: new Set(),
+    wideFiles: new Set(),
     mocked: new Set(),
     routes: new Set(),
     mockedRoutes: new Set(),
     mockedApi: new Set(),
   };
+  const graph = [];
   for (const ref of sc.verifiedBy) {
     const l = linkRef(ref, cfg);
     for (const k of Object.keys(out)) l[k].forEach((v) => out[k].add(v));
+    graph.push({ ref: refId(ref), ...l.graph });
   }
-  return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v].sort()]));
+  return {
+    ...Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v].sort()])),
+    graph,
+  };
 }
 
 // 시나리오 정의(주장, 검증 테스트, 재검증 주기)의 해시. 정의가 바뀌면 그 전의 근거는 이 주장을 증명하지 않는다

@@ -151,6 +151,8 @@
 - 엔진: 시나리오 연결(import 그래프, E2E 라우트), 신선도(파일 해시) → `scripts/qa/lib.mjs`
 - CLI: `status`, `show`, `recheck` → `scripts/qa/qa.mjs`
 - 프로젝트 설정 → `qa-knowledge/config.json`
+- 코드 그래프로 연결 좁히기 (기본 끔, `graph build`/`graph compare`) → `scripts/qa/graph.mjs`
+  - **테스트**: `graph.test.mjs` (`node --test`) → `scripts/qa/graph.test.mjs`
 - 실제 AI 점검 (로컬 Supabase + 진짜 Gemini, 하루 1회) → `scripts/qa/live-check.mjs`
 - 로컬 Supabase 설정 (QA용) → `supabase/config.toml`
 - E2E 재검증용 Playwright 설정 (3100 포트, 서버 재사용 안 함) → `apps/web/playwright.qa.config.ts`

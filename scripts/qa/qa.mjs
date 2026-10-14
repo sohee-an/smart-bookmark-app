@@ -11,11 +11,15 @@
 //   node scripts/qa/qa.mjs judgment list | mark <시나리오> correct|wrong   판정 에이전트의 판정과 사람 확인, 정확도
 //   node scripts/qa/qa.mjs fact void <시나리오 id> --reason "<이유>" [--at <근거 시각> | --last]
 //                                                    검사 환경 탓에 생긴 근거를 지우지 않고 무효로 표시한다
+//   node scripts/qa/qa.mjs graph build               코드 그래프를 만든다 (Graphify, 코드만 분석, AI 호출 없음)
+//   node scripts/qa/qa.mjs graph compare [--all]     기존 연결과 그래프로 좁힌 연결을 시나리오별로 비교한다
+//   --graph / --no-graph                             이번 실행만 그래프로 좁히기를 켜고 끈다 (기본은 config.graph.enabled)
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { appendFileSync, existsSync, mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { graphDir, graphWanted } from "./graph.mjs";
 import {
   KDIR,
   ROOT,
@@ -39,6 +43,10 @@ const posix = path.posix;
 const [cmd = "status", ...rest] = process.argv.slice(2);
 const flag = (f) => rest.includes(f);
 const opt = (f) => (rest.includes(f) ? rest[rest.indexOf(f) + 1] : null);
+
+// 그래프 켜짐 여부는 환경변수로 넘긴다. 같은 실행에서 부르는 하위 프로세스(nightly → qa.mjs)도 같은 값을 쓴다
+if (flag("--graph")) process.env.QA_GRAPH = "1";
+if (flag("--no-graph")) process.env.QA_GRAPH = "0";
 
 const cfg = loadConfig();
 const scenarios = loadScenarios();
@@ -133,6 +141,10 @@ if (cmd === "status") {
     console.log(
       `\n문자열로 부르는 API 중 이 시나리오로 실행되지 않는 것 (mock됐거나, 단위 테스트라 서버가 없음):\n${r.link.mockedApi.map((f) => `  - ${f}`).join("\n")}`
     );
+  if (graphWanted(cfg))
+    console.log(
+      `\n그래프로 좁히기:\n${r.link.graph.map((g) => `  - ${g.ref}: ${g.reason}`).join("\n")}`
+    );
   if (r.changed?.length)
     console.log(`\n검증 뒤 바뀐 파일:\n${r.changed.map((f) => `  - ${f}`).join("\n")}`);
   if (r.last)
@@ -165,7 +177,10 @@ if (cmd === "status") {
   console.log(`재검증 대상 ${rows.length}개: ${rows.map((r) => r.sc.id).join(", ")}\n`);
 
   // 지문은 테스트를 돌리기 전에 찍는다. 돌린 뒤에 찍으면 실행 중에 바뀐 파일이 검증된 것처럼 기록된다
-  const before = new Map(rows.map((r) => [r.sc.id, fingerprint(linkScenario(r.sc, cfg).files)]));
+  // 지문은 그래프로 좁혔든 아니든 기존 연결(wideFiles) 전체로 찍는다. 켜고 끄거나 CI(그래프 없음)에서 판정해도 같은 근거를 쓴다
+  const before = new Map(
+    rows.map((r) => [r.sc.id, fingerprint(linkScenario(r.sc, cfg).wideFiles)])
+  );
 
   // 테스트 러너는 셸을 거치지 않고 node로 JS 진입점을 직접 실행한다.
   // (예전에는 Windows에서 pnpm.cmd 때문에 셸 문자열을 이어 붙였는데, 인자 이스케이프가 불완전했다. CodeQL 지적)
@@ -608,6 +623,66 @@ if (cmd === "status") {
       console.log(
         `${f.status.padEnd(8)} ${f.id.padEnd(28)} ${f.text}${f.scenario ? `  (시나리오 ${f.scenario})` : ""}  ${f.at.slice(0, 10)}`
       );
+  }
+} else if (cmd === "graph") {
+  const sub = rest[0];
+  if (sub === "build") {
+    // 코드만 분석한다 (--code-only). 군집 나누기와 이름 붙이기(AI 호출)는 하지 않는다 (--no-cluster)
+    const home = os.homedir();
+    const bin =
+      process.env.QA_GRAPHIFY ??
+      [
+        path.join(home, ".graphify-venv", "Scripts", "graphify.exe"),
+        path.join(home, ".graphify-venv", "bin", "graphify"),
+      ].find((p) => existsSync(p)) ??
+      "graphify";
+    const out = posix.dirname(graphDir(cfg));
+    const r = spawnSync(bin, ["extract", ROOT, "--code-only", "--no-cluster", "--out", out], {
+      encoding: "utf8",
+      stdio: "inherit",
+    });
+    if (r.error || r.status !== 0) {
+      console.error(
+        `그래프를 만들지 못했습니다 (${bin}). 그래프가 없으면 기존 연결로 판정하므로 다른 명령은 그대로 쓸 수 있습니다.`
+      );
+      process.exit(1);
+    }
+    console.log(`\n그래프: ${graphDir(cfg)}/graph.json`);
+  } else if (sub === "compare") {
+    // 같은 근거(facts)로 기존 연결과 그래프 연결의 판정을 나란히 본다. 장부는 바꾸지 않는다
+    const facts = loadFacts();
+    const statusWith = (on, sc) => {
+      process.env.QA_GRAPH = on ? "1" : "0";
+      return statusOf(sc, cfg, facts);
+    };
+    let files = [0, 0];
+    let stale = [0, 0];
+    for (const sc of scenarios) {
+      if (!sc.verifiedBy.length) continue;
+      const off = statusWith(false, sc);
+      const on = statusWith(true, sc);
+      const wide = off.link.files;
+      const dropped = wide.filter((f) => !on.link.files.includes(f));
+      files = [files[0] + wide.length, files[1] + on.link.files.length];
+      stale = [stale[0] + (off.status === "stale"), stale[1] + (on.status === "stale")];
+      const moved =
+        off.status !== on.status ? `  상태 ${LABEL[off.status]} → ${LABEL[on.status]}` : "";
+      console.log(
+        `${String(wide.length).padStart(4)} → ${String(on.link.files.length).padEnd(4)} ${sc.id}${moved}`
+      );
+      if (flag("--all") || dropped.length <= 10)
+        for (const f of dropped) console.log(`        빠짐: ${f}`);
+      else console.log(`        빠짐 ${dropped.length}개 (--all로 전부)`);
+      for (const g of on.link.graph)
+        if (!g.used && g.reason !== "꺼짐")
+          console.log(`        기존 연결 유지: ${g.ref} — ${g.reason}`);
+    }
+    console.log(
+      `\n연결 파일 합계 ${files[0]} → ${files[1]} · 재검증 필요 ${stale[0]} → ${stale[1]}`
+    );
+  } else {
+    console.error("사용: qa.mjs graph build | graph compare [--all]");
+    process.exit(1);
   }
 } else {
   console.error(`알 수 없는 명령: ${cmd}`);

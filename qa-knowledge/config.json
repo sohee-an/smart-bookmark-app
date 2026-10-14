@@ -32,5 +32,10 @@
       "src/app/api/extension/_lib/pipeline.ts"
     ]
   },
+  "graph": {
+    "$comment": "코드 그래프로 연결 좁히기 (docs/qa-tester.md). 기본은 끔. 그래프는 dir/graphify-out/에 만들고 커밋하지 않는다(.cache는 gitignore). 그래프가 없거나 오래되면 기존 연결로 판정한다",
+    "enabled": false,
+    "dir": ".cache/qa-graph"
+  },
   "gapDirs": ["src/features", "src/entities", "src/server", "src/shared/lib", "src/app/api"]
 }
