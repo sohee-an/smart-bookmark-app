@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookmarkDetailPanel } from "@/entities/bookmark/ui/BookmarkDetailPanel";
 import { AddToCollectionButton } from "@/features/collection/ui/AddToCollectionButton";
+import { FEATURES } from "@/shared/config/features";
 import { TagFilter } from "@/features/bookmark/ui/TagFilter";
 import { BookmarkList } from "@/features/bookmark/ui/BookmarkList";
 import { SemanticResultSection } from "@/features/bookmark/ui/SemanticResultSection";
@@ -247,7 +248,9 @@ export function BookmarksContent({ isGuest }: { isGuest: boolean }) {
         onDelete={handlePanelDelete}
         onTagClick={handleTagClick}
         actions={
-          selectedBookmark ? <AddToCollectionButton bookmarkId={selectedBookmark.id} /> : undefined
+          FEATURES.collections && selectedBookmark ? (
+            <AddToCollectionButton bookmarkId={selectedBookmark.id} />
+          ) : undefined
         }
       />
 
