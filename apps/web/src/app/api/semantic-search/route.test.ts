@@ -13,7 +13,17 @@ vi.mock("@/shared/api/supabase/server", () => ({
   createSupabaseServerClient: async () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     rpc: async () => ({ data: state.rpcRows, error: null }),
-    from: () => ({ select: () => ({ in: async () => ({ data: [] }) }) }),
+    from: (table: string) => {
+      // 회원 하루 20회 제한용 사용 기록. 이 파일의 테스트는 한도에 걸리지 않게 항상 0회로 둔다
+      if (table === "feature_usage") {
+        const q = {
+          eq: () => q,
+          gte: async () => ({ count: 0, error: null }),
+        };
+        return { select: () => q, insert: async () => ({ error: null }) };
+      }
+      return { select: () => ({ in: async () => ({ data: [] }) }) };
+    },
   }),
 }));
 vi.mock("next/headers", () => ({
