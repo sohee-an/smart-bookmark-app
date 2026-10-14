@@ -120,6 +120,10 @@ if (cmd === "status") {
     console.log(
       `\nmock된 API (실제 라우트는 검증되지 않음):\n${r.link.mockedRoutes.map((f) => `  - ${f}`).join("\n")}`
     );
+  if (r.link.mockedApi.length)
+    console.log(
+      `\n문자열로 부르는 API 중 이 시나리오로 실행되지 않는 것 (mock됐거나, 단위 테스트라 서버가 없음):\n${r.link.mockedApi.map((f) => `  - ${f}`).join("\n")}`
+    );
   if (r.changed?.length)
     console.log(`\n검증 뒤 바뀐 파일:\n${r.changed.map((f) => `  - ${f}`).join("\n")}`);
   if (r.last)
