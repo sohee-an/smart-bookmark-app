@@ -208,8 +208,9 @@ export function loadFacts() {
     .map((l) => JSON.parse(l));
 }
 
-// 상태: unverified(검증 수단 없음/기록 없음) | failing | stale | fresh
+// 상태: hold(사람이 보류) | unverified(검증 수단 없음/기록 없음) | failing | stale | fresh
 export function statusOf(sc, cfg, facts, link = linkScenario(sc, cfg)) {
+  if (sc.hold) return { status: "hold", reason: `보류: ${sc.hold}`, link };
   if (sc.verifiedBy.length === 0)
     return { status: "unverified", reason: "검증하는 테스트가 없음", link };
   const last = facts.filter((f) => f.scenario === sc.id && f.result !== "skipped").at(-1);

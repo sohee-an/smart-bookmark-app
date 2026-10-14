@@ -6,7 +6,11 @@
       "feature": "URL 저장 + 크롤링",
       "claim": "비회원이 URL을 저장하면 카드가 바로 목록에 뜬다",
       "verifiedBy": [
-        { "runner": "playwright", "file": "e2e/bookmark-save.spec.ts", "name": "카드 표시" }
+        {
+          "runner": "playwright",
+          "file": "e2e/bookmark-save.spec.ts",
+          "name": "카드 표시"
+        }
       ]
     },
     {
@@ -14,8 +18,15 @@
       "feature": "URL 저장 + 크롤링",
       "claim": "빈 URL이나 형식이 틀린 URL은 저장되지 않고 에러 메시지가 뜬다",
       "verifiedBy": [
-        { "runner": "vitest", "file": "src/shared/lib/validateUrl.test.ts" },
-        { "runner": "playwright", "file": "e2e/bookmark-save.spec.ts", "name": "에러 메시지 표시" }
+        {
+          "runner": "vitest",
+          "file": "src/shared/lib/validateUrl.test.ts"
+        },
+        {
+          "runner": "playwright",
+          "file": "e2e/bookmark-save.spec.ts",
+          "name": "에러 메시지 표시"
+        }
       ]
     },
     {
@@ -23,13 +34,19 @@
       "feature": "AI 자동 요약/태깅",
       "claim": "저장한 카드가 crawling → processing → completed로 바뀌고 제목, 요약, 태그가 채워진다",
       "verifiedBy": [
-        { "runner": "vitest", "file": "src/__tests__/bookmark-ai-pipeline.test.ts" },
+        {
+          "runner": "vitest",
+          "file": "src/__tests__/bookmark-ai-pipeline.test.ts"
+        },
         {
           "runner": "vitest",
           "file": "src/__tests__/bookmark-pipeline-integration.test.ts",
           "name": "completed 전체 파이프라인"
         },
-        { "runner": "vitest", "file": "src/server/services/ai-analysis.service.test.ts" },
+        {
+          "runner": "vitest",
+          "file": "src/server/services/ai-analysis.service.test.ts"
+        },
         {
           "runner": "playwright",
           "file": "e2e/bookmark-save.spec.ts",
@@ -47,7 +64,10 @@
           "file": "src/__tests__/bookmark-pipeline-integration.test.ts",
           "name": "실패"
         },
-        { "runner": "vitest", "file": "src/server/services/crawler.service.test.ts" },
+        {
+          "runner": "vitest",
+          "file": "src/server/services/crawler.service.test.ts"
+        },
         {
           "runner": "playwright",
           "file": "e2e/pipeline-failure.spec.ts",
@@ -60,8 +80,14 @@
       "feature": "비회원 저장 (20개 제한)",
       "claim": "비회원은 북마크를 20개까지 저장하고, 21번째에는 한도 초과 안내가 뜬다",
       "verifiedBy": [
-        { "runner": "vitest", "file": "src/__tests__/bookmark-guest-workflow.test.ts" },
-        { "runner": "vitest", "file": "src/entities/bookmark/api/local.repository.test.ts" },
+        {
+          "runner": "vitest",
+          "file": "src/__tests__/bookmark-guest-workflow.test.ts"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/entities/bookmark/api/local.repository.test.ts"
+        },
         {
           "runner": "playwright",
           "file": "e2e/pipeline-failure.spec.ts",
@@ -74,9 +100,18 @@
       "feature": "북마크 관리",
       "claim": "북마크를 수정하고 삭제하면 다시 조회해도 그대로 반영되어 있다",
       "verifiedBy": [
-        { "runner": "vitest", "file": "src/__tests__/bookmark-crud-integration.test.ts" },
-        { "runner": "vitest", "file": "src/__tests__/bookmark-user-workflow.test.ts" },
-        { "runner": "vitest", "file": "src/features/bookmark/model/queries.test.tsx" }
+        {
+          "runner": "vitest",
+          "file": "src/__tests__/bookmark-crud-integration.test.ts"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/__tests__/bookmark-user-workflow.test.ts"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/model/queries.test.tsx"
+        }
       ]
     },
     {
@@ -84,9 +119,18 @@
       "feature": "태그 필터링",
       "claim": "태그를 여러 개 고르면 그중 하나라도 가진 북마크만 보인다 (OR)",
       "verifiedBy": [
-        { "runner": "vitest", "file": "src/features/bookmark/model/filterBookmarks.test.ts" },
-        { "runner": "vitest", "file": "src/features/bookmark/ui/TagFilter.test.tsx" },
-        { "runner": "vitest", "file": "src/features/bookmark/ui/FilterBar.test.tsx" }
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/model/filterBookmarks.test.ts"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/ui/TagFilter.test.tsx"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/features/bookmark/ui/FilterBar.test.tsx"
+        }
       ]
     },
     {
@@ -94,23 +138,40 @@
       "feature": "인증",
       "claim": "헤더는 비회원, 게스트, 로그인 상태에 맞는 버튼과 아바타를 깜빡임 없이 처음부터 보여 준다",
       "verifiedBy": [
-        { "runner": "playwright", "file": "e2e/header.spec.ts" },
-        { "runner": "playwright", "file": "e2e/qa-header.spec.ts" }
+        {
+          "runner": "playwright",
+          "file": "e2e/header.spec.ts"
+        },
+        {
+          "runner": "playwright",
+          "file": "e2e/qa-header.spec.ts"
+        }
       ]
     },
     {
       "id": "landing.entry",
       "feature": "인증",
       "claim": "랜딩에서 비회원으로 시작하면 메인으로, 로그인 링크는 로그인 페이지로 간다",
-      "verifiedBy": [{ "runner": "playwright", "file": "e2e/landing.spec.ts" }]
+      "verifiedBy": [
+        {
+          "runner": "playwright",
+          "file": "e2e/landing.spec.ts"
+        }
+      ]
     },
     {
       "id": "chat.streaming",
       "feature": "북마크 대화 (RAG 챗)",
       "claim": "챗 답변이 끊김 없이 스트리밍되고, 중단할 수 있고, 마크다운이 안전하게 렌더링된다",
       "verifiedBy": [
-        { "runner": "vitest", "file": "src/features/chat/model/useBookmarkChat.test.ts" },
-        { "runner": "vitest", "file": "src/features/chat/ui/Markdown.test.tsx" }
+        {
+          "runner": "vitest",
+          "file": "src/features/chat/model/useBookmarkChat.test.ts"
+        },
+        {
+          "runner": "vitest",
+          "file": "src/features/chat/ui/Markdown.test.tsx"
+        }
       ],
       "maxAgeDays": 7,
       "notes": "답변 품질은 모델에 달려 있어서 코드가 그대로여도 주기적으로 다시 본다"
@@ -119,7 +180,12 @@
       "id": "security.ssrf",
       "feature": "URL 저장 + 크롤링",
       "claim": "사설 IP, 비 HTTP 프로토콜 URL은 서버가 가져오지 않는다",
-      "verifiedBy": [{ "runner": "vitest", "file": "src/shared/lib/validateSsrf.test.ts" }]
+      "verifiedBy": [
+        {
+          "runner": "vitest",
+          "file": "src/shared/lib/validateSsrf.test.ts"
+        }
+      ]
     },
     {
       "id": "search.semantic",
@@ -133,7 +199,8 @@
       "feature": "컬렉션 / 협업",
       "claim": "컬렉션에 멤버를 초대하면 역할(owner/editor/viewer)에 맞는 권한만 가진다",
       "verifiedBy": [],
-      "notes": "검증하는 테스트가 없다"
+      "notes": "검증하는 테스트가 없다. PROJECT_PLAN에는 '완료'로 적혀 있었지만 실제로는 미완성이었다 (2026-10-14 장부 작성 중 발견)",
+      "hold": "미완성 기능. 화면에서 숨김 (FEATURES.collections = false, PR #126). 완성되면 hold를 지우고 권한 테스트부터 쓴다"
     },
     {
       "id": "extension.save",

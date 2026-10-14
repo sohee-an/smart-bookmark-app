@@ -26,7 +26,13 @@ const opt = (f) => (rest.includes(f) ? rest[rest.indexOf(f) + 1] : null);
 
 const cfg = loadConfig();
 const scenarios = loadScenarios();
-const LABEL = { fresh: "통과", stale: "재검증 필요", failing: "실패", unverified: "미검증" };
+const LABEL = {
+  fresh: "통과",
+  stale: "재검증 필요",
+  failing: "실패",
+  unverified: "미검증",
+  hold: "보류",
+};
 
 function statusAll() {
   const facts = loadFacts();
@@ -95,7 +101,8 @@ if (cmd === "status") {
   const only = opt("--scenario");
   const rows = statusAll().filter(
     (r) =>
-      (only ? r.sc.id === only : flag("--all") || r.status !== "fresh") && r.sc.verifiedBy.length
+      (only ? r.sc.id === only : (flag("--all") || r.status !== "fresh") && r.status !== "hold") &&
+      r.sc.verifiedBy.length
   );
   if (!rows.length) {
     console.log("재검증할 시나리오가 없습니다.");
