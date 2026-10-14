@@ -7,8 +7,13 @@ import base from "./playwright.config";
 
 const PORT = Number(process.env.QA_E2E_PORT ?? 3100);
 
+// 동시 작업자 수. 기본값(CPU 수)이면 개발 서버 하나에 요청이 몰려 첫 컴파일이 30초를 넘기고 가짜 실패가 난다
+// (5회 반복 실행에서 확인). CI는 base 설정대로 1개다
+const WORKERS = process.env.CI ? 1 : Number(process.env.QA_E2E_WORKERS ?? 4);
+
 export default defineConfig({
   ...base,
+  workers: WORKERS,
   reporter: "json",
   use: { ...base.use, baseURL: `http://localhost:${PORT}` },
   webServer: {

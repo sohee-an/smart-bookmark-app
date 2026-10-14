@@ -497,6 +497,17 @@ export function statusOf(sc, cfg, facts, link = linkScenario(sc, cfg)) {
       last,
       refs: perRef,
     };
+  // 재시도로 통과한 테스트가 있으면 통과는 통과지만 흔들림으로 드러낸다 (CI 재시도가 가리는 것)
+  const flaky = ran.flatMap((p) => p.latest.test.flaky ?? []);
+  if (flaky.length)
+    return {
+      status: "fresh",
+      flaky,
+      reason: `통과, 단 재시도로 통과한 테스트 ${flaky.length}개 (흔들림): ${flaky.slice(0, 2).join(" | ")}`,
+      link,
+      last,
+      refs: perRef,
+    };
   return { status: "fresh", reason: "통과", link, last, refs: perRef };
 }
 
