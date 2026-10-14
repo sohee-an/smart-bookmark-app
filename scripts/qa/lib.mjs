@@ -166,6 +166,13 @@ export function linkScenario(sc, cfg) {
       const ms = new Set(parseFile(file, cfg).mocks);
       ms.forEach((m) => mocked.add(m));
       walk([file], cfg, ms).forEach((f) => files.add(f));
+    } else if (ref.runner === "script") {
+      // 스크립트 검사는 스크립트 자신과 설정, 그리고 config.live.links에 적은 코드에 연결된다
+      walk(
+        [ref.file, ...(cfg.live?.links ?? []).map((p) => posix.join(cfg.appRoot, p))],
+        cfg
+      ).forEach((f) => files.add(f));
+      files.add("qa-knowledge/config.json");
     } else if (ref.runner === "playwright") {
       const src = readFileSync(abs(file), "utf8");
       for (const m of src.matchAll(/goto\(\s*["'`](\/[^"'`]*)/g)) routes.add(m[1]);

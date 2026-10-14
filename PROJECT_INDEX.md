@@ -93,7 +93,7 @@
 - API: 북마크 추가/제거 → `apps/web/src/app/api/collections/[id]/bookmarks/route.ts`
 - API: 멤버 역할변경/제거 → `apps/web/src/app/api/collections/[id]/members/route.ts`
 - API: 이메일 초대 → `apps/web/src/app/api/collections/invite/route.ts`
-- DB 스키마 (컬렉션 테이블 + RLS) → `supabase/migrations/collections-schema.sql`
+- DB 스키마 (컬렉션 테이블 + RLS) → `supabase/migrations/20260101000008_collections-schema.sql`
 
 ## 인증
 
@@ -146,6 +146,8 @@
 - 엔진: 시나리오 연결(import 그래프, E2E 라우트), 신선도(파일 해시) → `scripts/qa/lib.mjs`
 - CLI: `status`, `show`, `recheck` → `scripts/qa/qa.mjs`
 - 프로젝트 설정 → `qa-knowledge/config.json`
+- 실제 AI 점검 (로컬 Supabase + 진짜 Gemini, 하루 1회) → `scripts/qa/live-check.mjs`
+- 로컬 Supabase 설정 (QA용) → `supabase/config.toml`
 - E2E 재검증용 Playwright 설정 (3100 포트, 서버 재사용 안 함) → `apps/web/playwright.qa.config.ts`
 - 시나리오 (사용자 동작 단위 주장 + 검증 테스트) → `qa-knowledge/scenarios.json`
 - 실행 근거 (지우지 않고 쌓음) → `qa-knowledge/facts.jsonl`

@@ -12,5 +12,21 @@
   "playwright": {
     "cmd": "pnpm",
     "args": ["exec", "playwright", "test", "--config=playwright.qa.config.ts", "--project=chromium"]
+  },
+  "live": {
+    "$comment": "실제 AI 점검(scripts/qa/live-check.mjs). 로컬 Supabase(Docker) + 앱 서버를 3200에 띄운다. urls는 안정적인 공개 페이지만",
+    "supabaseCli": "2.120.0",
+    "port": 3200,
+    "timeoutSec": 120,
+    "urls": [
+      "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
+      "https://ko.wikipedia.org/wiki/HTML",
+      "https://nextjs.org/docs"
+    ],
+    "links": [
+      "src/app/api/extension/save-bookmark/route.ts",
+      "src/app/api/extension/_lib/auth.ts",
+      "src/app/api/extension/_lib/pipeline.ts"
+    ]
   }
 }

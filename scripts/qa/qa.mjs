@@ -1,9 +1,10 @@
 // QATester CLI
 //   node scripts/qa/qa.mjs status [--json]          시나리오별 상태 (fresh / stale / failing / unverified)
 //   node scripts/qa/qa.mjs show <시나리오 id>        연결된 파일, mock된 경계, 마지막 근거, 바뀐 파일
-//   node scripts/qa/qa.mjs recheck [--all] [--e2e] [--scenario <id>]
+//   node scripts/qa/qa.mjs recheck [--all] [--e2e] [--live] [--scenario <id>]
 //                                                    재검증이 필요한 시나리오의 테스트만 돌리고 사실을 쌓는다
 //                                                    --e2e: Playwright도 돌린다 (브라우저, 개발 서버 필요)
+//                                                    --live: 외부 서비스를 부르는 스크립트 검사도 돌린다 (실제 AI 등)
 import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
@@ -178,14 +179,52 @@ if (cmd === "status") {
               title: [...titles, spec.title].join(" › "),
               status: t.status, // expected | unexpected | flaky | skipped
             });
-        for (const s of suite.suites ?? [])
-          visit(s, [...titles, s.title]); // 중첩 suite는 describe라 제목을 붙인다 (파일 suite는 맨 위에서만)
+        for (const s of suite.suites ?? []) visit(s, [...titles, s.title]); // 중첩 suite는 describe라 제목을 붙인다 (파일 suite는 맨 위에서만)
       };
       for (const s of report.suites ?? []) visit(s, []);
     } catch {
       console.error(`Playwright 결과를 읽지 못했습니다.\n${(r.stderr || r.stdout).slice(-2000)}`);
     }
   }
+  // script 러너: 스크립트를 실행하고 마지막 줄의 JSON({ result, ran, skipped, ... })을 결과로 쓴다.
+  // 실제 AI 점검처럼 외부 서비스를 부르는 검사는 --live를 줘야 돈다 (느리고 비용이 든다)
+  // 같은 스크립트를 여러 시나리오가 쓰면 한 번만 돌리고 결과를 나눠 쓴다 (비용, 그리고 둘이 엇갈리는 일을 막는다)
+  const scriptCache = new Map();
+  const runScript = (file) => {
+    if (scriptCache.has(file)) return scriptCache.get(file);
+    console.log(`스크립트 실행 중: ${file} (외부 서비스를 불러서 몇 분 걸릴 수 있다)…`);
+    const r = spawnSync(process.execPath, [path.join(ROOT, file)], { cwd: ROOT, encoding: "utf8" });
+    scriptCache.set(file, r);
+    return r;
+  };
+  const scriptResult = (ref) => {
+    if (!flag("--live")) return { result: "skipped", reason: "--live 없음" };
+    const r = runScript(ref.file);
+    const last = (r.stdout ?? "").trim().split(/\r?\n/).filter(Boolean).at(-1);
+    try {
+      const o = JSON.parse(last);
+      if (o.result === "error") return { result: "error", error: o.error };
+      // ref.name이 있으면 그 그룹의 검사만 이 시나리오의 근거로 쓴다 (Playwright의 -g와 같은 역할)
+      const checks = (o.checks ?? []).filter((c) => !ref.name || c.group === ref.name);
+      if (!checks.length)
+        return { result: "error", error: `그룹 "${ref.name}"에 해당하는 검사가 없음` };
+      const failed = checks.filter((c) => !c.ok);
+      for (const c of failed) console.log(`         FAIL ${c.name}: ${c.detail ?? ""}`);
+      return {
+        result: failed.length ? "fail" : "pass",
+        ran: checks.length,
+        skipped: 0,
+        checks,
+        serverLog: failed.length ? o.serverLog : undefined,
+      };
+    } catch {
+      console.error(
+        `스크립트 결과(JSON)를 읽지 못했습니다: ${ref.file}\n${(r.stderr || r.stdout || "").slice(-1500)}`
+      );
+      return { result: "error" };
+    }
+  };
+
   const playwrightResult = (ref) => {
     if (!e2eCases) return { result: "error" };
     const cases = e2eCases.filter(
@@ -210,6 +249,7 @@ if (cmd === "status") {
           ref: id,
           ...(flag("--e2e") ? playwrightResult(ref) : { result: "skipped", reason: "E2E 미실행" }),
         };
+      if (ref.runner === "script") return { ref: id, ...scriptResult(ref) };
       return { ref: id, result: "error" };
     });
     const ran = tests.filter((t) => t.result !== "skipped");
