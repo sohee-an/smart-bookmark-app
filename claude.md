@@ -97,6 +97,7 @@ pnpm test       # 테스트 실행
 - 파일을 찾을 때는 반드시 PROJECT_INDEX.md를 먼저 본다
 - 파일 경로의 기준은 PROJECT_INDEX.md 한 곳이다. 에이전트, 스킬, 명령 문서에는 경로 대신 이름을 쓴다
 - 파일을 옮기거나 이름을 바꾸면 PROJECT_INDEX.md를 같이 고친다. 안 고치면 CI의 문서 경로 검사가 PR을 막는다
+- 새 파일을 만들면 PROJECT_INDEX.md에 한 줄 추가한다. 빠뜨리면 색인 누락 검사가 알려 준다
 - INDEX에서 찾지 못한 경우 → Glob/Grep 절대 금지, 사용자에게 이렇게 말한다:
   > "PROJECT_INDEX.md에 해당 키워드가 없어서 충분한 자료를 찾지 못했습니다."
 - 사용자가 "전체코드 봐줘" 라고 하면 → 그때만 Glob/Grep으로 탐색하고, 찾은 파일을 PROJECT_INDEX.md에 즉시 추가

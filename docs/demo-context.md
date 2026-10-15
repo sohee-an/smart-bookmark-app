@@ -59,7 +59,7 @@
 | 판정 실험 `판정-에이전트-실험/README.md`    | 원래 컴퓨터 바탕화면. 1차(커밋 안 한 버그 1개, 판정 3건)와 2차(커밋 6개에 원인 3개 섞음) 결과와 판정 전문                            | 4부 5번     | 아래 숫자표로 말로 대신한다                                                                                 |
 | 노션 사이클 후기 `노션-워크플로우-후기.md`  | 원래 컴퓨터 바탕화면                                                                                                                 | 1부 질문    | 대본 1부의 "질문 대비" 메모에 요약이 있다                                                                   |
 | `apps/web/.env.local`                       | 원래 컴퓨터 같은 경로. USB나 비밀번호 관리자로만 옮긴다                                                                              | dev 서버    | E2E는 API를 mock해서 없어도 돈다. dev 서버만 못 뜬다                                                        |
-| `.claude/settings.json` (포맷 훅 설정)      | gitignore라 clone으로 안 온다. 아래 내용으로 레포 루트에 새로 만든다                                                                 | 3부 포맷 훅 | 이 파일이 없으면 포맷 훅 시연이 조용히 안 돈다. 7월에 겪은 일과 같은 상황이다                               |
+| `.claude/settings.json` (포맷, 색인 훅)     | gitignore라 clone으로 안 온다. 아래 내용으로 레포 루트에 새로 만든다                                                                 | 3부 포맷 훅 | 이 파일이 없으면 포맷 훅 시연이 조용히 안 돈다. 7월에 겪은 일과 같은 상황이다                               |
 | `.claude/project/reviews/*.md`              | gitignore. 리뷰 결과 파일                                                                                                            | 2부 질문    | 생략. 대본에 요지가 있다                                                                                    |
 
 `.claude/settings.json`에 들어갈 내용 (비밀값 없음):
@@ -71,6 +71,10 @@
       {
         "matcher": "Write|Edit",
         "hooks": [{ "type": "command", "command": "node .claude/hooks/format.mjs" }]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [{ "type": "command", "command": "node scripts/check-index-coverage.mjs --hook" }]
       }
     ]
   }
