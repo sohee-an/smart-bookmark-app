@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { X, ArrowRight, Clock, Hash } from "lucide-react";
 import { SearchIcon } from "@smart-bookmark/ui/icons";
 import type { Bookmark } from "@/entities/bookmark/model/types";
@@ -61,7 +62,7 @@ export function MobileSearchOverlay({
         .slice(0, 6)
     : [];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       onSearch(query.trim());

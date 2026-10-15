@@ -1,10 +1,11 @@
 import { useAvatar } from "./use-avatar";
+import type { CSSProperties } from "react";
 
 interface AvatarPrimitiveProps {
   src?: string | null;
   username?: string;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
 
 export const AvatarPrimitive = ({ src, username, className, style }: AvatarPrimitiveProps) => {

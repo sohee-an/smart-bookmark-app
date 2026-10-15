@@ -2,7 +2,7 @@ import storage from "@/shared/lib/storage";
 import type { BookmarkRow, CreateBookmarkRequest } from "./bookmark.types.db";
 import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
-import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
+import type { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import getGuestId from "@/shared/lib/guest";
 import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 

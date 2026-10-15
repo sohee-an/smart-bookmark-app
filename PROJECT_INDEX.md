@@ -5,6 +5,7 @@
 >
 > **파일 경로의 단일 기준이다.** 에이전트, 스킬, 명령은 경로 대신 이름을 쓰고 위치는 여기서 찾는다.
 > 여기와 CLAUDE.md, `.claude/` 문서에 적힌 경로가 실제로 없으면 CI(`scripts/check-doc-paths.mjs`)가 PR을 막고 코멘트로 알려 준다.
+> 반대로 코드에 새 파일이 생겼는데 여기 없으면 `scripts/check-index-coverage.mjs`가 알려 준다(Claude가 파일을 만들 때 hook으로, CI에서는 경고로).
 
 ---
 
