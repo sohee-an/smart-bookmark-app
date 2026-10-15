@@ -3,8 +3,8 @@
  * PostToolUse 포맷 hook — Write/Edit로 파일을 건드릴 때마다 prettier + eslint --fix 강제.
  *
  * 왜 스크립트로 분리했나:
- *   - Claude Code hook 설정 파일(settings.json)은 .gitignore 대상이라 팀에 공유 안 됨.
- *     로직을 커밋되는 이 스크립트에 두면 팀 전체가 동일 포맷 규칙을 공유한다.
+ *   - 공용 hook 설정(settings.json)은 커밋돼 팀이 같이 쓴다. 개인 권한 설정만 settings.local.json에 둔다.
+ *     설정 파일에는 실행 명령 한 줄만 두고, 로직은 이 스크립트에 둬서 리뷰와 수정을 한 곳에서 한다.
  *   - hook 입력은 stdin JSON으로 들어온다. (예전 설정의 $CLAUDE_FILE_PATH는 존재하지
  *     않는 변수라 no-op였음 — node로 정확히 파싱해 교정.)
  *
