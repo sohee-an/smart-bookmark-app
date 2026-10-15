@@ -1,5 +1,5 @@
 import { supabase } from "@/shared/api/supabase/client";
-import {
+import type {
   BookmarkRepository,
   UpdateBookmarkData,
 } from "../../../entities/bookmark/api/bookmark.repository";
@@ -7,8 +7,8 @@ import { LocalRepository } from "../../../entities/bookmark/api/local.repository
 import { SupabaseBookmarkRepository } from "../../../entities/bookmark/api/supabase.repository";
 
 import getGuestId from "@/shared/lib/guest";
-import { BookmarkFilter } from "../../../entities/bookmark/api/bookmark.types.db";
-import { Bookmark } from "@/entities/bookmark/model/types";
+import type { BookmarkFilter } from "../../../entities/bookmark/api/bookmark.types.db";
+import type { Bookmark } from "@/entities/bookmark/model/types";
 import { encodeEmbedding } from "../lib/semantic";
 /**
  * @description 로그인 상태에 따라 Local 또는 Supabase Repository를 동적으로 선택하는 서비스 (Factory Pattern)

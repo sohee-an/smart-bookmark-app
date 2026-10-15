@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import { X, ExternalLink, Pencil, Check, XCircle, Trash2, Copy, CopyCheck } from "lucide-react";
 import { useBookmarkStore } from "../model/useBookmarkStore";
@@ -11,7 +12,7 @@ interface BookmarkDetailPanelProps {
   onSave?: (id: string, data: Pick<Bookmark, "title" | "tags">) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   onTagClick?: (tag: string) => void;
-  actions?: React.ReactNode;
+  actions?: ReactNode;
 }
 
 export const BookmarkDetailPanel = ({

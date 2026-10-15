@@ -1,12 +1,10 @@
 "use client";
 
 import { Folder, Users, Bookmark, Crown, Pencil, Eye } from "lucide-react";
+import type { ReactNode } from "react";
 import type { Collection, CollectionRole } from "../model/types";
 
-const ROLE_BADGE: Record<
-  CollectionRole,
-  { label: string; icon: React.ReactNode; className: string }
-> = {
+const ROLE_BADGE: Record<CollectionRole, { label: string; icon: ReactNode; className: string }> = {
   owner: {
     label: "소유자",
     icon: <Crown size={11} />,

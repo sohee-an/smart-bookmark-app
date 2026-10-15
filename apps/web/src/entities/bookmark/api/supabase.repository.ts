@@ -2,7 +2,7 @@ import { supabase } from "@/shared/api/supabase/client";
 import type { BookmarkRow, BookmarkFilter, CreateBookmarkRequest } from "./bookmark.types.db";
 import type { AIStatus, Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
-import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
+import type { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 
 type SupabaseDbRow = {
