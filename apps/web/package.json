@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint --max-warnings 5",
+    "lint": "eslint --max-warnings 0",
     "lint:fsd": "eslint --config eslint.fsd.config.mjs --max-warnings 0 src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -84,7 +84,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
-      "eslint --max-warnings 5"
+      "eslint --max-warnings 0"
     ]
   }
 }
