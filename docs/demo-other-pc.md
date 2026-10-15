@@ -32,7 +32,7 @@ git에 올라가지 않는 파일이라 이 컴퓨터에서 직접 가져가야 
 | `security-nudge-pr-page.png`          | 바탕화면                | 같은 PR 전체 화면 (예비)                                                                                                                      |
 | `.claude/project/reviews/*.md` (선택) | 지금 컴퓨터의 같은 경로 | 리뷰 파일을 질문에서 보여줄 때만. gitignore 대상이라 clone으로는 안 온다                                                                      |
 | `.claude/settings.json`               | 지금 컴퓨터의 같은 경로 | 포맷 훅(PostToolUse) 설정. gitignore라 clone으로 안 온다. 없으면 포맷 훅 시연이 조용히 안 돈다. 내용은 [demo-context.md](demo-context.md) 4절 |
-| `smart-bookmark-graph/` 폴더 전체     | 바탕화면                | 4부 1번 검증 지도(`qa-overlay.html`). 열 때 인터넷 필요                                                                                       |
+| (옮길 필요 없음) 코드 그래프 | 레포 `docs/demo/graph/` (demo 브랜치에 커밋됨) | 검증 지도 `qa-overlay.html`와 Graphify 원본 `graphify-out/graph.html`. clone하면 같이 온다. 열 때 인터넷 필요 |
 | `판정-에이전트-실험/` 폴더            | 바탕화면                | 4부 5번 판정 실험 결과. 없으면 demo-context.md 5절 숫자로 말로 대신한다                                                                       |
 
 - [ ] 위 파일 옮김

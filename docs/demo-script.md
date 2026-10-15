@@ -161,7 +161,7 @@ C=$(git log -1 --format=%H -- apps/web/src/app/api/semantic-search/route.ts); ec
 
 **화면 순서**
 
-1. 검증 지도 (바탕화면 `smart-bookmark-graph/qa-overlay.html`, 인터넷 필요): 어디가 비었나
+1. 검증 지도 (레포 `docs/demo/graph/qa-overlay.html`, 인터넷 필요): 어디가 비었나
 2. 에이전트가 제안한 시나리오 파일 한 항목 (`qa-knowledge/proposals/2026-10-14-semantic-search-v2.json`): 빈 곳을 AI가 채운다
 3. 장부 상태 (터미널 `node scripts/qa/qa.mjs status`, 또는 nightly 리포트 `qa-knowledge/reports/2026-10-14.md` 맨 위 요약 줄): 지금 상태를 장부가 안다
 4. 테스트 작성 에이전트가 막히는 장면 (터미널, 아래 명령): 쓰는 쪽은 앱 코드를 못 고친다
