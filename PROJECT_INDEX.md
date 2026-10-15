@@ -168,6 +168,11 @@
 - 설명과 한계 → `docs/qa-tester.md`
 - 이전 방식과 비교 (발표용) → `docs/qa-tester-before-after.md`
 
+## 릴리스
+
+- 릴리스 명령 (바뀐 화면만 UX 리뷰 → 리뷰 보관소 문서 → dev→main PR) → `.claude/commands/release.md`
+- UX 리뷰 범위 고르기 (AI 없이, 화면 파일만, 파일 수와 줄 수 예산) → `scripts/release/ux-scope.mjs`
+
 ## 모달/오버레이 시스템
 
 - `overlay.open()`, `overlay.close()` → `apps/web/src/shared/lib/overlay/overlay.ts`
