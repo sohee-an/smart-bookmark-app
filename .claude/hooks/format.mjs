@@ -27,6 +27,12 @@ import { dirname, join } from "node:path";
 
 const FORMATTABLE = /\.(ts|tsx|js|jsx|mjs|cjs|json|md|mdx|css|scss|ya?ml|html)$/;
 const LINTABLE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
+const ESLINT_CONFIGS = [
+  "eslint.config.js",
+  "eslint.config.mjs",
+  "eslint.config.cjs",
+  "eslint.config.ts",
+];
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -39,8 +45,23 @@ function readStdin() {
   });
 }
 
+/**
+ * 파일에서 위로 올라가며 eslint 설정이 있는 가장 가까운 폴더를 찾는다.
+ * ESLint 9는 설정을 cwd 기준으로 찾는다. hook은 레포 루트에서 돌고 루트에는 설정이 없어서,
+ * 예전에는 eslint가 매번 설정을 못 찾고 죽었다(에러를 삼켜서 아무도 몰랐음).
+ */
+function findEslintRoot(file) {
+  let dir = dirname(file);
+  while (true) {
+    if (ESLINT_CONFIGS.some((name) => existsSync(join(dir, name)))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
 /** 편집된 파일 위치에서 패키지 바이너리(JS)를 resolve해 node로 직접 실행. best-effort. */
-function runBin(requireFromFile, spec, args) {
+function runBin(requireFromFile, spec, args, cwd) {
   let bin;
   try {
     bin = requireFromFile.resolve(spec);
@@ -55,7 +76,7 @@ function runBin(requireFromFile, spec, args) {
   }
   if (!bin || !existsSync(bin)) return;
   try {
-    execFileSync(process.execPath, [bin, ...args], { stdio: "ignore" });
+    execFileSync(process.execPath, [bin, ...args], { stdio: "ignore", cwd });
   } catch {
     // 포맷/린트 실패로 편집을 막지 않는다 — 조용히 통과
   }
@@ -76,6 +97,7 @@ if (!filePath || !FORMATTABLE.test(filePath) || !existsSync(filePath)) {
 const requireFromFile = createRequire(pathToFileURL(filePath));
 runBin(requireFromFile, "prettier/bin/prettier.cjs", ["--write", filePath]);
 if (LINTABLE.test(filePath)) {
-  runBin(requireFromFile, "eslint/bin/eslint.js", ["--fix", filePath]);
+  const eslintRoot = findEslintRoot(filePath);
+  if (eslintRoot) runBin(requireFromFile, "eslint/bin/eslint.js", ["--fix", filePath], eslintRoot);
 }
 process.exit(0);
