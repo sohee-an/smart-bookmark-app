@@ -151,6 +151,7 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - `새 할일 등록해줘 [내용]` → `new-task` 명령 실행
 - `노션 댓글 확인해줘` → `notion-review` 명령 실행
 - `리뷰해줘 [대상]` → `code-review` 스킬 실행 (백그라운드)
+- `UI 만들어줘 [컴포넌트] [위치]` → `ui` 스킬 실행 (백그라운드 ui-agent, 위치 없으면 먼저 물음)
 - `보안 검토해줘 [대상]` → `security-review` 스킬 실행 (백그라운드, 기본 리뷰)
 - `심층 보안 검토해줘 [대상]` → `security-deep-review` 스킬 실행 (기본 + 공격자 관점을 따로 동시에)
 - `보안 리뷰 종합해줘` → `security-summary` 스킬 실행 (개발 세션에서, 요청할 때만)
