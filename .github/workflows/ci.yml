@@ -93,6 +93,10 @@ jobs:
         run: |
           echo "::error::문서에 적힌 경로가 저장소에 없습니다. PR 코멘트를 확인하세요."
           exit 1
+      - name: 색인 누락 검사 (경고만)
+        # 코드에 있는 파일이 PROJECT_INDEX.md에 있는지 본다. 지금 빠진 파일을 채우기 전까지는 막지 않는다.
+        # 다 채우면 --strict를 붙여 막는다.
+        run: node scripts/check-index-coverage.mjs
 
   test:
     name: Unit & Integration Tests

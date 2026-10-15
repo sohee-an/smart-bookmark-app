@@ -10,9 +10,18 @@
 // 검사 그룹: setup(계정, 서버, 정리 등 검사 준비), api(저장 API와 인증), ai(실제 AI 결과).
 // setup이 실패하면 제품 실패가 아니라 검사 오류다. 외부 AI 한도 초과(429)는 setup:ai로 올려서 ai 그룹만 오류가 된다
 //
+// 검색(search), 챗(chat) 그룹: 저장한 북마크로 의미 검색과 RAG 챗이 실제로 맞게 동작하는지 본다.
+//   - 임베딩이 저장됐나 (예전에 RLS 드리프트로 임베딩 insert가 조용히 실패한 적이 있다, decisions/028)
+//   - 북마크마다 제목이 아니라 뜻으로 쓴 검색어를 넣으면 그 북마크가 1등인가
+//   - 관련 없는 검색어에는 "정확한 결과"가 비어 있나 (기준값 0.8이 너무 낮지 않은지)
+//   - 챗: 질문에 맞는 북마크를 근거로 가져오고, 답에 [번호]로 인용하나. 관련 없는 질문에는 모른다고 답하나
+//   정답 문장이 아니라 "누가 1등인가", "근거에 들어갔나"처럼 매번 같은 답이 나오는 것만 본다.
+//   검색어와 질문은 qa-knowledge/config.json의 live.searchCases, live.chat에 있다.
+//
 // 사용: node scripts/qa/live-check.mjs [--json]   (qa.mjs가 runner "script"로 부른다)
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { ROOT, loadConfig } from "./lib.mjs";
 
@@ -92,6 +101,46 @@ function stopApp(app) {
     spawnSync("taskkill", ["/PID", String(app.child.pid), "/T", "/F"], { stdio: "ignore" });
   else app.child.kill("SIGTERM");
 }
+
+// 의미 검색과 챗 API는 Bearer 토큰이 아니라 Supabase 로그인 쿠키로 사용자를 본다.
+// 쿠키 형식(이름, base64 인코딩, 나눠 담기)을 직접 만들지 않고 앱과 같은 @supabase/ssr로 만든다
+async function sessionCookie(sb, session) {
+  const { createServerClient } = createRequire(path.join(appDir, "package.json"))("@supabase/ssr");
+  const jar = new Map();
+  const client = createServerClient(sb.url, sb.anon, {
+    cookies: {
+      getAll: () => [...jar].map(([name, value]) => ({ name, value })),
+      setAll: (list) => list.forEach(({ name, value }) => jar.set(name, value)),
+    },
+  });
+  const { error } = await client.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  if (error) throw new Error(`로그인 쿠키를 만들지 못했습니다: ${error.message}`);
+  return [...jar].map(([n, v]) => `${n}=${v}`).join("; ");
+}
+
+// 챗 API의 SSE 응답(sources, token, done, error 이벤트)을 끝까지 읽는다
+async function readChat(r) {
+  const text = await r.text();
+  let sources = [];
+  let answer = "";
+  let error = null;
+  for (const block of text.split("\n\n")) {
+    const ev = block.match(/^event: (.+)$/m)?.[1];
+    const data = block.match(/^data: (.+)$/m)?.[1];
+    if (!ev || !data) continue;
+    const d = JSON.parse(data);
+    if (ev === "sources") sources = d;
+    else if (ev === "token") answer += d.text;
+    else if (ev === "error") error = d.message;
+  }
+  return { sources, answer, error };
+}
+
+const sameUrl = (a, b) => a?.replace(/\/+$/, "") === b?.replace(/\/+$/, "");
+const NOT_FOUND = /찾지 못했/;
 
 const j = async (r) => {
   const t = await r.text();
@@ -195,10 +244,97 @@ async function main() {
       check("ai", `요약 있음: ${b.url}`, b.summary?.trim(), `${(b.summary ?? "").length}자`);
       check("ai", `태그 1~8개: ${b.url}`, tags.length >= 1 && tags.length <= 8, tags.join(", "));
     }
+
+    // 7. 의미 검색과 RAG 챗 정확도. AI가 끝난 북마크만 대상으로 한다
+    const ready = rows.filter((b) => b.ai_status === "completed");
+    if (ready.length > 0) {
+      const base = `http://localhost:${app.port}`;
+      const headers = { Cookie: await sessionCookie(sb, su), "Content-Type": "application/json" };
+
+      const emb = await j(
+        await fetch(`${sb.url}/rest/v1/embeddings?select=bookmark_id`, {
+          headers: { apikey: sb.anon, Authorization: `Bearer ${token}` },
+        })
+      );
+      for (const b of ready)
+        check(
+          "search",
+          `임베딩 저장: ${b.url}`,
+          Array.isArray(emb) && emb.some((e) => e.bookmark_id === b.id),
+          Array.isArray(emb) ? `${emb.length}개 중` : JSON.stringify(emb).slice(0, 200)
+        );
+
+      const search = async (query) => {
+        const r = await fetch(`${base}/api/semantic-search`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ query }),
+        });
+        const body = await j(r);
+        if (r.status !== 200 || !body.success)
+          throw new Error(`의미 검색 ${r.status}: ${body.message ?? body._raw ?? ""}`);
+        return body.data;
+      };
+      for (const c of live.searchCases ?? []) {
+        if (!ready.some((b) => sameUrl(b.url, c.url))) continue;
+        const { exact, related } = await search(c.query);
+        const top = [...exact, ...related].sort((a, b) => b.similarity - a.similarity)[0];
+        check(
+          "search",
+          `"${c.query}" 1등이 ${c.url}`,
+          sameUrl(top?.url, c.url),
+          `1등=${top?.url ?? "없음"} (${top?.similarity?.toFixed(3) ?? "-"})`
+        );
+      }
+      if (live.offTopicQuery) {
+        const { exact, related } = await search(live.offTopicQuery);
+        const best = Math.max(0, ...[...exact, ...related].map((r) => r.similarity));
+        check(
+          "search",
+          `관련 없는 "${live.offTopicQuery}"는 정확한 결과 없음`,
+          exact.length === 0,
+          `정확 ${exact.length}개, 최고 유사도 ${best.toFixed(3)}`
+        );
+      }
+
+      const chat = async (question) =>
+        readChat(
+          await fetch(`${base}/api/chat`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ question }),
+          })
+        );
+      const qa = live.chat;
+      if (qa?.question && ready.some((b) => sameUrl(b.url, qa.url))) {
+        const { sources, answer, error } = await chat(qa.question);
+        check(
+          "chat",
+          `"${qa.question}" 근거에 ${qa.url}`,
+          sources.some((s) => sameUrl(s.url, qa.url)),
+          `근거 ${sources.length}개: ${sources.map((s) => s.url).join(", ")}`
+        );
+        check(
+          "chat",
+          "답이 근거를 [번호]로 인용",
+          !error && /\[\d+\]/.test(answer) && !NOT_FOUND.test(answer),
+          error ?? answer.slice(0, 120)
+        );
+      }
+      if (qa?.offTopicQuestion) {
+        const { answer, error } = await chat(qa.offTopicQuestion);
+        check(
+          "chat",
+          "관련 없는 질문에는 모른다고 답함 (지어내지 않음)",
+          !error && NOT_FOUND.test(answer),
+          error ?? answer.slice(0, 120)
+        );
+      }
+    }
   } catch (e) {
     check("setup", "실행 오류 없음", false, String(e.message ?? e));
   } finally {
-    // 7. 정리. 계정을 지우면 북마크, 태그 연결, 임베딩이 cascade로 사라진다
+    // 8. 정리. 계정을 지우면 북마크, 태그 연결, 임베딩이 cascade로 사라진다
     if (userId) {
       const d = await fetch(`${sb.url}/auth/v1/admin/users/${userId}`, {
         method: "DELETE",

@@ -10,10 +10,10 @@ smart-bookmark 프로젝트의 FSD 레이어 의존성 위반을 분석해줘.
 ## FSD 레이어 규칙
 
 ```
-pages       ← 최상위 (아무 레이어나 import 가능)
-widgets     ← pages만 import 불가
-features    ← pages, widgets import 불가
-entities    ← pages, widgets, features import 불가
+app       ← 최상위 (아무 레이어나 import 가능)
+widgets     ← app만 import 불가
+features    ← app, widgets import 불가
+entities    ← app, widgets, features import 불가
 shared      ← 최하위 (다른 레이어 import 불가)
 ```
 
@@ -23,7 +23,7 @@ shared      ← 최하위 (다른 레이어 import 불가)
 ## 분석 대상 경로
 
 ```
-apps/web/src/pages/**
+apps/web/src/app/**
 apps/web/src/widgets/**
 apps/web/src/features/**
 apps/web/src/entities/**
@@ -34,10 +34,10 @@ apps/web/src/shared/**
 
 ### 레이어 간 의존성 방향
 
-- [ ] shared에서 features, entities, widgets, pages import 하는 곳
-- [ ] entities에서 features, widgets, pages import 하는 곳
-- [ ] features에서 widgets, pages import 하는 곳
-- [ ] widgets에서 pages import 하는 곳
+- [ ] shared에서 features, entities, widgets, app import 하는 곳
+- [ ] entities에서 features, widgets, app import 하는 곳
+- [ ] features에서 widgets, app import 하는 곳
+- [ ] widgets에서 app import 하는 곳
 
 ### 같은 레이어 간 import (슬라이스 간 참조)
 

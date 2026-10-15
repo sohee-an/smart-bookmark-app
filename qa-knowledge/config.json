@@ -29,8 +29,31 @@
     "links": [
       "src/app/api/extension/save-bookmark/route.ts",
       "src/app/api/extension/_lib/auth.ts",
-      "src/app/api/extension/_lib/pipeline.ts"
-    ]
+      "src/app/api/extension/_lib/pipeline.ts",
+      "src/app/api/semantic-search/route.ts",
+      "src/app/api/chat/route.ts",
+      "src/features/bookmark/lib/semantic.ts"
+    ],
+    "searchCases": [
+      {
+        "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
+        "query": "웹 브라우저에서 동작하는 프로그래밍 언어 레퍼런스"
+      },
+      {
+        "url": "https://ko.wikipedia.org/wiki/HTML",
+        "query": "웹 페이지의 구조를 만드는 마크업 언어"
+      },
+      {
+        "url": "https://nextjs.org/docs",
+        "query": "리액트 기반 풀스택 웹 프레임워크 공식 문서"
+      }
+    ],
+    "offTopicQuery": "김치찌개 맛있게 끓이는 법",
+    "chat": {
+      "url": "https://nextjs.org/docs",
+      "question": "Next.js 관련해서 저장한 자료를 정리해 줘",
+      "offTopicQuestion": "김치찌개 맛있게 끓이는 법 알려 줘"
+    }
   },
   "gapDirs": ["src/features", "src/entities", "src/server", "src/shared/lib", "src/app/api"]
 }
