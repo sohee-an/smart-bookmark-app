@@ -3,8 +3,8 @@
  * PostToolUse 포맷 hook — Write/Edit로 파일을 건드릴 때마다 prettier + eslint --fix 강제.
  *
  * 왜 스크립트로 분리했나:
- *   - Claude Code hook 설정 파일(settings.json)은 .gitignore 대상이라 팀에 공유 안 됨.
- *     로직을 커밋되는 이 스크립트에 두면 팀 전체가 동일 포맷 규칙을 공유한다.
+ *   - 공용 hook 설정(settings.json)은 커밋돼 팀이 같이 쓴다. 개인 권한 설정만 settings.local.json에 둔다.
+ *     설정 파일에는 실행 명령 한 줄만 두고, 로직은 이 스크립트에 둬서 리뷰와 수정을 한 곳에서 한다.
  *   - hook 입력은 stdin JSON으로 들어온다. (예전 설정의 $CLAUDE_FILE_PATH는 존재하지
  *     않는 변수라 no-op였음 — node로 정확히 파싱해 교정.)
  *
@@ -27,6 +27,12 @@ import { dirname, join } from "node:path";
 
 const FORMATTABLE = /\.(ts|tsx|js|jsx|mjs|cjs|json|md|mdx|css|scss|ya?ml|html)$/;
 const LINTABLE = /\.(ts|tsx|js|jsx|mjs|cjs)$/;
+const ESLINT_CONFIGS = [
+  "eslint.config.js",
+  "eslint.config.mjs",
+  "eslint.config.cjs",
+  "eslint.config.ts",
+];
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -39,8 +45,23 @@ function readStdin() {
   });
 }
 
+/**
+ * 파일에서 위로 올라가며 eslint 설정이 있는 가장 가까운 폴더를 찾는다.
+ * ESLint 9는 설정을 cwd 기준으로 찾는다. hook은 레포 루트에서 돌고 루트에는 설정이 없어서,
+ * 예전에는 eslint가 매번 설정을 못 찾고 죽었다(에러를 삼켜서 아무도 몰랐음).
+ */
+function findEslintRoot(file) {
+  let dir = dirname(file);
+  while (true) {
+    if (ESLINT_CONFIGS.some((name) => existsSync(join(dir, name)))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+
 /** 편집된 파일 위치에서 패키지 바이너리(JS)를 resolve해 node로 직접 실행. best-effort. */
-function runBin(requireFromFile, spec, args) {
+function runBin(requireFromFile, spec, args, cwd) {
   let bin;
   try {
     bin = requireFromFile.resolve(spec);
@@ -55,7 +76,7 @@ function runBin(requireFromFile, spec, args) {
   }
   if (!bin || !existsSync(bin)) return;
   try {
-    execFileSync(process.execPath, [bin, ...args], { stdio: "ignore" });
+    execFileSync(process.execPath, [bin, ...args], { stdio: "ignore", cwd });
   } catch {
     // 포맷/린트 실패로 편집을 막지 않는다 — 조용히 통과
   }
@@ -76,6 +97,7 @@ if (!filePath || !FORMATTABLE.test(filePath) || !existsSync(filePath)) {
 const requireFromFile = createRequire(pathToFileURL(filePath));
 runBin(requireFromFile, "prettier/bin/prettier.cjs", ["--write", filePath]);
 if (LINTABLE.test(filePath)) {
-  runBin(requireFromFile, "eslint/bin/eslint.js", ["--fix", filePath]);
+  const eslintRoot = findEslintRoot(filePath);
+  if (eslintRoot) runBin(requireFromFile, "eslint/bin/eslint.js", ["--fix", filePath], eslintRoot);
 }
 process.exit(0);

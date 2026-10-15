@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { QueryClient } from "@tanstack/react-query";
 import { LocalRepository } from "@/entities/bookmark/api/local.repository";
 import type { StorageProvider } from "@/entities/bookmark/api/local.repository";
 import type { BookmarkRow } from "@/entities/bookmark/api/bookmark.types.db";
@@ -28,13 +27,20 @@ describe("북마크 파이프라인 통합 (fetch → service → repository →
   let mockStorage: StorageProvider;
   let storedBookmarks: BookmarkRow[];
   let repo: LocalRepository;
-  let queryClient: QueryClient;
 
   beforeEach(() => {
     storedBookmarks = [];
+    const otherKeys = new Map<string, unknown>();
     mockStorage = {
-      get: vi.fn(() => storedBookmarks as unknown) as StorageProvider["get"],
-      set: vi.fn((_key, value) => {
+      // 저장소는 북마크(GUEST_BOOKMARK)와 임베딩(GUEST_BOOKMARK_EMBEDDING) 두 키를 쓴다. 북마크 키만 배열로 다룬다
+      get: vi.fn((key: string) =>
+        key === "GUEST_BOOKMARK" ? (storedBookmarks as unknown) : (otherKeys.get(key) ?? null)
+      ) as StorageProvider["get"],
+      set: vi.fn((key: string, value: unknown) => {
+        if (key !== "GUEST_BOOKMARK") {
+          otherKeys.set(key, value);
+          return;
+        }
         storedBookmarks.length = 0;
         storedBookmarks.push(...(value as BookmarkRow[]));
       }) as StorageProvider["set"],
@@ -46,10 +52,6 @@ describe("북마크 파이프라인 통합 (fetch → service → repository →
       () => new Date("2024-06-01T10:00:00Z"),
       () => `pipeline-${++uuidCount}`
     );
-
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-    });
   });
 
   it("크롤링 성공 → AI 분석 성공 → completed 전체 파이프라인", async () => {

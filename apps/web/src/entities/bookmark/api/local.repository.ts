@@ -2,11 +2,13 @@ import storage from "@/shared/lib/storage";
 import type { BookmarkRow, CreateBookmarkRequest } from "./bookmark.types.db";
 import type { Bookmark } from "../model/types";
 import { toBookmark } from "../lib/bookmark.mapper";
-import { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
+import type { BookmarkRepository, UpdateBookmarkData } from "./bookmark.repository";
 import getGuestId from "@/shared/lib/guest";
 import { BookmarkError, BookmarkErrorCode } from "../model/bookmark.error";
 
 const GUEST_KEY = "GUEST_BOOKMARK";
+// 비회원 임베딩 (북마크 id → Float32 base64). 북마크 목록과 따로 둬서 목록 조회가 무거워지지 않게 한다
+const GUEST_EMBEDDING_KEY = "GUEST_BOOKMARK_EMBEDDING";
 
 /** 비회원 북마크 저장 한도 */
 export const GUEST_BOOKMARK_LIMIT = 20;
@@ -95,6 +97,11 @@ export class LocalRepository implements BookmarkRepository {
       GUEST_KEY,
       rows.filter((item) => item.id !== id)
     );
+    const embeddings = this.getEmbeddings();
+    if (id in embeddings) {
+      delete embeddings[id];
+      this.storageProvider.set(GUEST_EMBEDDING_KEY, embeddings);
+    }
   }
 
   /**
@@ -102,6 +109,22 @@ export class LocalRepository implements BookmarkRepository {
    */
   async removeAll(): Promise<void> {
     this.storageProvider.set(GUEST_KEY, []);
+    this.storageProvider.set(GUEST_EMBEDDING_KEY, {});
+  }
+
+  /**
+   * @description 비회원 임베딩을 저장합니다. 값은 서비스가 인코딩한 문자열이다 (비회원 시맨틱 검색용)
+   */
+  async saveEmbedding(id: string, encoded: string): Promise<void> {
+    if (!this.getRows().some((row) => row.id === id)) return;
+    this.storageProvider.set(GUEST_EMBEDDING_KEY, { ...this.getEmbeddings(), [id]: encoded });
+  }
+
+  /**
+   * @description 저장된 비회원 임베딩 전체 (북마크 id → 인코딩된 문자열)
+   */
+  getEmbeddings(): Record<string, string> {
+    return this.storageProvider.get<Record<string, string>>(GUEST_EMBEDDING_KEY) ?? {};
   }
 
   /**

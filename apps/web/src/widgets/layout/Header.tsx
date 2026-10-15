@@ -18,6 +18,7 @@ import { SearchDropdown } from "@/features/bookmark/ui/SearchDropdown";
 import { MobileSearchOverlay } from "@/features/bookmark/ui/MobileSearchOverlay";
 import { useBookmarks } from "@/features/bookmark/model/queries";
 import { useRecentSearches } from "@/shared/lib/useRecentSearches";
+import { FEATURES } from "@/shared/config/features";
 import type { User } from "@supabase/supabase-js";
 
 export const Header = ({
@@ -253,7 +254,7 @@ export const Header = ({
             <SearchIcon size={18} />
           </button>
 
-          {user && (
+          {user && FEATURES.collections && (
             <Link
               href="/collections"
               className={`hidden items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition-all sm:flex ${

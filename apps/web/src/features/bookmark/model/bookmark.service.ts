@@ -1,5 +1,5 @@
 import { supabase } from "@/shared/api/supabase/client";
-import {
+import type {
   BookmarkRepository,
   UpdateBookmarkData,
 } from "../../../entities/bookmark/api/bookmark.repository";
@@ -7,8 +7,9 @@ import { LocalRepository } from "../../../entities/bookmark/api/local.repository
 import { SupabaseBookmarkRepository } from "../../../entities/bookmark/api/supabase.repository";
 
 import getGuestId from "@/shared/lib/guest";
-import { BookmarkFilter } from "../../../entities/bookmark/api/bookmark.types.db";
-import { Bookmark } from "@/entities/bookmark/model/types";
+import type { BookmarkFilter } from "../../../entities/bookmark/api/bookmark.types.db";
+import type { Bookmark } from "@/entities/bookmark/model/types";
+import { encodeEmbedding } from "../lib/semantic";
 /**
  * @description 로그인 상태에 따라 Local 또는 Supabase Repository를 동적으로 선택하는 서비스 (Factory Pattern)
  */
@@ -92,7 +93,7 @@ export class BookmarkService {
   }
 
   /**
-   * @description 임베딩 벡터를 저장합니다. (회원 전용)
+   * @description 임베딩 벡터를 저장합니다. 회원은 Supabase, 비회원은 localStorage.
    * 파이프라인 단계마다 세션을 재확인하므로, 저장은 게스트(localStorage)로 됐는데
    * 임베딩 시점에 세션이 살아나면(만료→자동갱신 등) Supabase에 없는 북마크 id로
    * insert를 시도해 RLS 위반이 난다 → 소유 확인 후에만 저장한다.
@@ -104,7 +105,18 @@ export class BookmarkService {
       if (owned) {
         await repo.saveEmbedding(bookmarkId, embedding);
       }
+    } else if (repo instanceof LocalRepository) {
+      // 비회원 임베딩도 브라우저에 저장한다 (비회원 시맨틱 검색). 전에는 만들고 버렸다
+      await repo.saveEmbedding(bookmarkId, encodeEmbedding(embedding));
     }
+  }
+
+  /**
+   * @description 비회원 임베딩 전체. 회원이면 빈 객체 (회원은 서버에서 검색한다)
+   */
+  async getGuestEmbeddings(): Promise<Record<string, string>> {
+    const repo = await this.getRepository();
+    return repo instanceof LocalRepository ? repo.getEmbeddings() : {};
   }
 
   /**

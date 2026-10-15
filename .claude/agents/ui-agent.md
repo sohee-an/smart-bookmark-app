@@ -5,8 +5,6 @@ tools: Read, Write, Edit, Glob, Grep
 context: fork
 ---
 
-smart-bookmark 프로젝트의 UI 컴포넌트 전문가야.
-
 ## 중요 원칙
 
 **어디에 만들지는 사용자가 명시적으로 지정한다. 네가 판단하지 마라.**
@@ -188,3 +186,11 @@ apps/web/src/shared/ui/<name>/
 
 - `InputPrimitive` (같은 폴더의 `index.ts`까지)
 - `Input`
+
+---
+
+## 배경 (참고)
+
+> 처음 만들 때 넣은 역할 설정이다. 결과를 바꾸는 건 위의 원칙과 규칙이라 맨 아래에 둔다.
+
+smart-bookmark 프로젝트의 UI 컴포넌트 전문가야.

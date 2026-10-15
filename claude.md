@@ -1,5 +1,4 @@
 @PROJECT_PLAN.md
-@PROJECT_INDEX.md
 
 # Smart Bookmark
 
@@ -10,16 +9,17 @@
 ```
 smart-bookmark/
 ├── apps/
-│   └── web/          # Next.js 앱 (메인)
-│       └── src/
-│           ├── app/          # Next.js App Router (라우트, 레이아웃, API Route) = FSD app 레이어
-│           ├── widgets/
-│           ├── features/
-│           ├── entities/
-│           ├── shared/
-│           ├── server/       # 서버 전용 서비스 (크롤러, AI). FSD 레이어 아님
-│           ├── styles/
-│           └── middleware.ts
+│   ├── web/          # Next.js 앱 (메인)
+│   │   └── src/
+│   │       ├── app/          # Next.js App Router (라우트, 레이아웃, API Route) = FSD app 레이어
+│   │       ├── widgets/
+│   │       ├── features/
+│   │       ├── entities/
+│   │       ├── shared/
+│   │       ├── server/       # 서버 전용 서비스 (크롤러, AI). FSD 레이어 아님
+│   │       ├── styles/
+│   │       └── middleware.ts
+│   └── extension/    # 크롬 익스텐션 (WXT + React, Manifest V3)
 └── packages/
     ├── eslint-config/ # 공통 ESLint 설정
     ├── typescript-config/ # 공통 TS 설정
@@ -31,7 +31,7 @@ smart-bookmark/
 - 전체: Turborepo 모노레포 (apps/, packages/ 레벨)
 - apps/web 내부: FSD (Feature-Sliced Design) 구조
 - FSD 레이어 순서: app → widgets → features → entities → shared (`packages/eslint-config/fsd.js`가 CI에서 강제)
-- 상위 레이어가 하위 레이어를 import, 역방향 금지
+- 상위 레이어가 하위 레이어를 import, 역방향 금지. `entities`가 `features`를 import하는 것 같은 역방향은 lint가 CI에서 막는다
 - UI는 Headless 패턴 적용 (로직과 UI 분리)
 - 추후 React Native 앱 출시를 고려한 확장 구조
   - 로직은 packages/에서 공유
@@ -40,7 +40,7 @@ smart-bookmark/
 ## 프레임워크
 
 - Next.js App Router 사용
-- Server Components, Server Actions 방식 사용
+- Server Components 사용. Server Actions는 쓰지 않고, 서버 처리는 API Route(`app/api/`)로 한다
 
 ## 데이터 저장
 
@@ -91,77 +91,31 @@ pnpm test       # 테스트 실행
 ## 작업 규칙
 
 - CLAUDE.md와 PROJECT_PLAN.md는 항상 자동으로 로드됨 — 이미 알고 있으면 다시 읽지 말 것
+- PROJECT_INDEX.md는 자동으로 로드되지 않는다. 컨텍스트를 줄이려고 뺐다. 파일을 찾을 때 연다
 
 ## 탐색 규칙
 
-- 파일을 찾을 때는 반드시 PROJECT_INDEX.md를 먼저 본다
+- 파일을 찾거나 경로가 필요한 작업을 할 때는 반드시 PROJECT_INDEX.md를 먼저 열어 본다 (자동으로 로드되지 않는다)
 - 파일 경로의 기준은 PROJECT_INDEX.md 한 곳이다. 에이전트, 스킬, 명령 문서에는 경로 대신 이름을 쓴다
 - 파일을 옮기거나 이름을 바꾸면 PROJECT_INDEX.md를 같이 고친다. 안 고치면 CI의 문서 경로 검사가 PR을 막는다
-- INDEX에서 찾지 못한 경우 → Glob/Grep 절대 금지, 사용자에게 이렇게 말한다:
-  > "PROJECT_INDEX.md에 해당 키워드가 없어서 충분한 자료를 찾지 못했습니다."
-- 사용자가 "전체코드 봐줘" 라고 하면 → 그때만 Glob/Grep으로 탐색하고, 찾은 파일을 PROJECT_INDEX.md에 즉시 추가
+- 새 파일을 만들면 PROJECT_INDEX.md에 한 줄 추가한다. 빠뜨리면 색인 누락 검사가 알려 준다
+- INDEX에 없으면 Glob/Grep으로 찾되, 찾은 파일은 PROJECT_INDEX.md에 바로 추가한다. 지금 INDEX에 빠진 파일이 있다 (`node scripts/check-index-coverage.mjs`)
 - 아키텍처, 기술 스택, 프로젝트 구조는 이 파일 기준으로 판단할 것
 - 개별 파일은 해당 파일의 구체적인 코드가 필요할 때만 핀포인트로 읽을 것
 
-## Notion 워크플로우 트리거
+## Notion 워크플로우
 
-> 세부 태스크는 Notion DB로 관리(태스크명/상태/검수 컬럼). 구체적 page/DB ID는 로컬 설정에 둔다.
+"새 할일 등록해줘 [내용]"과 "노션 댓글 확인해줘"의 절차, 체크박스, 상태값, DB 스키마는 **task-pipeline 스킬 한 곳**에만 적는다. 여기와 명령 파일에는 절차를 적지 않는다 (예전에는 세 곳에 적혀 서로 어긋났다).
 
-### "노션 댓글 확인해줘"
+- 체크박스는 두 개: 시나리오검수(시나리오 승인), 개발구현방향(구현 계획 승인). 사람만 누른다
+- 상태 흐름: 테스트 시나리오 → 방향성 → 개발중 → 테스트중 → 완료 (실패 5회면 검수요청)
+- AI 댓글은 `[AI]`로 시작한다 (사람과 AI가 같은 Notion 계정이라 작성자로 구분이 안 된다)
+- Notion page/DB ID는 로컬 설정에 둔다. 형식은 task-pipeline 스킬 폴더의 예시 파일
+- 노션으로 작업할 때는 시나리오 → 사람 검수 → 테스트 → 구현 순서를 지킨다. 자세한 건 task-pipeline 스킬에 있다. 태스크 분해 기준도 그 스킬에 있다
 
-다음 두 가지를 순서대로 실행:
+## 테스트 컨벤션
 
-1. **댓글 확인 & 답글**
-   - 현재 진행중인 모든 태스크 페이지 댓글 읽기 (notion-get-comments)
-   - 새 댓글(내가 아직 답하지 않은 것)에 맥락 파악 후 Notion에 답글 달기 (notion-create-comment)
-
-2. **검수 체크 감지 → 개발 시작**
-   - 세부 태스크 DB에서 검수=true AND 상태=방향성 인 태스크 조회
-   - 발견 시: 상태를 `개발중`으로 업데이트 후 아래 개발 프로세스 실행
-
-### "새 할일 등록해줘 [내용]"
-
-1. 할일 매니저 하위에 큰 할일 페이지 생성 (notion-create-pages, parent: 할일 매니저 page_id)
-2. 그 안에 세부 태스크 DB 생성 (태스크명/상태/검수 컬럼)
-3. 태스크 분해 후 각 태스크 페이지에 코드 방향 상세 작성
-
-## 개발 프로세스 (검수 체크 감지 후 순서)
-
-```
-1. 상태 → 개발중
-   Notion 태스크 페이지의 코드 방향 숙지
-
-2. 테스트 먼저 작성
-   태스크의 완료 기준을 테스트 코드로 변환
-   파일 위치: 소스 파일 옆 co-location (bookmark.service.test.ts)
-
-3. 구현
-   테스트가 통과할 코드 작성
-
-4. 상태 → 테스트중
-   테스트 실행: pnpm test (현재 태스크 + 관련 파일 회귀 테스트)
-
-5. 결과 분기
-   ✅ 전부 통과 → 상태: 완료, Notion 댓글에 완료 요약 작성
-   ❌ 실패 → AI 자가 수정 후 재실행 (최대 5회)
-   ❌ 5회 초과 → 상태: 검수요청, Notion 댓글에 실패 로그 + 시도 요약 기록
-```
-
-## 세부 태스크 상태값
-
-| 상태         | 의미                                | 담당                 |
-| ------------ | ----------------------------------- | -------------------- |
-| `방향성`     | 태스크 분해 완료, 검수 대기         | 사람 검수 대기       |
-| `개발중`     | AI 구현 진행 중                     | AI                   |
-| `테스트중`   | 테스트 실행 중                      | AI                   |
-| `완료`       | 테스트 전부 통과                    | AI 자동              |
-| `재검토필요` | 기획 변경 영향 감지, 사람 판단 대기 | AI 자동 감지         |
-| `재개발`     | 재검토 후 수정 확정, AI 재실행 대기 | 사람 판단 후         |
-| `검수요청`   | 5회 이상 실패, 사람 확인 필요       | AI 자동 에스컬레이션 |
-
-## 테스트 파일 컨벤션
-
-소스 파일 옆 co-location 방식:
+테스트 파일은 소스 파일 옆에 둔다 (co-location). 이름은 `파일명.test.ts` (예: `bookmark.service.test.ts`).
 
 ```
 apps/web/src/features/bookmark/model/
@@ -174,53 +128,11 @@ apps/web/src/__tests__/           ← 통합 테스트
 apps/web/e2e/                     ← e2e 테스트
 ```
 
-회귀 테스트 탐지: 관련 파일명 + `.test` 자동 탐지 → import 분석으로 연관 테스트도 실행
+회귀 탐지: QA 장부가 import 관계로 시나리오와 코드를 연결하고, 연결된 코드가 바뀌면 "재검증 필요"로 띄운다 (`node scripts/qa/qa.mjs status`). 연관 테스트를 자동으로 골라 실행하지는 않는다
 
-## 태스크 분해 기준
-
-태스크는 **파일 단위가 아닌 "브라우저/앱에서 눈으로 확인할 수 있는 동작 단위"** 로 나눈다.
-
-- ✅ 좋은 예: "URL 저장하면 카드가 즉시 뜨는 것 확인"
-- ✅ 좋은 예: "잠시 후 카드에 title/summary/tags 자동으로 채워지는 것 확인"
-- ❌ 나쁜 예: "bookmarkService.ts 수정" (파일 기준 — 실행해서 확인 불가)
-
-나누는 조건:
-
-- 각 태스크 완료 후 사용자가 직접 실행해서 결과를 눈으로 확인 가능한가
-- 방향이 틀렸을 때 해당 태스크만 되돌릴 수 있는가
-
-묶는 조건:
-
-- 분리해도 중간 결과를 확인할 수 없으면 하나로 묶는다
+테스트 전략 상세 가이드(파일별 체크리스트, 단위/통합/E2E 로드맵, 커버리지 목표, 모킹 패턴): [docs/spec/testing-strategy.md](docs/spec/testing-strategy.md)
 
 # 프로젝트 Rules
-
-## 아키텍처
-
-- FSD(Feature-Sliced Design) 레이어 규칙 엄수
-- `entities`가 `features`를 import 금지 (레이어 위반)
-- 레이어 순서는 위 '아키텍처' 섹션 기준
-
-## 테스트 컨벤션
-
-- 테스트 파일은 소스 파일 옆에 위치 (co-location)
-- 네이밍: `파일명.test.ts` (예: bookmark.service.test.ts)
-- 단위 테스트: 소스 파일 옆
-- 통합 테스트: `apps/web/src/__tests__/`
-- e2e 테스트: `apps/web/e2e/`
-
-**테스트 전략 상세 가이드**: [docs/spec/testing-strategy.md](docs/spec/testing-strategy.md)
-
-- 파일별 테스트 체크리스트
-- 단위/통합/E2E 테스트 로드맵
-- 커버리지 목표 및 모킹 패턴
-
-## 절대 규칙
-
-- 구현 전 반드시 시나리오 작성 → 사람 검수 → 테스트 코드 작성 순서 준수
-- 검수 없이 구현 절대 금지
-- 5회 이상 테스트 실패 시 구현 중단 → Notion 상태를 검수요청으로 변경
-- 스펙 변경 감지 시 영향받는 태스크 재검토필요로 자동 변경
 
 ## 버그 추적 규칙
 
@@ -236,26 +148,20 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 
 ## 트리거
 
-- `새 할일 등록해줘 [내용]` → /project:new-task 실행
-- `노션 댓글 확인해줘` → /project:review 실행
-- `리뷰해줘 [대상]` → /project:code-review 실행 (백그라운드)
-- `보안 검토해줘 [대상]` → /project:security-review 실행 (백그라운드, 기본 리뷰)
-- `심층 보안 검토해줘 [대상]` → /project:security-deep-review 실행 (기본 + 공격자 관점을 따로 동시에)
-- `보안 리뷰 종합해줘` → /project:security-summary 실행 (개발 세션에서, 요청할 때만)
-- `QA 해줘 [대상]` → /project:qa-review 실행 (백그라운드)
+- `새 할일 등록해줘 [내용]` → `new-task` 명령 실행
+- `노션 댓글 확인해줘` → `notion-review` 명령 실행
+- `리뷰해줘 [대상]` → `code-review` 스킬 실행 (백그라운드)
+- `UI 만들어줘 [컴포넌트] [위치]` → `ui` 스킬 실행 (백그라운드 ui-agent, 위치 없으면 먼저 물음)
+- `보안 검토해줘 [대상]` → `security-review` 스킬 실행 (백그라운드, 기본 리뷰)
+- `심층 보안 검토해줘 [대상]` → `security-deep-review` 스킬 실행 (기본 + 공격자 관점을 따로 동시에)
+- `보안 리뷰 종합해줘` → `security-summary` 스킬 실행 (개발 세션에서, 요청할 때만)
+- `QA 해줘 [대상]` → `qa-review` 스킬 실행 (백그라운드)
+- `QA 점검해줘 [기능]` → `qa-sweep` 스킬 실행 (장부 상태 → 시나리오 제안 → 사람 승인 → 테스트 작성 → 재검증 → 실패 판정)
+- `실패 판정해줘 [시나리오 id]` → `qa-sweep` 스킬의 judge 단계 실행
 
 ## 리뷰 결과 보관소
 
-`.claude/project/reviews/` — 모든 리뷰 결과가 날짜별로 저장됨
-
-| 파일 패턴                        | 내용                    |
-| -------------------------------- | ----------------------- |
-| `code-review-YYYY-MM-DD.md`      | 아키텍처/타입 설계 리뷰 |
-| `security-review-YYYY-MM-DD.md`  | 보안 취약점 분석        |
-| `security-deep-YYYY-MM-DD.md`    | 공격자 관점 보안 분석   |
-| `security-summary-YYYY-MM-DD.md` | 보안 리뷰 종합          |
-| `ux-review-YYYY-MM-DD.md`        | UX/인터랙션 리뷰        |
-| `qa-review-YYYY-MM-DD.md`        | QA/완성도 리뷰          |
+`.claude/project/reviews/`에 날짜별로 저장된다. 파일 이름은 각 리뷰 스킬에 있다.
 
 **에이전트 참조 규칙:**
 
@@ -264,21 +170,19 @@ UI 핸들러 → 서비스(BookmarkService) → Repository 구현체 → DB 쿼�
 - 사람이 반영할 항목을 지정하면 그 리뷰 파일만 읽는다. 리뷰 전체를 미리 알고 시작하면 작업 범위가 리뷰에 끌려가는 문제가 있었다
 - Critical/High 항목은 새 태스크 등록 전 먼저 해소 여부 확인
 
-**보안 검사 구조:**
+**QA 지식 장부 (QATester):**
 
-| 언제              | 무엇이                                                                                      | 성격              |
-| ----------------- | ------------------------------------------------------------------------------------------- | ----------------- |
-| push 전 (로컬)    | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고)   | 결정론            |
-| PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트                                                 | 결정론, 막지 않음 |
-| 매주 월요일       | CodeQL, 의존성 audit. critical/high가 있으면 이슈 하나를 만들거나 갱신하고, 해소되면 닫는다 | 결정론, 막지 않음 |
-| 사람이 부를 때    | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary)                    | 판단              |
-| 사람이 부를 때    | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림                                 | 판단              |
+- 시나리오 제안(qa-scenario-writer), 테스트 작성(qa-test-author), 실패 판정(qa-judge)은 서로의 결과를 보지 않는다. 메인 세션만 전부 본다
+- 장부에 시나리오를 넣는 것, 이슈와 PR을 만드는 것은 사람이 말할 때만. 작성 에이전트는 테스트 파일만 쓴다
+- 자세한 건 `docs/qa-tester.md`, 상태 확인은 `node scripts/qa/qa.mjs status`
+
+**보안 검사 구조:** push 전 훅, PR/주간 CI, 사람이 부르는 리뷰로 나뉜다. 자세한 건 `docs/development-workflow.md`의 "보안 검사 구조".
 
 보안 민감 경로는 `.github/security-sensitive-paths.json` 하나로 관리한다.
 
 ## 참고 스킬
 
-- 파이프라인 전체 흐름: `.claude/skills/task-pipeline/SKILL.md`
+- Notion 파이프라인 (유일한 기준): `.claude/skills/task-pipeline/SKILL.md`
 - 시나리오 작성법: `.claude/skills/task-pipeline/SCENARIO.md`
 - 상태 전환 규칙: `.claude/skills/task-pipeline/STATUS.md`
 - 에스컬레이션 기준: `.claude/skills/task-pipeline/ESCALATION.md`

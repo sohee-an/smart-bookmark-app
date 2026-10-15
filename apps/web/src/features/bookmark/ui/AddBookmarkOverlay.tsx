@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type { FormEvent } from "react";
 import { Link2, FileText, X, Plus, Lock } from "lucide-react";
 import { Input } from "@/shared/ui/input/Input";
 import { bookmarkService } from "../model/bookmark.service";
@@ -45,7 +46,7 @@ export const AddBookmarkOverlay = ({ isOpen, onClose }: AddBookmarkOverlayProps)
     };
   }, [isOpen, handleClose]);
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
     const error = validateUrl(url);
     if (error) {

@@ -1,0 +1,93 @@
+{
+  "$comment": "qa-scenario-writer 제안. 장부(scenarios.json)에는 아직 반영되지 않았다. 기존 search.semantic은 주장이 넓어서 아래 5개로 쪼갠 안이다.",
+  "target": "시맨틱 검색",
+  "proposals": [
+    {
+      "id": "search.semantic.split",
+      "feature": "시맨틱 서치",
+      "claim": "유사도 0.8 이상은 '정확한 결과', 0.65 이상 0.8 미만은 '연관된 결과'로 나뉘고, 0.65 미만은 RPC 호출 인자(match_threshold)로 걸러진다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "vitest",
+        "file": "src/app/api/semantic-search/route.test.ts",
+        "approach": "인증된 supabase 클라이언트, 임베딩 모델, rpc를 가짜로 두고 similarity 0.8, 0.7999, 0.65를 반환시켜 exact/related 분기와 rpc 인자(match_threshold 0.65, match_count 10)를 확인. 0.65 미만 제외는 DB 함수 책임이라 이 테스트의 범위가 아님"
+      },
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts: EXACT_THRESHOLD = 0.8, match_threshold: 0.65, match_count: 10",
+        "docs/decisions/029-시맨틱-검색-유사도.md: 두 단계 threshold 구조"
+      ],
+      "assumption": "기획서의 '연관된 결과(<0.80)'는 하한이 없는 것처럼 읽히지만 실제로는 0.65 하한이 있다는 결정 문서 기준. 두 값은 측정 없이 정했다 (장부 notes)",
+      "priority": "high"
+    },
+    {
+      "id": "search.semantic.auth-and-input",
+      "feature": "시맨틱 서치",
+      "claim": "로그아웃 상태로 시맨틱 검색 API를 부르면 401로 거절되고, 검색어가 비었거나 공백뿐이면 임베딩 호출 없이 400이 나온다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "vitest",
+        "file": "src/app/api/semantic-search/route.test.ts",
+        "approach": "getUser가 null이면 401, query가 '' 또는 '   '이면 400이고 embedContent와 rpc가 호출되지 않음을 확인"
+      },
+      "evidence": [
+        "apps/web/src/app/api/semantic-search/route.ts: user 없음 401, query?.trim() 없음 400",
+        "apps/web/src/app/api/embed/route.ts 는 같은 흐름의 저장 쪽 임베딩이라 별도 확인 필요"
+      ],
+      "assumption": "비용이 드는 Gemini 임베딩 호출 앞에서 막히는 것이 의도라고 봄. 호출 횟수 제한(rate limit)은 이 라우트에 없어 이 시나리오 범위 밖",
+      "priority": "high"
+    },
+    {
+      "id": "search.semantic.guest-gate",
+      "feature": "시맨틱 서치",
+      "claim": "비회원이 검색어를 넣으면 의미 검색 API는 호출되지 않고 '로그인 후 사용할 수 있어요' 안내와 로그인 버튼이 보인다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-guest.spec.ts",
+        "approach": "비회원 상태로 /bookmarks?q=react 진입, /api/semantic-search 요청이 0건인지(page.route 카운트)와 안내 문구, 로그인 버튼 클릭 시 /login 이동 확인"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx: getSession()이 null이면 fetch 없이 로딩 종료",
+        "apps/web/src/features/bookmark/ui/SemanticResultSection.tsx: isGuest 분기 안내와 router.push('/login')",
+        "PROJECT_PLAN.md 인증: 비회원 사용 가능(localStorage)"
+      ],
+      "assumption": "isGuest 값이 서버에서 내려오는 경로(getAuthState)는 이 시나리오에서 다루지 않고 화면 결과만 본다",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.dedupe-keyword",
+      "feature": "시맨틱 서치",
+      "claim": "키워드 검색 결과에 이미 나온 북마크는 'AI 의미 검색 결과' 섹션에 다시 나오지 않고, 섹션 제목의 개수도 중복을 뺀 개수로 보인다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-member.spec.ts",
+        "approach": "/api/semantic-search를 page.route로 가짜 응답(키워드에 걸리는 북마크 하나 포함)으로 대체하고, 같은 카드가 키워드 영역에만 1번 보이는지와 '정확한 결과 (N)' 숫자 확인. 로그인 세션은 기존 E2E 방식 따라 준비"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx: keywordFilteredIds로 deduplicatedExact/Related 계산",
+        "docs/decisions/029 중복 제거 로직"
+      ],
+      "assumption": "회원용 E2E 로그인 준비가 되어 있다고 가정하지 않음. 어렵다면 dedupe 계산을 훅/함수로 빼서 vitest로 내리는 대안이 있음",
+      "priority": "medium"
+    },
+    {
+      "id": "search.semantic.failure-feedback",
+      "feature": "시맨틱 서치",
+      "claim": "의미 검색이 서버 오류(500)나 네트워크 오류로 실패하면 'AI 검색에 실패했어요' 안내가 뜨고 로딩 표시가 사라지며, 키워드 검색 결과는 그대로 보인다",
+      "verifiedBy": [],
+      "suggestedTest": {
+        "runner": "playwright",
+        "file": "e2e/semantic-search-member.spec.ts",
+        "approach": "/api/semantic-search를 500과 route.abort()로 각각 대체하고 토스트 문구, 스켈레톤 소멸, 키워드 카드 유지 확인"
+      },
+      "evidence": [
+        "apps/web/src/app/(main)/bookmarks/BookmarksContent.tsx: 401 외 실패 시 toast, finally에서 semanticLoading 해제(abort 아닐 때)",
+        "apps/web/src/app/api/semantic-search/route.ts: catch에서 500"
+      ],
+      "assumption": "검색어를 빠르게 바꿀 때 이전 요청 abort와 늦게 온 응답이 새 결과를 덮지 않는 경쟁 상태는 별도 시나리오 후보 (현재 AbortController로 막혀 있다고 코드상 보이나 테스트 없음)",
+      "maxAgeDays": null,
+      "priority": "low"
+    }
+  ]
+}
