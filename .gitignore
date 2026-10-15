@@ -82,8 +82,7 @@ blob-report/
 playwright/.cache/
 
 # ─── Claude Code ───────────────────────────────────
-# 민감 정보 (MCP 토큰, API 키 등)
-.claude/settings.json
+# 개인 설정 (권한 허용 목록, MCP 토큰 등). 공용 훅은 .claude/settings.json에 두고 커밋한다
 .claude/settings.local.json
 .claude/setting.json
 
