@@ -2,6 +2,9 @@
   "name": "@smart-bookmark/ui",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "lint": "eslint --max-warnings 0"
+  },
   "exports": {
     "./input": "./src/input/index.ts",
     "./avatar": "./src/avatar/index.ts",
@@ -9,9 +12,11 @@
     "./tag": "./src/tag/index.ts"
   },
   "devDependencies": {
+    "@smart-bookmark/eslint-config": "workspace:*",
     "@smart-bookmark/typescript-config": "workspace:*",
     "@types/react": "^19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "eslint": "^9"
   },
   "peerDependencies": {
     "react": "^19"
