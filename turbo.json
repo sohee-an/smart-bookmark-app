@@ -2,7 +2,7 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "globalEnv": ["NODE_ENV"],
-  "globalPassThroughEnv": ["QA_E2E_PORT", "QA_E2E_WORKERS"],
+  "globalPassThroughEnv": ["QA_E2E_PORT", "QA_E2E_WORKERS", "TEST_USER_EMAIL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
