@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { X, Folder } from "lucide-react";
 import { useCreateCollection } from "../model/queries";
 import { toast } from "@/shared/lib/toast";
@@ -14,7 +15,7 @@ export const CreateCollectionModal = ({ onClose }: Props) => {
   const [description, setDescription] = useState("");
   const { mutateAsync, isPending } = useCreateCollection();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     try {

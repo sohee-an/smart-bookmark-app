@@ -1,11 +1,5 @@
-import React, {
-  HTMLAttributes,
-  ButtonHTMLAttributes,
-  InputHTMLAttributes,
-  createContext,
-  useContext,
-  useId,
-} from "react";
+import type { HTMLAttributes, ButtonHTMLAttributes, InputHTMLAttributes } from "react";
+import React, { createContext, useContext, useId } from "react";
 
 // ─── Context ───────────────────────────────────────
 interface TagContextValue {

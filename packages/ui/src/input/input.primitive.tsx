@@ -1,12 +1,5 @@
-import React, {
-  InputHTMLAttributes,
-  HTMLAttributes,
-  LabelHTMLAttributes,
-  useId,
-  forwardRef,
-  createContext,
-  useContext,
-} from "react";
+import type { InputHTMLAttributes, HTMLAttributes, LabelHTMLAttributes } from "react";
+import React, { useId, forwardRef, createContext, useContext } from "react";
 
 // ─── Context ───────────────────────────────────────
 interface InputContextValue {
