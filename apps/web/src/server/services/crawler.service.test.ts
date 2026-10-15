@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrawlerService, resolveCrawlUrl } from "./crawler.service";
+import type * as ValidateSsrf from "@/shared/lib/validateSsrf";
 
 // 크롤링 테스트는 네트워크와 DNS를 쓰지 않는다. SSRF 검증은 통과한 것으로 두고 fetch는 가짜 HTML을 돌려준다
 vi.mock("@/shared/lib/validateSsrf", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@/shared/lib/validateSsrf")>();
+  const mod = await importOriginal<typeof ValidateSsrf>();
   return { ...mod, validateSsrf: vi.fn().mockResolvedValue(undefined) };
 });
 
