@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode, FormEvent } from "react";
 import { X, UserPlus, Crown, Pencil, Eye, Trash2 } from "lucide-react";
 import type {
   CollectionDetail,
@@ -20,7 +21,7 @@ const ROLE_OPTIONS: {
   value: CollectionRole;
   label: string;
   desc: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }[] = [
   {
     value: "editor",
@@ -31,7 +32,7 @@ const ROLE_OPTIONS: {
   { value: "viewer", label: "뷰어", desc: "북마크 조회만 가능", icon: <Eye size={14} /> },
 ];
 
-const ROLE_ICON: Record<CollectionRole, React.ReactNode> = {
+const ROLE_ICON: Record<CollectionRole, ReactNode> = {
   owner: <Crown size={14} className="text-amber-500" />,
   editor: <Pencil size={14} className="text-blue-500" />,
   viewer: <Eye size={14} className="text-zinc-400" />,
@@ -49,7 +50,7 @@ export const InviteMemberModal = ({ collection, currentUserId, onClose }: Props)
 
   const isOwner = collection.role === "owner";
 
-  const handleInvite = async (e: React.FormEvent) => {
+  const handleInvite = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     setInviteError(null);

@@ -1,4 +1,4 @@
-import { HTMLAttributes, KeyboardEvent } from "react";
+import type { HTMLAttributes, KeyboardEvent } from "react";
 import { X, Plus, Tag as TagIcon } from "lucide-react";
 import { TagPrimitive } from "@smart-bookmark/ui/tag";
 

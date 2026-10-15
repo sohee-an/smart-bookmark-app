@@ -1,9 +1,10 @@
-import React, { InputHTMLAttributes, forwardRef, useState } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
+import { forwardRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { InputPrimitive } from "@smart-bookmark/ui/input";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   label?: string;
   hideLabel?: boolean;
   error?: string;

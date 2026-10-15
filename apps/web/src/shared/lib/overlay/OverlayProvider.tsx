@@ -1,11 +1,12 @@
 "use client";
 
 import { Fragment, useReducer, useEffect } from "react";
+import type { ReactNode } from "react";
 import { overlayEmitter } from "./overlay.emitter";
 import { overlayReducer, initialState } from "./overlay.reducer";
 import { overlay } from "./overlay";
 
-export function OverlayProvider({ children }: { children: React.ReactNode }) {
+export function OverlayProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(overlayReducer, initialState);
 
   useEffect(() => {
