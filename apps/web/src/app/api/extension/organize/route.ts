@@ -51,7 +51,9 @@ async function classifyChunk(
       let domain = item.url;
       try {
         domain = new URL(item.url).hostname.replace(/^www\./, "");
-      } catch {}
+      } catch {
+        // URL이 아니면 원문을 도메인 자리에 그대로 쓴다
+      }
       const title = (item.title || "(없음)").slice(0, 40);
       return `${i + 1}. ${title} | ${domain}`;
     })

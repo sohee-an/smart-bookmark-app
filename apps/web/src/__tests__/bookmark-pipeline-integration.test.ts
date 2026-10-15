@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { QueryClient } from "@tanstack/react-query";
 import { LocalRepository } from "@/entities/bookmark/api/local.repository";
 import type { StorageProvider } from "@/entities/bookmark/api/local.repository";
 import type { BookmarkRow } from "@/entities/bookmark/api/bookmark.types.db";
@@ -28,7 +27,6 @@ describe("북마크 파이프라인 통합 (fetch → service → repository →
   let mockStorage: StorageProvider;
   let storedBookmarks: BookmarkRow[];
   let repo: LocalRepository;
-  let queryClient: QueryClient;
 
   beforeEach(() => {
     storedBookmarks = [];
@@ -54,10 +52,6 @@ describe("북마크 파이프라인 통합 (fetch → service → repository →
       () => new Date("2024-06-01T10:00:00Z"),
       () => `pipeline-${++uuidCount}`
     );
-
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-    });
   });
 
   it("크롤링 성공 → AI 분석 성공 → completed 전체 파이프라인", async () => {

@@ -35,7 +35,9 @@ export async function POST(request: Request) {
       try {
         await validateSsrf(item.url);
         validItems.push(item);
-      } catch {}
+      } catch {
+        // SSRF 검사에 걸린 URL은 가져오지 않고 건너뛴다
+      }
     })
   );
 
