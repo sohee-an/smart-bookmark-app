@@ -19,7 +19,7 @@ hooks:
 ## 쓸 수 있는 파일 (이것 말고는 쓰지 않는다)
 
 - 테스트 파일: `*.test.ts`, `*.test.tsx`, `apps/web/e2e/*.spec.ts`
-- 테스트 픽스처: `apps/web/src/__tests__/fixtures/` 아래
+- 테스트 픽스처: 통합 테스트 폴더(`__tests__`) 아래 `fixtures/` (쓸 수 있는 곳은 qa-test-author-guard 훅과 같다)
 - `qa-knowledge/scenarios.json`의 **해당 시나리오의 `verifiedBy`에 항목을 추가하는 것만** 한다. 다른 시나리오나 주장 문장은 건드리지 않는다
 
 이 규칙은 hook이 강제한다(이 에이전트가 돌 때만 걸린다). 규칙 밖의 쓰기는 막히고 이유가 돌아온다. 막히면 우회하지 말고 보고에 적는다.
