@@ -114,3 +114,17 @@ E2E가 실제 쓰기 플로우를 다루게 되면 **테스트 전용 DB로 격�
 - **main 머지** → Storybook **GitHub Pages** 게시 ([라이브](https://sohee-an.github.io/smart-bookmark-app/), `storybook.yml`) — 빌드 단계가 스토리 깨짐 검증을 겸함 → [032](./decisions/032-Storybook-Pages-게시.md)
 - 릴리스는 `dev → main` PR을 머지 커밋으로 병합하고, `package.json` 버전에 맞춰 태그(`gh release create vX.Y.Z`). 첫 릴리스 [v0.1.0](https://github.com/sohee-an/smart-bookmark-app/releases/tag/v0.1.0).
 - 환경변수는 Vercel 대시보드에서 관리 (`.env*`는 커밋 금지)
+
+---
+
+## 8. 보안 검사 구조
+
+| 언제              | 무엇이                                                                                      | 성격              |
+| ----------------- | ------------------------------------------------------------------------------------------- | ----------------- |
+| push 전 (로컬)    | `.husky/pre-push`: 시크릿(막음), 보안 민감 파일 변경(경고), lockfile 변경 시 의존성(경고)   | 결정론            |
+| PR, main/dev push | CodeQL, 의존성 audit, 보안 리뷰 알림 코멘트                                                 | 결정론, 막지 않음 |
+| 매주 월요일       | CodeQL, 의존성 audit. critical/high가 있으면 이슈 하나를 만들거나 갱신하고, 해소되면 닫는다 | 결정론, 막지 않음 |
+| 사람이 부를 때    | 기본 리뷰(security-reviewer + OWASP 스킬), 심층 리뷰(security-adversary)                    | 판단              |
+| 사람이 부를 때    | 종합(security-summary): 여러 곳에서 찾음 / 한 곳만 / 엇갈림                                 | 판단              |
+
+보안 민감 경로는 `.github/security-sensitive-paths.json` 하나로 관리한다.
