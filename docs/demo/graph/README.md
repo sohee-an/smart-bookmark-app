@@ -5,11 +5,14 @@
 | 파일 | 내용 |
 | --- | --- |
 | `qa-overlay.html` | **QA 검증 지도.** 파일 단위 코드 그래프 위에 QATester 장부를 겹친 것. 초록은 검증됨, 노랑은 부분 검증 또는 재검증 필요, 빨강은 실패 또는 검사 오류, 회색은 어느 시나리오에도 연결되지 않은 파일. 마우스를 올리면 파일, 상태, 시나리오가 보인다 |
+| `flow-map.html` | **import 노선도 (웹 + 익스텐션, 묶음 단위).** 파일을 폴더 묶음(features/bookmark, shared/lib, extension/components 같은 것)으로 합쳐 입구부터 왼쪽→오른쪽으로 그린 것. 전체를 한 화면에 보려면 이걸 연다. 위에서 웹만 / 익스텐션만 / 둘 다로 바꿀 수 있다. 익스텐션 → 웹 API는 import가 아니라 fetch라 점선으로 손으로 넣었다. 점을 누르면 안에 든 파일과 파일 단위 import가 옆에 뜬다. 만드는 법: 레포 루트에서 `node docs/demo/graph/flow-map.mjs` |
+| `flow-all.html` | **import 흐름 (apps/web 전체).** 같은 graph.json을 파일 단위로 합쳐 FSD 층을 열로 두고 입구(page, route)부터 왼쪽→오른쪽으로 그린 것. 역방향 import가 0개라 전체가 한 방향으로 흐른다. 많이 쓰이는 파일(types.ts 같은 것)로 가는 선은 기본으로 접는다. 점을 누르면 그 파일의 앞뒤만 남는다. 만드는 법: 레포 루트에서 `node docs/demo/graph/flow-all.mjs` |
+| `flow-view.html` | **URL 저장 경로.** 입구(+ 버튼)부터 Gemini, Supabase까지 요청 하나가 지나가는 파일만 왼쪽→오른쪽으로 그린 것. 실선은 graph.json에 있는 import, 점선은 화면에서 API 라우트로 가는 fetch(손으로 추가). 테두리 색은 QA 장부 상태. 점을 누르면 그 파일을 지나는 길만 남는다. 만드는 법: 레포 루트에서 `node docs/demo/graph/flow-view.mjs` |
 | `graphify-out/graph.html` | Graphify 원본 그래프 (심볼 단위, 모듈 묶음 80개에 이름 붙음) |
 | `graphify-out/GRAPH_REPORT.md` | Graphify 요약 (묶음 이름, 연결이 많은 노드) |
 | `graphify-out/graph.json` | 전체 그래프 데이터. `graphify query`, `graphify path`로 묻는다 |
 
-브라우저로 html 파일을 열면 된다. `qa-overlay.html`은 d3를 CDN(jsdelivr)에서 받으므로 인터넷이 필요하다.
+브라우저로 html 파일을 열면 된다. `qa-overlay.html`은 d3를, `flow-map.html`, `flow-all.html`, `flow-view.html`, `graph.html`은 vis-network를 CDN에서 받으므로 인터넷이 필요하다.
 
 ## 만든 방법
 
