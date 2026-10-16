@@ -1,5 +1,5 @@
-import type { InputHTMLAttributes, HTMLAttributes, LabelHTMLAttributes } from "react";
-import React, { useId, forwardRef, createContext, useContext } from "react";
+import type { InputHTMLAttributes, HTMLAttributes, LabelHTMLAttributes, Ref } from "react";
+import React, { useId, createContext, useContext } from "react";
 
 // ─── Context ───────────────────────────────────────
 interface InputContextValue {
@@ -59,26 +59,27 @@ function InputIcon({ children, ...props }: HTMLAttributes<HTMLDivElement>) {
 }
 
 // ─── Field ─────────────────────────────────────────
-const InputField = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  (props, ref) => {
-    const { id, hasError, hasIcon } = useInputContext();
-    const errorId = `${id}-error`;
+// React 19: ref는 보통 prop으로 받는다 (forwardRef 안 씀)
+interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+  ref?: Ref<HTMLInputElement>;
+}
 
-    return (
-      <input
-        id={id}
-        ref={ref}
-        aria-invalid={hasError}
-        aria-describedby={hasError ? errorId : undefined}
-        data-has-icon={hasIcon}
-        data-error={hasError}
-        {...props}
-      />
-    );
-  }
-);
+function InputField({ ref, ...props }: InputFieldProps) {
+  const { id, hasError, hasIcon } = useInputContext();
+  const errorId = `${id}-error`;
 
-InputField.displayName = "InputField";
+  return (
+    <input
+      id={id}
+      ref={ref}
+      aria-invalid={hasError}
+      aria-describedby={hasError ? errorId : undefined}
+      data-has-icon={hasIcon}
+      data-error={hasError}
+      {...props}
+    />
+  );
+}
 
 // ─── ErrorMessage ──────────────────────────────────
 function InputError({ children, ...props }: HTMLAttributes<HTMLParagraphElement>) {
