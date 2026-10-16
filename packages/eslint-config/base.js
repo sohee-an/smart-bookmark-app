@@ -20,6 +20,20 @@ export const config = [
         "error",
         { prefer: "type-imports", fixStyle: "separate-type-imports" },
       ],
+      // React 19: ref는 보통 prop으로 받는다. forwardRef는 deprecated라 import 자체를 막는다
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "react",
+              importNames: ["forwardRef"],
+              message:
+                "React 19에서는 ref를 prop으로 받는다 (예: function Field({ ref, ...props }))",
+            },
+          ],
+        },
+      ],
       // CLAUDE.md 코드 스타일: React.X 네임스페이스 접근 금지, named import 사용
       "no-restricted-syntax": [
         "error",
