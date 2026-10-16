@@ -27,14 +27,14 @@
 
 ## 1. 인증
 
-**파일**: `pages/login.tsx`, `features/auth/model/auth-schema.ts`, `middleware.ts`
+**파일**: `app/(public)/login/page.tsx`, `features/auth/model/auth-schema.ts`, `middleware.ts`
 
 - 이메일/비밀번호 로그인 및 회원가입
 - React Hook Form + Zod 유효성 검사
 - 회원가입 후 이메일 인증 대기 화면 (session null 감지)
 - 로그인 시 이메일 미인증 에러 메시지 처리
 - 비회원 게스트 모드 (`is_guest` 쿠키)
-- OAuth 콜백: `pages/api/auth/callback.ts`
+- OAuth 콜백: `app/api/auth/callback/route.ts`
 - 미들웨어 라우트 보호:
   - 인증 O + `/landing`, `/login` → `/` 리다이렉트
   - 인증 X + 메인 페이지 → `/landing` 리다이렉트
@@ -43,7 +43,7 @@
 
 ## 2. 북마크 저장 파이프라인
 
-**파일**: `features/bookmark/ui/AddBookmarkOverlay.tsx`, `pages/api/crawl.ts`, `pages/api/ai-analyze.ts`, `pages/api/embed.ts`
+**파일**: `features/bookmark/ui/AddBookmarkOverlay.tsx`, `app/api/crawl/route.ts`, `app/api/ai-analyze/route.ts`, `app/api/embed/route.ts`
 
 ```
 URL 입력
@@ -63,7 +63,7 @@ URL 입력
 
 ## 3. 검색 및 필터링
 
-**파일**: `pages/bookmarks.tsx`, `features/bookmark/model/filterBookmarks.ts`, `pages/api/semantic-search.ts`
+**파일**: `app/(main)/bookmarks/page.tsx`, `features/bookmark/model/filterBookmarks.ts`, `app/api/semantic-search/route.ts`
 
 ### 키워드 검색
 
@@ -130,7 +130,7 @@ URL 입력
 
 ## 6. 메인 대시보드
 
-**파일**: `pages/index.tsx`, `widgets/bookmark/RecentBookmarkSlider.tsx`
+**파일**: `app/(main)/page.tsx`, `widgets/bookmark/RecentBookmarkSlider.tsx`
 
 - 최근 북마크 가로 슬라이더 (CSS snap 스크롤)
 - 북마크 카드 그리드 목록
