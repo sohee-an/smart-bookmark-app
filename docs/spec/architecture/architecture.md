@@ -6,20 +6,28 @@
 
 ```
 apps/web/src/
-├── pages/              # 라우팅 + API Routes
-│   ├── index.tsx       # 메인 대시보드
-│   ├── bookmarks.tsx   # 검색 전용 페이지
-│   ├── login.tsx       # 로그인/회원가입
-│   ├── landing.tsx     # 비회원 랜딩
+├── app/                # Next.js App Router. 라우팅 + API Routes (FSD의 app 레이어)
+│   ├── (main)/
+│   │   ├── page.tsx            # 메인 대시보드
+│   │   ├── bookmarks/page.tsx  # 검색 전용 페이지
+│   │   ├── chat/page.tsx       # RAG 챗
+│   │   └── collections/        # 컬렉션 (화면 숨김)
+│   ├── (public)/
+│   │   ├── landing/page.tsx    # 비회원 랜딩
+│   │   └── login/page.tsx      # 로그인/회원가입
+│   ├── auth/callback/          # OAuth 콜백 화면
 │   └── api/
-│       ├── crawl.ts          # URL 크롤링
-│       ├── ai-analyze.ts     # AI 요약/태깅
-│       ├── embed.ts          # 임베딩 생성
-│       ├── semantic-search.ts # 시맨틱 검색
-│       └── auth/callback.ts  # OAuth 콜백
-├── components/
-│   └── layout/Header.tsx
+│       ├── crawl/route.ts            # URL 크롤링
+│       ├── ai-analyze/route.ts       # AI 요약/태깅
+│       ├── embed/route.ts            # 임베딩 생성
+│       ├── semantic-search/route.ts  # 시맨틱 검색
+│       ├── chat/route.ts             # RAG 챗
+│       ├── collections/              # 컬렉션 API
+│       ├── extension/                # 익스텐션 전용 API
+│       └── auth/callback/route.ts    # OAuth 콜백
 ├── widgets/
+│   ├── layout/Header.tsx
+│   ├── home/
 │   └── bookmark/RecentBookmarkSlider.tsx
 ├── features/
 │   └── bookmark/
@@ -67,7 +75,7 @@ apps/web/src/
 ## FSD 레이어 규칙
 
 ```
-pages → widgets → features → entities → shared
+app → widgets → features → entities → shared
 ```
 
 상위 레이어만 하위 레이어를 import. 역방향 금지.
