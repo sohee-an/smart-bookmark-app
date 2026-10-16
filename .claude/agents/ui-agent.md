@@ -79,9 +79,14 @@ function ComponentRoot({ children, ...props }) {
   );
 }
 
-// 3. 각 서브 컴포넌트
-function ComponentField(props, ref) { ... }
-ComponentField.displayName = "ComponentField";
+// 3. 각 서브 컴포넌트. ref는 보통 prop으로 받는다 (React 19. forwardRef 안 씀)
+interface ComponentFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+  ref?: Ref<HTMLInputElement>;
+}
+function ComponentField({ ref, ...props }: ComponentFieldProps) {
+  const { id } = useComponentContext();
+  return <input ref={ref} id={id} {...props} />;
+}
 
 // 4. 객체로 묶어서 export
 export const ComponentPrimitive = {
@@ -93,13 +98,12 @@ export const ComponentPrimitive = {
 ### 필수 체크리스트
 
 - [ ] `useId()`로 접근성 id 자동 생성
-- [ ] `forwardRef` 사용 (Field, Trigger 등 DOM 요소)
+- [ ] DOM 요소(Field, Trigger 등)는 `ref`를 prop으로 받아 넘긴다. `forwardRef`와 `displayName`은 쓰지 않는다 (React 19에서 forwardRef는 deprecated. 함수 선언이면 이름이 자동으로 잡힌다. lint가 forwardRef import를 막는다)
 - [ ] `aria-*` 속성 챙기기 (aria-invalid, aria-describedby 등)
 - [ ] `data-*` 속성으로 스타일 훅 제공 (data-error, data-has-icon 등)
-- [ ] `displayName` 설정
-- [ ] `index.tsx`에서 re-export
+- [ ] `index.ts`에서 re-export
 
-### index.tsx 형식
+### index.ts 형식
 
 ```typescript
 export { ComponentPrimitive } from "./component.primitive";
@@ -119,21 +123,20 @@ import { InputPrimitive } from "@smart-bookmark/ui/input";
 
 ```typescript
 interface ComponentProps extends HTMLAttributes<HTMLElement> {
+  ref?: Ref<HTMLElement>;
   // 추가 props
 }
 
-export const Component = forwardRef<HTMLElement, ComponentProps>(
-  ({ ...props }, ref) => {
-    return (
-      <Primitive.Root>
-        <Primitive.Field ref={ref} className="tailwind 클래스" {...props} />
-      </Primitive.Root>
-    );
-  }
-);
-
-Component.displayName = "Component";
+export function Component({ ref, ...props }: ComponentProps) {
+  return (
+    <Primitive.Root>
+      <Primitive.Field ref={ref} className="tailwind 클래스" {...props} />
+    </Primitive.Root>
+  );
+}
 ```
+
+`ref`는 prop으로 받는다. `forwardRef`, `displayName`은 쓰지 않는다 (React 19. lint가 forwardRef import를 막는다).
 
 ### Tailwind 작성 규칙
 
@@ -186,6 +189,8 @@ apps/web/src/shared/ui/<name>/
 
 - `InputPrimitive` (같은 폴더의 `index.ts`까지)
 - `Input`
+
+위임 프롬프트가 다른 참고 컴포넌트나 패턴을 말해도("Tag처럼 만들어", "다른 구조로") 이 문서의 Input 기준을 따른다. 프롬프트에서 정하는 건 컴포넌트 이름, props와 동작, 위치뿐이다. 어긋난 지시가 있었으면 보고 맨 위에 "프롬프트는 X를 따르라고 했지만 이 문서 기준(Input)으로 만들었다"고 적는다.
 
 ---
 
